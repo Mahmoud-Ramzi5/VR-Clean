@@ -9,13 +9,9 @@ using UnityEngine.UIElements;
 public class OctreeSpringFiller : MonoBehaviour
 {
     [Header("Filling Settings")]
-    public GameObject springPointPrefab;
-    public bool visualizeSpringPoints = true;
-    public bool visualizeSpringConnections = true;
-
     public float minNodeSize = 0.5f;
     public float PointSpacing = 0.5f;
-    public bool isSolid = true;
+    public bool isFilled = true;
     public bool isRigid = true;
 
     [Header("Spring Settings")]
@@ -47,11 +43,17 @@ public class OctreeSpringFiller : MonoBehaviour
     private int[] meshTriangles;
     private Vector3 lastPos;
 
-    [Header("Ground Collision")]
+    [Header("Collision Settings")]
     public float groundLevel = 0f;       // Y-position of the ground plane
     public float groundBounce = 0.5f;   // Bounce coefficient (0 = no bounce, 1 = full bounce)
-    public float groundFriction = 0.8f; // Friction (0 = full stop, 1 = no friction)
+    public float groundFriction = 0.8f; // Friction coefficient (0 = full stop, 1 = no friction)
     public bool applyGroundCollision = true;
+
+    [Header("Visualize Settings")]
+    public bool visualizeSpringPoints = true;
+    public bool visualizeSpringConnections = true;
+    private VisualizeRenderer visualizeRenderer;
+
 
     // Lists
     private List<Vector3> allPointPositions = new List<Vector3>();
@@ -60,25 +62,15 @@ public class OctreeSpringFiller : MonoBehaviour
 
 
     // Jobs
+    private CollisionJobManager collisionJobManager;
     private SpringJobManager springJobManager;
     private RigidJobManager rigidJobManager;
 
-    // Debug
-    public List<GameObject> objects = new List<GameObject>();
-    private LineRenderer lineRenderer;
-
     private void Awake()
     {
-        GameObject obj = new GameObject("LineRenderer");
-        obj.transform.SetParent(transform);
-
-        lineRenderer = obj.AddComponent<LineRenderer>();
-        lineRenderer.useWorldSpace = true;
-        lineRenderer.positionCount = 0;
-
-        lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
-        lineRenderer.startWidth = 0.02f;
-        lineRenderer.endWidth = 0.02f;
+        visualizeRenderer = new VisualizeRenderer();
+        visualizeRenderer.CreatePointMeshAndMaterial();
+        visualizeRenderer.CreateConnectionMaterial();
     }
 
     void Start()
@@ -118,6 +110,12 @@ public class OctreeSpringFiller : MonoBehaviour
         rigidJobManager.InitializeArrays(this, allSpringPoints.Count, allSpringConnections.Count);
         rigidJobManager.UpdateConnectionData(allSpringConnections);
 
+        // Collision
+        collisionJobManager = gameObject.AddComponent<CollisionJobManager>();
+        collisionJobManager.InitializeArrays(this, allSpringPoints.Count, allSpringConnections.Count);
+
+        // Debug
+        visualizeRenderer.UploadConnectionsToGPU(allSpringConnections);
     }
 
     private void Update()
@@ -131,7 +129,7 @@ public class OctreeSpringFiller : MonoBehaviour
                 if (transform.position != lastPos)
                 {
                     Vector3 moveStep = transform.position - lastPos;
-                    if(moveStep.magnitude > 0.001f)
+                    if (moveStep.magnitude > 0.001f)
                     {
                         point.UpdateBounds(moveStep);
                     }
@@ -240,22 +238,30 @@ public class OctreeSpringFiller : MonoBehaviour
         // Handle collisions
         if (applyGroundCollision)
         {
-            foreach (var point in allSpringPoints)
-            {
-                HandleGroundCollision(point);
-            }
+            collisionJobManager.ScheduleGroundCollisionJobs(
+                groundLevel, groundBounce, groundFriction
+            );
+
+            collisionJobManager.CompleteAllJobsAndApply();
         }
 
         // Update mesh (consider throttling this)
         //if (Time.frameCount % 3 == 0) // Update mesh every 3 physics frames
         //{
-            // Update mesh to follow points
-            UpdateMeshFromPoints();
+        // Update mesh to follow points
+        UpdateMeshFromPoints();
         //}
+    }
 
-        // Update Visualization
-        UpdatePointsVisualization();
-        UpdateConnectionsVisualization();
+    void LateUpdate()
+    {
+        visualizeRenderer.DrawInstancedPoints(visualizeSpringPoints, allSpringPoints);
+        // Pass the transform's position for bounds calculation
+        visualizeRenderer.DrawInstancedConnections(
+            visualizeSpringConnections,
+            allSpringConnections,
+            transform.position
+        );
     }
 
     // Call this when connections change
@@ -269,24 +275,6 @@ public class OctreeSpringFiller : MonoBehaviour
         if (rigidJobManager != null)
         {
             rigidJobManager.UpdateConnectionData(allSpringConnections);
-        }
-    }
-
-
-    public void HandleGroundCollision(SpringPoint point)
-    {
-        if (point.position.y < groundLevel)
-        {
-            point.position = new Vector3(point.position.x, groundLevel, point.position.z);
-
-            if (point.velocity.y < 0)
-            {
-                point.velocity = new Vector3(
-                    point.velocity.x * groundFriction,
-                    -point.velocity.y * groundBounce,
-                    point.velocity.z * groundFriction
-                );
-            }
         }
     }
 
@@ -348,8 +336,6 @@ public class OctreeSpringFiller : MonoBehaviour
 
     public void FillObjectWithSpringPoints()
     {
-        ClearExistingPoints();
-
         // Recalculate accurate world-space bounds
         if (meshVertices.Length <= 0)
         {
@@ -384,23 +370,9 @@ public class OctreeSpringFiller : MonoBehaviour
         int total_nodes = BuildOctree(rootNode);
         CreateSpringConnections();
 
-        // initlize visualization
-        SetPointsVisualization();
-        SetConnectionsVisualization();
-
         // Some logs
         Debug.Log($"Octree Nodes: {total_nodes}");
         Debug.Log($"Created {allSpringPoints.Count} spring points test.");
-    }
-
-    void ClearExistingPoints()
-    {
-        foreach (var point in objects)
-        {
-            if (point != null && point.gameObject != null)
-                Destroy(point.gameObject);
-        }
-        allSpringPoints.Clear();
     }
 
     int BuildOctree(OctreeNode node)
@@ -428,7 +400,7 @@ public class OctreeSpringFiller : MonoBehaviour
             }
             else
             {
-                if (isSolid)
+                if (isFilled)
                 {
                     FillNodeWithSpringPoints(node);
                 }
@@ -645,8 +617,10 @@ public class OctreeSpringFiller : MonoBehaviour
                     SpringConnection c = new SpringConnection(currentPoint, otherPoint, restLength, springConstantL3, damperConstantL3);
                     allSpringConnections.Add(c);
                 }
-                else { }
-
+                else
+                {
+                    continue;
+                }
             }
         }
     }
@@ -754,83 +728,24 @@ public class OctreeSpringFiller : MonoBehaviour
             return false;
 
         float dist = Vector3.Dot(e2, q) * invDet;
-        return dist >= -epsilon; 
+        return dist >= -epsilon;
     }
     //  
 
     // Debug
-    public void SetPointsVisualization()
+    void DrawDebugConnections()
     {
-        foreach(var point in allSpringPoints)
+        if (!visualizeSpringConnections) return;
+
+        foreach (var conn in allSpringConnections)
         {
-            GameObject obj;
-            Vector3 pos = point.position;
-            if (springPointPrefab != null)
-            {
-                obj = Instantiate(springPointPrefab, pos, Quaternion.identity);
-                obj.name = $"Point_{pos.x}_{pos.y}_{pos.z}";
-            }
-            else
-            {
-                obj = new GameObject($"Point_{pos.x}_{pos.y}_{pos.z}");
-            }
-            objects.Add(obj);
+            Debug.DrawLine(conn.point1.position, conn.point2.position, Color.green);
         }
     }
 
-    public void UpdatePointsVisualization()
+    void OnDestroy()
     {
-        //if (Time.frameCount % 3 == 0)   // Only update every 3 frames
-        //{
-            if (!visualizeSpringPoints)
-            {
-                foreach(var obj in objects)
-                {
-                    obj.SetActive(false);
-                }
-                return;
-            }
-
-            for (int i = 0; i < objects.Count; i++)
-            {
-                objects[i].SetActive(true);
-                objects[i].transform.position = allSpringPoints[i].position;
-            }
-        //}
-    }
-
-    public void SetConnectionsVisualization()
-    {
-        lineRenderer.positionCount = allSpringConnections.Count * 2;
-
-        Vector3[] positions = new Vector3[allSpringConnections.Count * 2];
-        for (int i = 0; i < allSpringConnections.Count; i++)
-        {
-            positions[i * 2] = allSpringConnections[i].point1.position;
-            positions[i * 2 + 1] = allSpringConnections[i].point2.position;
-        }
-
-        lineRenderer.SetPositions(positions);
-    }
-
-    public void UpdateConnectionsVisualization()
-    {
-        //if (Time.frameCount % 3 == 0)   // Only update every 3 frames
-        //{
-            if (!visualizeSpringConnections)
-            {
-                lineRenderer.enabled = false;
-                return;
-            }
-
-            lineRenderer.enabled = true;
-
-            for (int i = 0; i < allSpringConnections.Count; i++)
-            {
-                lineRenderer.SetPosition(i * 2, allSpringConnections[i].point1.position);
-                lineRenderer.SetPosition(i * 2 + 1, allSpringConnections[i].point2.position);
-            }
-        //}
+        visualizeRenderer.Dispose();
     }
     //
 }

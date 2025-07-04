@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Threading;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -249,11 +250,7 @@ public class SpringJobManager : MonoBehaviour
     public void ScheduleSpringJobs(float deltaTime)
     {
         // Clear the force buffer by setting each element to zero
-        var currentForceBuffer = usingForceBufferA ? forcesBufferA : forcesBufferB; 
-        for (int i = 0; i < currentForceBuffer.Length; i++)
-        {
-            currentForceBuffer[i] = float3.zero;
-        }
+        var currentForceBuffer = usingForceBufferA ? forcesBufferA : forcesBufferB;
 
         // Update positions and velocities from parent system
         var currentVelocityBuffer = usingVelocityBufferA ? velocitiesBufferA : velocitiesBufferB;
