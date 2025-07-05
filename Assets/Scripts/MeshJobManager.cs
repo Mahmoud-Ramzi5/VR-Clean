@@ -20,30 +20,19 @@ public class MeshJobManager : MonoBehaviour
     private NativeParallelMultiHashMap<int, WeightedPoint> vertexPointMap;
 
     private NativeArray<float3> vertices;
-    private NativeArray<float3> positions;
+    private NativeArray<SpringPointData> springPoints;
 
     private JobHandle meshUpdateJobHandle;
 
-    // Reference to the parent system
-    private OctreeSpringFiller parentSystem;
-
-    public void InitializeArrays(OctreeSpringFiller parent, Vector3[] meshVertices, int pointCount)
+    public void InitializeArrays(Vector3[] meshVertices, NativeArray<SpringPointData> springPoints)
     {
-        parentSystem = parent;
-
         vertices = new NativeArray<float3>(meshVertices.Length, Allocator.Persistent);
-        positions = new NativeArray<float3>(pointCount, Allocator.Persistent);
+        this.springPoints = springPoints;
 
         for (int i = 0; i < meshVertices.Length; i++)
         {
             // Update mesh vertices
             vertices[i] = (float3)meshVertices[i];
-        }
-
-        for (int i = 0; i < parentSystem.allSpringPoints.Count; i++)
-        {
-            // Update positions
-            positions[i] = parentSystem.allSpringPoints[i].position;
         }
 
         // Build the vertex - to - point relationship map once at startup
@@ -60,9 +49,9 @@ public class MeshJobManager : MonoBehaviour
 
             // Find closest spring point
             List<(int index, float distSq)> closest = new();
-            for (int j = 0; j < positions.Length; j++)
+            for (int j = 0; j < springPoints.Length; j++)
             {
-                float distSq = math.lengthsq((float3)worldPos - positions[j]);
+                float distSq = math.lengthsq((float3)worldPos - springPoints[j].position);
                 closest.Add((j, distSq));
             }
 
@@ -96,7 +85,7 @@ public class MeshJobManager : MonoBehaviour
     struct MeshUpdateJob : IJobParallelFor
     {
         [ReadOnly] public NativeParallelMultiHashMap<int, WeightedPoint> vertexMap;
-        [ReadOnly] public NativeArray<float3> positions;
+        [ReadOnly] public NativeArray<SpringPointData> springPoints;
 
         [ReadOnly] public float4x4 localToWorld;
         [ReadOnly] public float4x4 worldToLocal;
@@ -111,8 +100,8 @@ public class MeshJobManager : MonoBehaviour
             {
                 do
                 {
-                    blended += positions[wp.index] * wp.weight;
-                    totalWeight += wp.weight;
+                    blended += springPoints[wp.index].position * wp.weight;
+                    totalWeight += wp.weight; // calculate the total weight
                 } while (vertexMap.TryGetNextValue(out wp, ref it));
 
                 if (totalWeight > 0f)
@@ -138,17 +127,11 @@ public class MeshJobManager : MonoBehaviour
             vertices[i] = (float3)meshVertices[i];
         }
 
-        for (int i = 0; i < parentSystem.allSpringPoints.Count; i++)
-        {
-            // Update positions
-            positions[i] = parentSystem.allSpringPoints[i].position;
-        }
-
         var meshUpdateJob = new MeshUpdateJob
         {
             vertices = vertices,
-            positions = positions,
             vertexMap = vertexPointMap,
+            springPoints = springPoints,
             localToWorld = localToWorldMatrix,
             worldToLocal = worldToLocalMatrix
         };
@@ -193,7 +176,7 @@ public class MeshJobManager : MonoBehaviour
     private void OnDestroy()
     {
         if (vertices.IsCreated) vertices.Dispose();
-        if (positions.IsCreated) positions.Dispose();
+        if (springPoints.IsCreated) springPoints.Dispose();
         if (vertexPointMap.IsCreated) vertexPointMap.Dispose();
     }
 }

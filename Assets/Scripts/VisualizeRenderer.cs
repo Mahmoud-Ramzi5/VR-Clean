@@ -1,8 +1,9 @@
 using System.Collections.Generic;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-public class VisualizeRenderer: MonoBehaviour
+public class VisualizeRenderer
 {
     // SpringPoint
     private Mesh pointMesh;
@@ -27,7 +28,7 @@ public class VisualizeRenderer: MonoBehaviour
 
         if (shader == null)
         {
-            Debug.LogError("URP/Lit shader not found. Make sure URP is installed and active.");
+            Debug.LogError("URP/Lit shader not found.");
             return;
         }
 
@@ -53,35 +54,7 @@ public class VisualizeRenderer: MonoBehaviour
         }
     }
 
-    public void UploadConnectionsToGPU(List<SpringConnection> springConnections)
-    {
-        if (springConnections == null || springConnections.Count == 0)
-        {
-            return;
-        }
-
-        connectionCount = springConnections.Count;
-        int totalPoints = connectionCount * 2;
-
-        Vector3[] positions = new Vector3[totalPoints];
-        for (int i = 0; i < connectionCount; i++)
-        {
-            positions[i * 2] = springConnections[i].point1.position;
-            positions[i * 2 + 1] = springConnections[i].point2.position;
-        }
-
-        // Dispose old buffer if needed
-        if (connectionBuffer != null)
-        {  
-            connectionBuffer.Release();
-        }
-
-        connectionBuffer = new ComputeBuffer(totalPoints, sizeof(float) * 3);
-        connectionBuffer.SetData(positions);
-    }
-
-
-    public void DrawInstancedPoints(bool visualize, List<SpringPoint> springPoints)
+    public void DrawInstancedPoints(bool visualize, NativeArray<SpringPointData> springPoints)
     {
         if (!visualize || pointMesh == null || pointMaterial == null || springPoints == null)
         {
@@ -89,7 +62,7 @@ public class VisualizeRenderer: MonoBehaviour
         }
 
 
-        int count = springPoints.Count;
+        int count = springPoints.Length;
         if (count == 0) return; // no points
 
         if (pointMatrices == null || pointMatrices.Length != count)
@@ -112,17 +85,43 @@ public class VisualizeRenderer: MonoBehaviour
         }
     }
 
-    public void DrawInstancedConnections(bool visualize, List<SpringConnection> springConnections, Vector3 centerPosition)
+    public void UploadConnectionsToGPU(NativeArray<SpringPointData> springPoints, NativeArray<SpringConnectionData> springConnections)
     {
-        if (!visualize || connectionBuffer == null || connectionMaterial == null || connectionCount == 0 || springConnections == null)
+        if (springPoints == null || springConnections == null || springPoints.Length == 0 || springConnections.Length == 0)
+        {
+            return;
+        }
+
+        connectionCount = springConnections.Length;
+        int totalPoints = connectionCount * 2;
+
+        Vector3[] positions = new Vector3[totalPoints];
+        for (int i = 0; i < connectionCount; i++)
+        {
+            positions[i * 2] = springPoints[springConnections[i].pointA].position;
+            positions[i * 2 + 1] = springPoints[springConnections[i].pointB].position;
+        }
+
+        // Dispose old buffer if needed
+        if (connectionBuffer == null || connectionBuffer.count != totalPoints)
+        {
+            if (connectionBuffer != null) connectionBuffer.Release();
+            connectionBuffer = new ComputeBuffer(totalPoints, sizeof(float) * 3);
+        }
+        connectionBuffer.SetData(positions);
+    }
+
+    public void DrawInstancedConnections(bool visualize, Vector3 centerPosition, NativeArray<SpringPointData> springPoints, NativeArray<SpringConnectionData> springConnections)
+    {
+        if (!visualize || connectionBuffer == null || connectionMaterial == null || connectionCount == 0 || springPoints == null || springConnections == null)
         {
             return;
         }
 
         // Update connection data if changed
-        if (connectionCount != springConnections.Count)
+        if (connectionCount != springConnections.Length)
         {
-            UploadConnectionsToGPU(springConnections);
+            UploadConnectionsToGPU(springPoints, springConnections);
         }
 
         // Set material properties

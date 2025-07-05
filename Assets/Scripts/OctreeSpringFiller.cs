@@ -1,6 +1,88 @@
+using NUnit.Framework.Internal;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
+
+
+public struct SpringPointData
+{
+    public float3 position;
+    public float3 velocity;
+    public float3 force;
+
+    public float mass;
+    public int isFixed;       // 0 = false, 1 = true
+    //public float radius;
+
+    // Collision
+    public float bounciness;
+    public float friction;
+
+    // Bounds (just min/max; no UnityEngine.Bounds)
+    public float3 boundsMin;
+    public float3 boundsMax;
+
+    // Mesh
+    public int isMeshVertex;  // 0 = false, 1 = true
+    public int triangleIndex;
+
+    // other data
+    public float3 initialPosition;
+    public float3 predictedPosition;
+
+    public SpringPointData(
+    float3 position,
+    float3 velocity,
+    float mass,
+    int isFixed,
+    float bounciness,
+    float friction,
+    float3 boundsMin,
+    float3 boundsMax,
+    int triangleIndex,
+    int isMeshVertex
+)
+    {
+        this.position = position;
+        this.velocity = velocity;
+        this.force = float3.zero;
+
+        this.mass = mass;
+        this.isFixed = isFixed;
+
+        this.bounciness = bounciness;
+        this.friction = friction;
+
+        this.boundsMin = boundsMin;
+        this.boundsMax = boundsMax;
+
+        this.triangleIndex = triangleIndex;
+        this.isMeshVertex = isMeshVertex;
+
+        this.initialPosition = position;
+        this.predictedPosition = position;
+    }
+}
+
+public struct SpringConnectionData
+{
+    public int pointA;         // index into SpringPointData array
+    public int pointB;         // index into SpringPointData array
+    public float restLength;
+    public float springConstant;
+    public float damperConstant;
+
+    public SpringConnectionData(int a, int b, float restLength, float springConstant, float damperConstant)
+    {
+        this.pointA = a;
+        this.pointB = b;
+        this.restLength = restLength;
+        this.springConstant = springConstant;
+        this.damperConstant = damperConstant;
+    }
+}
 
 
 public class OctreeSpringFiller : MonoBehaviour
@@ -54,9 +136,12 @@ public class OctreeSpringFiller : MonoBehaviour
 
     // Lists
     private List<Vector3> allPointPositions = new List<Vector3>();
-    public List<SpringPoint> allSpringPoints = new List<SpringPoint>();
-    public List<SpringConnection> allSpringConnections = new List<SpringConnection>();
 
+    private NativeList<SpringPointData> tempPoints = new NativeList<SpringPointData>(Allocator.Persistent);
+    private NativeList<SpringConnectionData> tempConnections = new NativeList<SpringConnectionData>(Allocator.Persistent);
+
+    private NativeArray<SpringPointData> allSpringPoints;
+    private NativeArray<SpringConnectionData> allSpringConnections;
 
     // Jobs
     private CollisionJobManager collisionJobManager;
@@ -87,12 +172,19 @@ public class OctreeSpringFiller : MonoBehaviour
         FillObjectWithSpringPoints();
 
         // Update positions and bounds on start
-        foreach (SpringPoint point in allSpringPoints)
+        for (int i = 0; i < allSpringPoints.Length; i++)
         {
-            point.mass = totalMass / allSpringPoints.Count;
-            Vector3 moveStep = transform.position - lastPos;
-            point.UpdateBounds(moveStep);
+            SpringPointData point = allSpringPoints[i]; // get copy
+            point.mass = totalMass / allSpringPoints.Length;
+            allSpringPoints[i] = point; // write back modified copy
         }
+
+        //foreach (SpringPoint point in allSpringPoints)
+        //{
+        //    point.mass = totalMass / allSpringPoints.Count;
+        //    Vector3 moveStep = transform.position - lastPos;
+        //    point.UpdateBounds(moveStep);
+        //}
 
 
         // Use Jobs to calculate physics on GPU threads
@@ -100,46 +192,44 @@ public class OctreeSpringFiller : MonoBehaviour
 
         // Mesh
         meshJobManager = gameObject.AddComponent<MeshJobManager>();
-        meshJobManager.InitializeArrays(this, meshVertices, allSpringConnections.Count);
+        meshJobManager.InitializeArrays(meshVertices, allSpringPoints);
 
         // Spring
         springJobManager = gameObject.AddComponent<SpringJobManager>();
-        springJobManager.InitializeArrays(this, allSpringPoints.Count, allSpringConnections.Count);
-        springJobManager.UpdateConnectionData(allSpringConnections);
+        springJobManager.InitializeArrays(allSpringPoints, allSpringConnections);
 
         // Rigid
         rigidJobManager = gameObject.AddComponent<RigidJobManager>();
-        rigidJobManager.InitializeArrays(this, allSpringPoints.Count, allSpringConnections.Count);
-        rigidJobManager.UpdateConnectionData(allSpringConnections);
+        rigidJobManager.InitializeArrays(allSpringPoints, allSpringConnections);
 
         // Collision
         collisionJobManager = gameObject.AddComponent<CollisionJobManager>();
-        collisionJobManager.InitializeArrays(this, allSpringPoints.Count, allSpringConnections.Count);
+        collisionJobManager.InitializeArrays(allSpringPoints);
     }
 
-    private void Update()
-    {
-        if (Time.frameCount % 5 == 0)
-        {
-            // Run every 5th frame
-            // Spread out expensive operations
-            foreach (SpringPoint point in allSpringPoints)
-            {
-                if (transform.position != lastPos)
-                {
-                    Vector3 moveStep = transform.position - lastPos;
-                    if (moveStep.magnitude > 0.001f)
-                    {
-                        point.UpdateBounds(moveStep);
-                    }
-                }
-            }
-            if (transform.position != lastPos)
-            {
-                lastPos = transform.position;
-            }
-        }
-    }
+    //private void Update()
+    //{
+    //    if (Time.frameCount % 5 == 0)
+    //    {
+    //        // Run every 5th frame
+    //        // Spread out expensive operations
+    //        foreach (SpringPoint point in allSpringPoints)
+    //        {
+    //            if (transform.position != lastPos)
+    //            {
+    //                Vector3 moveStep = transform.position - lastPos;
+    //                if (moveStep.magnitude > 0.001f)
+    //                {
+    //                    point.UpdateBounds(moveStep);
+    //                }
+    //            }
+    //        }
+    //        if (transform.position != lastPos)
+    //        {
+    //            lastPos = transform.position;
+    //        }
+    //    }
+    //}
 
     void FixedUpdate()
     {
@@ -256,26 +346,10 @@ public class OctreeSpringFiller : MonoBehaviour
     {
         visualizeRenderer.DrawInstancedPoints(visualizeSpringPoints, allSpringPoints);
 
-        visualizeRenderer.UploadConnectionsToGPU(allSpringConnections);
-        visualizeRenderer.DrawInstancedConnections(
-            visualizeSpringConnections,
-            allSpringConnections,
-            transform.position
+        visualizeRenderer.UploadConnectionsToGPU(allSpringPoints, allSpringConnections);
+        visualizeRenderer.DrawInstancedConnections(visualizeSpringConnections, 
+            transform.position, allSpringPoints, allSpringConnections
         );
-    }
-
-    // Call this when connections change
-    public void UpdateConnections()
-    {
-        if (springJobManager != null)
-        {
-            springJobManager.UpdateConnectionData(allSpringConnections);
-        }
-
-        if (rigidJobManager != null)
-        {
-            rigidJobManager.UpdateConnectionData(allSpringConnections);
-        }
     }
 
     public void FillObjectWithSpringPoints()
@@ -284,6 +358,14 @@ public class OctreeSpringFiller : MonoBehaviour
         if (meshVertices.Length <= 0)
         {
             Debug.Log("Vertices Error");
+            return;
+        }
+
+        // Abort if complexity too high
+        float complexityEstimate = meshBounds.size.magnitude / PointSpacing;
+        if (complexityEstimate > 100000)
+        {
+            Debug.LogError($"Aborted: Excessive complexity ({complexityEstimate})");
             return;
         }
 
@@ -314,9 +396,14 @@ public class OctreeSpringFiller : MonoBehaviour
         int total_nodes = BuildOctree(rootNode);
         CreateSpringConnections();
 
+        // Copy to native arrays
+        allSpringPoints = tempPoints.AsArray();
+        allSpringConnections = tempConnections.AsArray();
+
         // Some logs
         Debug.Log($"Octree Nodes: {total_nodes}");
-        Debug.Log($"Created {allSpringPoints.Count} spring points.");
+        Debug.Log($"Created {allSpringPoints.Length} spring points.");
+        Debug.Log($"Created {allSpringConnections.Length} spring connections.");
     }
 
     int BuildOctree(OctreeNode node)
@@ -444,12 +531,21 @@ public class OctreeSpringFiller : MonoBehaviour
 
     void CreateSpringPoint(Vector3 worldPos, Bounds bounds, bool isMeshVertex)
     {
-        SpringPoint point = new SpringPoint(worldPos);
+        float3 center = (float3)bounds.center;
+        float3 extents = (float3)bounds.extents;
 
-        point.mass = 1.0f;
-        point.radius = 0.1f;
-        point.nodeBounds = bounds;
-
+        SpringPointData point = new SpringPointData(
+            position: worldPos,
+            velocity: new float3(0, 0, 0),
+            mass: 1.0f,
+            isFixed: 0,
+            bounciness: 0.5f,
+            friction: 0.8f,
+            boundsMin: center - extents,
+            boundsMax: center + extents,
+            triangleIndex: -1,
+            isMeshVertex: isMeshVertex? 1 : 0
+        );
 
         //if (isMeshVertex)
         //{
@@ -472,7 +568,7 @@ public class OctreeSpringFiller : MonoBehaviour
         //    }
         //}
 
-        allSpringPoints.Add(point);
+        tempPoints.Add(point);
 
         // Function to find the index of the triangle that contains a point
         int FindTriangleIndex(Mesh mesh, Vector3 point)
@@ -524,42 +620,41 @@ public class OctreeSpringFiller : MonoBehaviour
     void CreateSpringConnections()
     {
         // Clear existing connections
-        allSpringConnections.Clear();
+        tempConnections.Clear();
 
         // For each point, find nearby points and create connections
-        for (int i = 0; i < allSpringPoints.Count; i++)
+        for (int i = 0; i < tempPoints.Length; i++)
         {
-            SpringPoint currentPoint = allSpringPoints[i];
+            SpringPointData currentPoint = tempPoints[i];
 
-            for (int j = i + 1; j < allSpringPoints.Count; j++)
+            for (int j = i + 1; j < tempPoints.Length; j++)
             {
-                SpringPoint otherPoint = allSpringPoints[j];
-                float distance = Vector3.Distance(currentPoint.position, otherPoint.position);
-
+                SpringPointData otherPoint = tempPoints[j];
+                float distance = math.distance(currentPoint.position, otherPoint.position);
                 // Connect if within radius and not already connected
-                if (distance <= connectionRadiusL1 * PointSpacing && !IsConnected(currentPoint, otherPoint))
+                if (distance <= connectionRadiusL1 * PointSpacing && !IsConnected(i, j))
                 {
                     // Clamp rest length to reasonable values
                     float restLength = Mathf.Clamp(distance, 0.5f, maxRestLengthL1);
 
-                    SpringConnection c = new SpringConnection(currentPoint, otherPoint, restLength, springConstantL1, damperConstantL1);
-                    allSpringConnections.Add(c);
+                    SpringConnectionData c = new SpringConnectionData(i, j, restLength, springConstantL1, damperConstantL1);
+                    tempConnections.Add(c);
                 }
-                else if (distance <= connectionRadiusL2 * PointSpacing && !IsConnected(currentPoint, otherPoint))
+                else if (distance <= connectionRadiusL2 * PointSpacing && !IsConnected(i, j))
                 {
                     // Clamp rest length to reasonable values
                     float restLength = Mathf.Clamp(distance, 0.5f, maxRestLengthL2);
 
-                    SpringConnection c = new SpringConnection(currentPoint, otherPoint, restLength, springConstantL2, damperConstantL2);
-                    allSpringConnections.Add(c);
+                    SpringConnectionData c = new SpringConnectionData(i, j, restLength, springConstantL2, damperConstantL2);
+                    tempConnections.Add(c);
                 }
-                else if (distance <= connectionRadiusL3 * PointSpacing && !IsConnected(currentPoint, otherPoint))
+                else if (distance <= connectionRadiusL3 * PointSpacing && !IsConnected(i, j))
                 {
                     // Clamp rest length to reasonable values
                     float restLength = Mathf.Clamp(distance, 0.5f, maxRestLengthL3);
 
-                    SpringConnection c = new SpringConnection(currentPoint, otherPoint, restLength, springConstantL3, damperConstantL3);
-                    allSpringConnections.Add(c);
+                    SpringConnectionData c = new SpringConnectionData(i, j, restLength, springConstantL3, damperConstantL3);
+                    tempConnections.Add(c);
                 }
                 else
                 {
@@ -569,12 +664,12 @@ public class OctreeSpringFiller : MonoBehaviour
         }
     }
 
-    bool IsConnected(SpringPoint point1, SpringPoint point2)
+    bool IsConnected(int point1Index, int point2Index)
     {
-        foreach (var conn in allSpringConnections)
+        foreach (var conn in tempConnections)
         {
-            if ((conn.point1 == point1 && conn.point2 == point2) ||
-                (conn.point1 == point2 && conn.point2 == point1))
+            if ((conn.pointA == point1Index && conn.pointB == point2Index) ||
+                (conn.pointA == point2Index && conn.pointB == point1Index))
                 return true;
         }
         return false;
@@ -592,12 +687,12 @@ public class OctreeSpringFiller : MonoBehaviour
 
         // 2. Use multiple ray directions to increase reliability
         Vector3[] baseDirections = {
-        Vector3.left,
-        Vector3.right,
-        Vector3.forward,
-        Vector3.back,
-        Vector3.up,
-        Vector3.down
+            Vector3.left,
+            Vector3.right,
+            Vector3.forward,
+            Vector3.back,
+            Vector3.up,
+            Vector3.down
         };
 
         float originOffset = 1e-9f; // very Small offset
@@ -677,19 +772,38 @@ public class OctreeSpringFiller : MonoBehaviour
     //  
 
     // Debug
-    void DrawDebugConnections()
+    private void DrawDebugConnections()
     {
         if (!visualizeSpringConnections) return;
 
         foreach (var conn in allSpringConnections)
         {
-            Debug.DrawLine(conn.point1.position, conn.point2.position, Color.white);
+            
+            Debug.DrawLine(allSpringPoints[conn.pointA].position, allSpringPoints[conn.pointB].position, Color.white);
         }
     }
 
-    void OnDestroy()
+    private void OnDestroy()
     {
+        tempPoints.Clear();
+        tempConnections.Clear();
+        allPointPositions.Clear();
+
+        if (meshJobManager) Destroy(meshJobManager);
+        if (rigidJobManager) Destroy(rigidJobManager);
+        if (springJobManager) Destroy(springJobManager);
+        if (collisionJobManager) Destroy(collisionJobManager);
+
+        if (tempPoints.IsCreated) tempPoints.Dispose();
+        if (tempConnections.IsCreated) tempConnections.Dispose();
+
+        if (allSpringPoints.IsCreated) allSpringPoints.Dispose();
+        if (allSpringConnections.IsCreated) allSpringConnections.Dispose();
+
         visualizeRenderer.Dispose();
+
+        Resources.UnloadUnusedAssets();
+        System.GC.Collect();
     }
     //
 }
