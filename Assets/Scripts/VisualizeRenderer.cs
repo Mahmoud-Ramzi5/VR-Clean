@@ -19,9 +19,68 @@ public class VisualizeRenderer
     public void CreatePointMeshAndMaterial()
     {
         // === 1. Generate sphere mesh (default sphere) ===
-        GameObject tempSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        pointMesh = Object.Instantiate(tempSphere.GetComponent<MeshFilter>().sharedMesh);
-        Object.Destroy(tempSphere); // Clean up temporary object
+        // Too high & expensive (515 vertices, 768 triangles)
+
+        //GameObject tempSphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        //pointMesh = Object.Instantiate(tempSphere.GetComponent<MeshFilter>().sharedMesh);
+        //Object.Destroy(tempSphere); // Clean up temporary object
+
+        pointMesh = new Mesh();
+
+        // === 1. Generate Icosahedron Mesh ===
+        // Medium (12 vertices, 20 triangles)
+
+        //// Golden ratio
+        //float t = (1f + Mathf.Sqrt(5f)) / 2f;
+
+        //// 12 vertices of an icosahedron
+        //Vector3[] vertices = {
+        //    new Vector3(-1f,  t, 0f).normalized,
+        //    new Vector3( 1f,  t, 0f).normalized,
+        //    new Vector3(-1f, -t, 0f).normalized,
+        //    new Vector3( 1f, -t, 0f).normalized,
+
+        //    new Vector3(0f, -1f,  t).normalized,
+        //    new Vector3(0f,  1f,  t).normalized,
+        //    new Vector3(0f, -1f, -t).normalized,
+        //    new Vector3(0f,  1f, -t).normalized,
+
+        //    new Vector3( t, 0f, -1f).normalized,
+        //    new Vector3( t, 0f,  1f).normalized,
+        //    new Vector3(-t, 0f, -1f).normalized,
+        //    new Vector3(-t, 0f,  1f).normalized,
+        //};
+
+        //// 20 triangular faces
+        //int[] triangles = {
+        //    0, 11, 5,    0, 5, 1,    0, 1, 7,    0, 7, 10,   0, 10, 11,
+        //    1, 5, 9,     5, 11, 4,   11, 10, 2,  10, 7, 6,    7, 1, 8,
+        //    3, 9, 4,     3, 4, 2,    3, 2, 6,    3, 6, 8,     3, 8, 9,
+        //    4, 9, 5,     2, 4, 11,   6, 2, 10,   8, 6, 7,     9, 8, 1,
+        //};
+
+        // === 1. Generate Octahedron Mesh ===
+        // Lowst possible (6 vertices, 8 triangles)
+
+        // 6 vertices of an octahedron
+        Vector3[] vertices = {
+            new Vector3( 1,  0,  0),
+            new Vector3(-1,  0,  0),
+            new Vector3( 0,  1,  0),
+            new Vector3( 0, -1,  0),
+            new Vector3( 0,  0,  1),
+            new Vector3( 0,  0, -1),
+        };
+
+        // 8 triangular faces
+        int[] triangles = {
+            4, 0, 2,   4, 2, 1,   4, 1, 3,   4, 3, 0,
+            5, 2, 0,   5, 1, 2,   5, 3, 1,   5, 0, 3,
+        };
+
+        pointMesh.vertices = vertices;
+        pointMesh.triangles = triangles;
+        pointMesh.RecalculateNormals();
 
         // === 2. Create simple instanced material ===
         Shader shader = Shader.Find("Universal Render Pipeline/Lit");
