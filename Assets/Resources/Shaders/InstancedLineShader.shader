@@ -3,57 +3,48 @@ Shader "Custom/InstancedLineShader"
     Properties
     {
         _Color ("Color", Color) = (1,1,1,1)
-        _Thickness ("Thickness", Float) = 0.02
+        _Thickness ("Thickness", Float) = 0.04
     }
     SubShader
     {
         Tags { "RenderType"="Opaque" }
         LOD 100
-
         Pass
         {
+            ZWrite On
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
-            #pragma multi_compile_instancing
-            #include "UnityCG.cginc"
+
+            StructuredBuffer<float3> _LineBuffer;
+
+            float4 _Color;
+            float _Thickness;
 
             struct appdata
             {
-                float4 vertex : POSITION;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
+                uint vertexID : SV_VertexID;
             };
 
             struct v2f
             {
-                float4 vertex : SV_POSITION;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
+                float4 pos : SV_POSITION;
+                float4 color : COLOR;
             };
 
-            StructuredBuffer<float3> _LineBuffer;
-            float4 _Color;
-            float _Thickness;
-
-            v2f vert (appdata v, uint instanceID : SV_InstanceID)
+            v2f vert(appdata v)
             {
                 v2f o;
-                UNITY_SETUP_INSTANCE_ID(v);
-                UNITY_TRANSFER_INSTANCE_ID(v, o);
 
-                // Get line start/end from buffer
-                float3 startPos = _LineBuffer[instanceID * 2];
-                float3 endPos = _LineBuffer[instanceID * 2 + 1];
-
-                // Interpolate position along line
-                float3 pos = lerp(startPos, endPos, v.vertex.x);
-                o.vertex = UnityObjectToClipPos(float4(pos, 1.0));
+                float3 worldPos = _LineBuffer[v.vertexID];
+                o.pos = UnityObjectToClipPos(float4(worldPos, 1.0));
+                o.color = _Color;
                 return o;
             }
 
-            fixed4 frag (v2f i) : SV_Target
+            fixed4 frag(v2f i) : SV_Target
             {
-                UNITY_SETUP_INSTANCE_ID(i);
-                return _Color;
+                return i.color;
             }
             ENDCG
         }

@@ -8,7 +8,7 @@ public class VisualizeRenderer: MonoBehaviour
     private Mesh pointMesh;
     private Material pointMaterial;
     private Matrix4x4[] pointMatrices;
-    private const int maxBatchSize = 2047;
+    private const int maxBatchSize = 1023;
 
     // Spring Connection
     private ComputeBuffer connectionBuffer;
@@ -100,9 +100,8 @@ public class VisualizeRenderer: MonoBehaviour
         // Build transformation matrix per point
         for (int i = 0; i < count; i++)
         {
-            float radius = springPoints[i].radius;
             Vector3 pos = springPoints[i].position;
-            pointMatrices[i] = Matrix4x4.TRS(pos, Quaternion.identity, Vector3.one * radius);
+            pointMatrices[i] = Matrix4x4.TRS(pos, Quaternion.identity, Vector3.one * 0.05f);
         }
 
         // Batch draw in groups of 1023
@@ -128,16 +127,17 @@ public class VisualizeRenderer: MonoBehaviour
 
         // Set material properties
         connectionMaterial.SetBuffer("_LineBuffer", connectionBuffer);
-        connectionMaterial.SetColor("_Color", Color.green);
-        connectionMaterial.SetFloat("_Thickness", 0.02f);
+        connectionMaterial.SetColor("_Color", Color.white);
+        connectionMaterial.SetFloat("_Thickness", 0.05f);
 
-        // Draw all lines in one call
+        // renders a number of line primitives directly on the GPU
+        // using procedural geometry — meaning no mesh is needed.
         Graphics.DrawProcedural(
-            connectionMaterial,
+            connectionMaterial, // The material that contains the shader
             new Bounds(centerPosition, Vector3.one * 100f), // Large bounds
-            MeshTopology.Lines,
+            MeshTopology.Lines, // for rendering lines
             connectionCount * 2, // 2 vertices per line
-            1, // Instance count
+            1, // Instance count (not instancing)
             null, // Camera (null = current)
             null, // Material properties
             ShadowCastingMode.Off,

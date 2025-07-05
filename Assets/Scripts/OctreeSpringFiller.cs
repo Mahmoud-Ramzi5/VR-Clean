@@ -1,9 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Collections;
-using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 
 public class OctreeSpringFiller : MonoBehaviour
@@ -65,6 +62,7 @@ public class OctreeSpringFiller : MonoBehaviour
     private CollisionJobManager collisionJobManager;
     private SpringJobManager springJobManager;
     private RigidJobManager rigidJobManager;
+    private MeshJobManager meshJobManager;
 
     private void Awake()
     {
@@ -100,6 +98,10 @@ public class OctreeSpringFiller : MonoBehaviour
         // Use Jobs to calculate physics on GPU threads
         // Parallelizing calculations improves performance
 
+        // Mesh
+        meshJobManager = gameObject.AddComponent<MeshJobManager>();
+        meshJobManager.InitializeArrays(this, meshVertices, allSpringConnections.Count);
+
         // Spring
         springJobManager = gameObject.AddComponent<SpringJobManager>();
         springJobManager.InitializeArrays(this, allSpringPoints.Count, allSpringConnections.Count);
@@ -113,9 +115,6 @@ public class OctreeSpringFiller : MonoBehaviour
         // Collision
         collisionJobManager = gameObject.AddComponent<CollisionJobManager>();
         collisionJobManager.InitializeArrays(this, allSpringPoints.Count, allSpringConnections.Count);
-
-        // Debug
-        visualizeRenderer.UploadConnectionsToGPU(allSpringConnections);
     }
 
     private void Update()
@@ -245,18 +244,19 @@ public class OctreeSpringFiller : MonoBehaviour
             collisionJobManager.CompleteAllJobsAndApply();
         }
 
-        // Update mesh (consider throttling this)
-        //if (Time.frameCount % 3 == 0) // Update mesh every 3 physics frames
-        //{
-        // Update mesh to follow points
-        UpdateMeshFromPoints();
-        //}
+        // Handle Mesh Update
+        meshJobManager.ScheduleMeshUpdateJobs(
+            meshVertices, transform.localToWorldMatrix, transform.worldToLocalMatrix
+        );
+
+        meshJobManager.CompleteAllJobsAndApply(targetMesh);
     }
 
     void LateUpdate()
     {
         visualizeRenderer.DrawInstancedPoints(visualizeSpringPoints, allSpringPoints);
-        // Pass the transform's position for bounds calculation
+
+        visualizeRenderer.UploadConnectionsToGPU(allSpringConnections);
         visualizeRenderer.DrawInstancedConnections(
             visualizeSpringConnections,
             allSpringConnections,
@@ -276,62 +276,6 @@ public class OctreeSpringFiller : MonoBehaviour
         {
             rigidJobManager.UpdateConnectionData(allSpringConnections);
         }
-    }
-
-    void UpdateMeshFromPoints()
-    {
-        Vector3[] vertices = meshVertices;
-
-        // Find average position of all points
-        Vector3 averagePos = Vector3.zero;
-        foreach (var point in allSpringPoints)
-        {
-            averagePos += point.position;
-        }
-        averagePos /= allSpringPoints.Count;
-
-        if (!math.any(math.isnan(averagePos)))
-        {
-            // Update mesh position to follow points
-            transform.position = averagePos;
-        }
-
-        // Update each vertex based on its corresponding point
-        for (int i = 0; i < vertices.Length; i++)
-        {
-            // Find closest spring point to this vertex
-            Vector3 worldVertex = transform.TransformPoint(vertices[i]);
-            SpringPoint closestPoint = FindClosestPoint(worldVertex);
-
-            if (closestPoint != null)
-            {
-                // Update vertex position relative to new mesh position
-                vertices[i] = transform.InverseTransformPoint(closestPoint.position);
-            }
-        }
-
-        // Apply changes to mesh
-        targetMesh.vertices = vertices;
-        targetMesh.RecalculateNormals();
-        targetMesh.RecalculateBounds();
-    }
-
-    SpringPoint FindClosestPoint(Vector3 worldPos)
-    {
-        SpringPoint closest = null;
-        float minDist = float.MaxValue;
-
-        foreach (var point in allSpringPoints)
-        {
-            float dist = Vector3.Distance(worldPos, point.position);
-            if (dist < minDist)
-            {
-                minDist = dist;
-                closest = point;
-            }
-        }
-
-        return closest;
     }
 
     public void FillObjectWithSpringPoints()
@@ -372,7 +316,7 @@ public class OctreeSpringFiller : MonoBehaviour
 
         // Some logs
         Debug.Log($"Octree Nodes: {total_nodes}");
-        Debug.Log($"Created {allSpringPoints.Count} spring points test.");
+        Debug.Log($"Created {allSpringPoints.Count} spring points.");
     }
 
     int BuildOctree(OctreeNode node)
@@ -739,7 +683,7 @@ public class OctreeSpringFiller : MonoBehaviour
 
         foreach (var conn in allSpringConnections)
         {
-            Debug.DrawLine(conn.point1.position, conn.point2.position, Color.green);
+            Debug.DrawLine(conn.point1.position, conn.point2.position, Color.white);
         }
     }
 
