@@ -37,7 +37,7 @@ public class RigidJobManager : MonoBehaviour
             if (applyGravity && point.isFixed == 0)
             {
                 // Add gravity force to each point
-                point.force = gravity * point.mass;
+                point.force += gravity * point.mass;
             }
             springPoints[index] = point;
         }
@@ -78,7 +78,7 @@ public class RigidJobManager : MonoBehaviour
                 // More conservative velocity clamping (50 units/s squared)
                 if (math.lengthsq(velocity) > 2500f)
                 {
-                    velocity = math.normalizesafe(velocity) * 50f;
+                    velocity = math.normalize(velocity) * 50f;
                 }
 
                 point.velocity = velocity;
@@ -117,7 +117,7 @@ public class RigidJobManager : MonoBehaviour
                 var pointA = springPoints[conn.pointA];
                 var pointB = springPoints[conn.pointB];
 
-                float3 direction = pointA.predictedPosition - pointB.predictedPosition;
+                float3 direction = pointB.predictedPosition - pointA.predictedPosition;
 
                 float distance = math.length(direction);
                 if (distance < 1e-6f || float.IsNaN(distance)) continue;
@@ -155,7 +155,7 @@ public class RigidJobManager : MonoBehaviour
             // More conservative velocity clamping (50 units/s squared)
             if (math.lengthsq(velocity) > 2500f)
             {
-                velocity = math.normalizesafe(velocity) * 50f;
+                velocity = math.normalize(velocity) * 50f;
             }
 
             point.velocity = velocity;

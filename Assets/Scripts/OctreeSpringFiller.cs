@@ -347,7 +347,7 @@ public class OctreeSpringFiller : MonoBehaviour
         visualizeRenderer.DrawInstancedPoints(visualizeSpringPoints, allSpringPoints);
 
         visualizeRenderer.UploadConnectionsToGPU(allSpringPoints, allSpringConnections);
-        visualizeRenderer.DrawInstancedConnections(visualizeSpringConnections, 
+        visualizeRenderer.DrawInstancedConnections(visualizeSpringConnections,
             transform.position, allSpringPoints, allSpringConnections
         );
     }
@@ -544,7 +544,7 @@ public class OctreeSpringFiller : MonoBehaviour
             boundsMin: center - extents,
             boundsMax: center + extents,
             triangleIndex: -1,
-            isMeshVertex: isMeshVertex? 1 : 0
+            isMeshVertex: isMeshVertex ? 1 : 0
         );
 
         //if (isMeshVertex)
@@ -617,51 +617,96 @@ public class OctreeSpringFiller : MonoBehaviour
         }
     }
 
+    // Before: O(n^2) complexity - 1,000 points = 500,000 distance checks (two for loops)
+    // After: O(n * 27 * k) complexity - 1,000 points, approx: 27,000 checks(with k = 1)
     void CreateSpringConnections()
     {
-        // Clear existing connections
         tempConnections.Clear();
+        if (tempPoints.Length == 0) return;
 
-        // For each point, find nearby points and create connections
+        // Calculate maximum connection radius
+        float maxRadius = math.max(math.max(connectionRadiusL3, connectionRadiusL2), connectionRadiusL1) * PointSpacing;
+        if (maxRadius <= 0) return;
+
+        // Initialize spatial grid
+        float cellSize = maxRadius;
+        Dictionary<int3, List<int>> grid = new Dictionary<int3, List<int>>();
+
+        // Assign points to grid cells
         for (int i = 0; i < tempPoints.Length; i++)
         {
-            SpringPointData currentPoint = tempPoints[i];
+            float3 pos = tempPoints[i].position;
+            int3 cell = new int3((int)math.floor(pos.x / cellSize),
+                                (int)math.floor(pos.y / cellSize),
+                                (int)math.floor(pos.z / cellSize));
 
-            for (int j = i + 1; j < tempPoints.Length; j++)
+            if (!grid.TryGetValue(cell, out List<int> cellList))
             {
-                SpringPointData otherPoint = tempPoints[j];
-                float distance = math.distance(currentPoint.position, otherPoint.position);
-                // Connect if within radius and not already connected
-                if (distance <= connectionRadiusL1 * PointSpacing && !IsConnected(i, j))
-                {
-                    // Clamp rest length to reasonable values
-                    float restLength = Mathf.Clamp(distance, 0.5f, maxRestLengthL1);
+                cellList = new List<int>();
+                grid.Add(cell, cellList);
+            }
+            cellList.Add(i);
+        }
 
-                    SpringConnectionData c = new SpringConnectionData(i, j, restLength, springConstantL1, damperConstantL1);
-                    tempConnections.Add(c);
-                }
-                else if (distance <= connectionRadiusL2 * PointSpacing && !IsConnected(i, j))
-                {
-                    // Clamp rest length to reasonable values
-                    float restLength = Mathf.Clamp(distance, 0.5f, maxRestLengthL2);
+        int3 GetCell(float3 pos, float size)
+        {
+            return new int3(
+                (int)math.floor(pos.x / size),
+                (int)math.floor(pos.y / size),
+                (int)math.floor(pos.z / size)
+            );
+        }
 
-                    SpringConnectionData c = new SpringConnectionData(i, j, restLength, springConstantL2, damperConstantL2);
-                    tempConnections.Add(c);
-                }
-                else if (distance <= connectionRadiusL3 * PointSpacing && !IsConnected(i, j))
-                {
-                    // Clamp rest length to reasonable values
-                    float restLength = Mathf.Clamp(distance, 0.5f, maxRestLengthL3);
+        // Create connections using spatial queries
+        for (int i = 0; i < tempPoints.Length; i++)
+        {
+            float3 posA = tempPoints[i].position;
+            int3 cell = GetCell(posA, cellSize);
 
-                    SpringConnectionData c = new SpringConnectionData(i, j, restLength, springConstantL3, damperConstantL3);
-                    tempConnections.Add(c);
-                }
-                else
+            // Check 3x3x3 neighbor cells
+            for (int x = -1; x <= 1; x++)
+            {
+                for (int y = -1; y <= 1; y++)
                 {
-                    continue;
+                    for (int z = -1; z <= 1; z++)
+                    {
+                        int3 neighborCell = cell + new int3(x, y, z);
+                        if (!grid.TryGetValue(neighborCell, out List<int> points))
+                            continue;
+
+                        foreach (int j in points)
+                        {
+                            // Ensure each pair is only processed once (i < j)
+                            if (j <= i || IsConnected(i, j)) continue;
+
+                            float3 posB = tempPoints[j].position;
+                            float distance = math.distance(posA, posB);
+                            float connectionRadius = connectionRadiusL1 * PointSpacing;
+
+                            // Determine connection type
+                            if (distance <= connectionRadius)
+                            {
+                                AddConnection(i, j, distance, maxRestLengthL1, springConstantL1, damperConstantL1);
+                            }
+                            else if ((connectionRadius = connectionRadiusL2 * PointSpacing) >= distance)
+                            {
+                                AddConnection(i, j, distance, maxRestLengthL2, springConstantL2, damperConstantL2);
+                            }
+                            else if ((connectionRadius = connectionRadiusL3 * PointSpacing) >= distance)
+                            {
+                                AddConnection(i, j, distance, maxRestLengthL3, springConstantL3, damperConstantL3);
+                            }
+                        }
+                    }
                 }
             }
         }
+    }
+
+    void AddConnection(int i, int j, float distance, float maxRestLength, float springConst, float damperConst)
+    {
+        float restLength = math.clamp(distance, 0.5f, maxRestLength);
+        tempConnections.Add(new SpringConnectionData(i, j, restLength, springConst, damperConst));
     }
 
     bool IsConnected(int point1Index, int point2Index)
@@ -778,7 +823,7 @@ public class OctreeSpringFiller : MonoBehaviour
 
         foreach (var conn in allSpringConnections)
         {
-            
+
             Debug.DrawLine(allSpringPoints[conn.pointA].position, allSpringPoints[conn.pointB].position, Color.white);
         }
     }
