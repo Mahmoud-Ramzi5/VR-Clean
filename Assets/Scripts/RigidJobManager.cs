@@ -56,7 +56,7 @@ public class RigidJobManager : MonoBehaviour
             if (point.isFixed != 0) return;
 
             // --- NaN/Origin Checks ---
-            float3 position = point.position;
+            float3 position = point.predictedPosition;
             if (math.any(math.isnan(position)))
             {
                 point.force = float3.zero;
@@ -78,7 +78,7 @@ public class RigidJobManager : MonoBehaviour
                 // More conservative velocity clamping (50 units/s squared)
                 if (math.lengthsq(velocity) > 2500f)
                 {
-                    velocity = math.normalize(velocity) * 50f;
+                    velocity = math.normalizesafe(velocity) * 50f;
                 }
 
                 point.velocity = velocity;
@@ -93,6 +93,9 @@ public class RigidJobManager : MonoBehaviour
             {
                 point.velocity = float3.zero;
             }
+
+            // Reset force for next integration
+            point.force = float3.zero;
 
             springPoints[index] = point;
         }
@@ -117,7 +120,7 @@ public class RigidJobManager : MonoBehaviour
                 float3 direction = pointA.predictedPosition - pointB.predictedPosition;
 
                 float distance = math.length(direction);
-                if (distance < 1e-6f || float.IsNaN(distance)) return;
+                if (distance < 1e-6f || float.IsNaN(distance)) continue;
 
                 direction = direction / distance;
                 float stretch = distance - conn.restLength;
@@ -152,7 +155,7 @@ public class RigidJobManager : MonoBehaviour
             // More conservative velocity clamping (50 units/s squared)
             if (math.lengthsq(velocity) > 2500f)
             {
-                velocity = math.normalize(velocity) * 50f;
+                velocity = math.normalizesafe(velocity) * 50f;
             }
 
             point.velocity = velocity;
@@ -162,6 +165,7 @@ public class RigidJobManager : MonoBehaviour
 
             // Reset force for next frame
             point.force = float3.zero;
+
             springPoints[index] = point;
         }
     }
