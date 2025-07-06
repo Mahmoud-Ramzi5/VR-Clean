@@ -1,0 +1,46 @@
+#pragma kernel CSMain
+
+struct WeightedPoint
+{
+    int index;
+    float weight;
+};
+
+struct VertexWeightBinding
+{
+    WeightedPoint wp0;
+    WeightedPoint wp1;
+    WeightedPoint wp2;
+};
+
+StructuredBuffer<VertexWeightBinding> VertexBindings;
+StructuredBuffer<float3> PointsPositions;
+
+RWStructuredBuffer<float3> Vertices;
+
+float4x4 worldToLocal;
+
+[numthreads(64, 1, 1)]
+void CSMain(uint id : SV_DispatchThreadID)
+{
+    VertexWeightBinding bind = VertexBindings[id];
+
+    float3 pos = float3(0, 0, 0);
+    float totalWeight = 0;
+
+    [unroll]
+    for (int i = 0; i < 3; i++)
+    {
+        int idx = (i == 0) ? bind.wp0.index : (i == 1) ? bind.wp1.index : bind.wp2.index;
+        float w = (i == 0) ? bind.wp0.weight : (i == 1) ? bind.wp1.weight : bind.wp2.weight;
+
+        pos += PointsPositions[idx] * w;
+        totalWeight += w;
+    }
+
+    if (totalWeight > 0.0f)
+    {
+        pos /= totalWeight;
+        Vertices[id] = mul(worldToLocal, float4(pos, 1.0f)).xyz;
+    }
+}

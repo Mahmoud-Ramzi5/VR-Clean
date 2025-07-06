@@ -9,7 +9,7 @@ using Unity.Mathematics;
 using UnityEngine;
 
 
-public class MeshJobManager : MonoBehaviour
+public class MeshJobManagerCPU : MonoBehaviour
 {
     public struct WeightedPoint
     {
