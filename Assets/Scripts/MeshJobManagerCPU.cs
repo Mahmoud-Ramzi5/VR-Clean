@@ -161,9 +161,7 @@ public class MeshJobManagerCPU : MonoBehaviour
             }
 
             // Apply updated vertices to the mesh
-            targetMesh.MarkDynamic();
-            targetMesh.vertices = newVertices;
-            targetMesh.UploadMeshData(false);
+            targetMesh.SetVertices(vertices);
             targetMesh.RecalculateNormals();
             targetMesh.RecalculateBounds();
         }

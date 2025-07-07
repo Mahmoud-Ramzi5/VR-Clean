@@ -1,12 +1,10 @@
-using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Threading;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 
 public class MeshJobManagerGPU : MonoBehaviour
@@ -27,34 +25,36 @@ public class MeshJobManagerGPU : MonoBehaviour
         public WeightedPoint wp2;
     }
 
-    private NativeArray<float3> vertices;
     private NativeArray<SpringPointData> springPoints;
+    private VertexWeightBinding[] vertexWeightBindings;
 
-    private ComputeShader meshCompute;
+    private ComputeShader meshUpdater;
     private int kernelId;
 
-    private ComputeBuffer vertexBuffer;         // RWStructuredBuffer<float3>
-    private ComputeBuffer PointPosBuffer;    // StructuredBuffer<float3>
-    private ComputeBuffer weightMapBuffer;      // StructuredBuffer<VertexWeightBinding>
-    private VertexWeightBinding[] vertexWeightBindings;
+    private ComputeBuffer[] vertexBuffers = new ComputeBuffer[2];   // RWStructuredBuffer<float3>
+    private int currentBufferIndex = 0;
+    private int frameCount = 0;
+
+    private ComputeBuffer PointPosBuffer;   // StructuredBuffer<float3>
+    private ComputeBuffer weightMapBuffer;  // StructuredBuffer<VertexWeightBinding>
+
 
     public void Initialize(Vector3[] meshVertices, NativeArray<SpringPointData> springPoints)
     {
-        vertices = new NativeArray<float3>(meshVertices.Length, Allocator.Persistent);
         this.springPoints = springPoints;
 
-        for (int i = 0; i < meshVertices.Length; i++)
-        {
-            // Update mesh vertices
-            vertices[i] = (float3)meshVertices[i];
-        }
+        meshUpdater = Resources.Load<ComputeShader>("MeshUpdater");
+        kernelId = meshUpdater.FindKernel("CSMain");
+        PrecomputeVertexMapping(meshVertices);
 
-        meshCompute = Resources.Load<ComputeShader>("MeshUpdater");
-        kernelId = meshCompute.FindKernel("CSMain");
-        PrecomputeVertexMapping();
+        vertexBuffers[0] = new ComputeBuffer(meshVertices.Length, sizeof(float) * 3);
+        vertexBuffers[1] = new ComputeBuffer(meshVertices.Length, sizeof(float) * 3);
+
+        PointPosBuffer = new ComputeBuffer(springPoints.Length, sizeof(float) * 3);
+        weightMapBuffer = new ComputeBuffer(vertexWeightBindings.Length, 3 * (sizeof(int) + sizeof(float)));
     }
 
-    public void PrecomputeVertexMapping()
+    public void PrecomputeVertexMapping(Vector3[] vertices)
     {
         int vertexCount = vertices.Length;
         vertexWeightBindings = new VertexWeightBinding[vertexCount];
@@ -136,41 +136,51 @@ public class MeshJobManagerGPU : MonoBehaviour
     {
         NativeArray<float3> positions = new(springPoints.Length, Allocator.Persistent);
 
-        new GetPositionsJob {
+        new GetPositionsJob
+        {
             springPoints = springPoints,
             positions = positions,
         }.Schedule(springPoints.Length, 64).Complete();
 
-        int count = meshVerts.Length;
-        vertexBuffer = new ComputeBuffer(count, sizeof(float) * 3);
-        PointPosBuffer = new ComputeBuffer(positions.Length, sizeof(float) * 3);
-        weightMapBuffer = new ComputeBuffer(vertexWeightBindings.Length, 3 * (sizeof(int) + sizeof(float)));
+        ComputeBuffer currentVertexBuffer = vertexBuffers[currentBufferIndex];
 
-        vertexBuffer.SetData(meshVerts);
+        currentVertexBuffer.SetData(meshVerts);
         PointPosBuffer.SetData(positions);
         weightMapBuffer.SetData(vertexWeightBindings);
 
-        meshCompute.SetBuffer(kernelId, "Vertices", vertexBuffer);
-        meshCompute.SetBuffer(kernelId, "PointsPositions", PointPosBuffer);
-        meshCompute.SetBuffer(kernelId, "VertexBindings", weightMapBuffer);
+        meshUpdater.SetBuffer(kernelId, "Vertices", currentVertexBuffer);
+        meshUpdater.SetBuffer(kernelId, "PointsPositions", PointPosBuffer);
+        meshUpdater.SetBuffer(kernelId, "VertexBindings", weightMapBuffer);
 
-        meshCompute.SetMatrix("worldToLocal", worldToLocal);
-        meshCompute.Dispatch(kernelId, Mathf.CeilToInt(count / 64f), 1, 1);
+        meshUpdater.SetMatrix("worldToLocal", worldToLocal);
+        meshUpdater.Dispatch(kernelId, Mathf.CeilToInt(meshVerts.Length / 64f), 1, 1);
 
-        UnityEngine.Rendering.AsyncGPUReadback.Request(vertexBuffer, (request) =>
+        // Request readback for PREVIOUS frame's buffer 
+        int readbackIndex = (currentBufferIndex + 1) % 2;
+
+        // if available
+        if (frameCount > 0)
         {
-            if (!request.hasError)
+            AsyncGPUReadback.Request(vertexBuffers[readbackIndex], (request) =>
             {
-                if (targetMesh != null)  // check if mesh still exists
+                if (!request.hasError)
                 {
-                    var data = request.GetData<Vector3>();
-                    data.CopyTo(meshVerts);
-                    targetMesh.vertices = meshVerts;
-                    targetMesh.RecalculateBounds();
-                    targetMesh.RecalculateNormals();
+                    if (targetMesh != null)  // check if mesh still exists
+                    {
+                        var data = request.GetData<Vector3>();
+
+                        // Apply updated vertices
+                        targetMesh.SetVertices(data);
+                        targetMesh.RecalculateBounds();
+                        targetMesh.RecalculateNormals();
+                    }
                 }
-            }
-        });
+            });
+        }
+
+        // Switch to next buffer for next frame
+        currentBufferIndex = readbackIndex;
+        frameCount++;
 
         //// Read back
         //vertexBuffer.GetData(meshVerts);
@@ -179,10 +189,13 @@ public class MeshJobManagerGPU : MonoBehaviour
         //targetMesh.vertices = meshVerts;
         //targetMesh.RecalculateBounds();
         //targetMesh.RecalculateNormals();
+    }
 
+    private void OnDestroy()
+    {
+        vertexBuffers[0].Dispose();
+        vertexBuffers[1].Dispose();
 
-        // Cleanup
-        vertexBuffer.Dispose();
         PointPosBuffer.Dispose();
         weightMapBuffer.Dispose();
     }

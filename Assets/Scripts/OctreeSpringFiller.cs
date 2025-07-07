@@ -83,7 +83,7 @@ public class OctreeSpringFiller : MonoBehaviour
 
         // Get mesh
         targetMesh = GetComponent<MeshFilter>().mesh;
-        targetMesh.RecalculateBounds();
+        targetMesh.MarkDynamic();   // mesh will be updated frequently at runtime.
 
         meshBounds = targetMesh.bounds;
         meshVertices = targetMesh.vertices;
