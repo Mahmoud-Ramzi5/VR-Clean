@@ -13,6 +13,8 @@ public class OctreeSpringFiller : MonoBehaviour
     public bool isFilled = true;
     public bool isRigid = true;
 
+    public int maxConnectionsPerPoint = 18;
+
     [Header("Spring Settings")]
     [Header("Spring Settings / Layer 1")]
     public float springConstantL1 = 100f;
@@ -553,37 +555,43 @@ public class OctreeSpringFiller : MonoBehaviour
         float cellSize = maxRadius;
         Dictionary<int3, List<int>> grid = new Dictionary<int3, List<int>>();
 
+        var connectedPairs = new HashSet<ulong>();
+
+        int3 GetCell(float3 position)
+        {
+            return new int3(
+                (int)math.floor(position.x / cellSize),
+                (int)math.floor(position.y / cellSize),
+                (int)math.floor(position.z / cellSize)
+            );
+        }
+
+        ulong HashPair(int a, int b)
+        {
+            uint min = (uint)math.min(a, b);
+            uint max = (uint)math.max(a, b);
+            return ((ulong)min << 32) | max;
+        }
+
         // Assign points to grid cells
         for (int i = 0; i < tempPoints.Length; i++)
         {
-            float3 pos = tempPoints[i].position;
-            int3 cell = new int3((int)math.floor(pos.x / cellSize),
-                                (int)math.floor(pos.y / cellSize),
-                                (int)math.floor(pos.z / cellSize));
-
-            if (!grid.TryGetValue(cell, out List<int> cellList))
+            int3 cell = GetCell(tempPoints[i].position);
+            if (!grid.TryGetValue(cell, out List<int> list))
             {
-                cellList = new List<int>();
-                grid.Add(cell, cellList);
+                list = new List<int>();
+                grid.Add(cell, list);
             }
-            cellList.Add(i);
-        }
-
-        int3 GetCell(float3 pos, float size)
-        {
-            return new int3(
-                (int)math.floor(pos.x / size),
-                (int)math.floor(pos.y / size),
-                (int)math.floor(pos.z / size)
-            );
+            list.Add(i);
         }
 
         // Create connections using spatial queries
         for (int i = 0; i < tempPoints.Length; i++)
         {
             float3 posA = tempPoints[i].position;
-            int3 cell = GetCell(posA, cellSize);
+            int3 cell = GetCell(posA);
 
+            List<(int, float)> candidates = new List<(int, float)>();
             // Check 3x3x3 neighbor cells
             for (int x = -1; x <= 1; x++)
             {
@@ -600,26 +608,49 @@ public class OctreeSpringFiller : MonoBehaviour
                             // Ensure each pair is only processed once (i < j)
                             if (j <= i || IsConnected(i, j)) continue;
 
-                            float3 posB = tempPoints[j].position;
-                            float distance = math.distance(posA, posB);
-                            float connectionRadius = connectionRadiusL1 * PointSpacing;
+                            ulong pair = HashPair(i, j);
+                            if (connectedPairs.Contains(pair)) continue;
 
-                            // Determine connection type
-                            if (distance <= connectionRadius)
-                            {
-                                AddConnection(i, j, distance, maxRestLengthL1, springConstantL1, damperConstantL1);
-                            }
-                            else if ((connectionRadius = connectionRadiusL2 * PointSpacing) >= distance)
-                            {
-                                AddConnection(i, j, distance, maxRestLengthL2, springConstantL2, damperConstantL2);
-                            }
-                            else if ((connectionRadius = connectionRadiusL3 * PointSpacing) >= distance)
-                            {
-                                AddConnection(i, j, distance, maxRestLengthL3, springConstantL3, damperConstantL3);
-                            }
+                            float3 posB = tempPoints[j].position;
+                            float dist = math.distance(posA, posB);
+                            if (dist <= maxRadius)
+                                candidates.Add((j, dist));
                         }
                     }
                 }
+            }
+
+            // Sort by distance, prioritize closest connections
+            candidates.Sort((a, b) => a.Item2.CompareTo(b.Item2));
+
+            int added = 0;
+            foreach (var (j, dist) in candidates)
+            {
+                if (added >= maxConnectionsPerPoint) break;
+
+                float threshold1 = connectionRadiusL1 * PointSpacing;
+                float threshold2 = connectionRadiusL2 * PointSpacing;
+                float threshold3 = connectionRadiusL3 * PointSpacing;
+
+                if (dist <= threshold1)
+                {
+                    AddConnection(i, j, dist, maxRestLengthL1, springConstantL1, damperConstantL1);
+                }
+                else if (dist <= threshold2)
+                {
+                    AddConnection(i, j, dist, maxRestLengthL2, springConstantL2, damperConstantL2);
+                }
+                else if (dist <= threshold3)
+                {
+                    AddConnection(i, j, dist, maxRestLengthL3, springConstantL3, damperConstantL3);
+                }
+                else
+                {
+                    continue;
+                }
+
+                connectedPairs.Add(HashPair(i, j));
+                added++;
             }
         }
     }
