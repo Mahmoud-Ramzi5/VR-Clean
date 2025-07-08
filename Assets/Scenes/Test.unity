@@ -154,6 +154,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -174,6 +175,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &16851848
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -277,6 +288,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -297,6 +309,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &65578164
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -400,6 +422,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -420,6 +443,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &147341510
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -523,6 +556,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -543,6 +577,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &178866465
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -646,6 +690,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -666,6 +711,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &270825515
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -769,6 +824,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -789,6 +845,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &297600171
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -892,6 +958,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -912,6 +979,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &325186467
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1152,6 +1229,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -1172,6 +1250,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &338183453
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1275,6 +1363,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -1295,6 +1384,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &380261145
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1519,6 +1618,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -1539,6 +1639,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &512074802
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1642,6 +1752,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -1662,6 +1773,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &535156804
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1765,6 +1886,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -1785,6 +1907,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &548138808
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1888,6 +2020,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -1908,6 +2041,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &579658040
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2011,6 +2154,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -2031,6 +2175,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &628920995
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2134,6 +2288,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -2154,6 +2309,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &651258670
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2257,15 +2422,16 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  springConstantL1: 100
+  maxConnectionsPerPoint: 18
+  springConstantL1: 360
   damperConstantL1: 0.6
   connectionRadiusL1: 1
   maxRestLengthL1: 2
-  springConstantL2: 60
+  springConstantL2: 300
   damperConstantL2: 0.5
   connectionRadiusL2: 2
   maxRestLengthL2: 2.5
-  springConstantL3: 40
+  springConstantL3: 240
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
@@ -2277,6 +2443,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &817871910
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2429,6 +2605,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -2449,6 +2626,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &840348596
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2552,6 +2739,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -2572,6 +2760,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &874807571
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2675,6 +2873,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -2695,6 +2894,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &973296326
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2798,6 +3007,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -2818,6 +3028,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &1062221856
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2921,15 +3141,16 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  springConstantL1: 80
+  maxConnectionsPerPoint: 18
+  springConstantL1: 360
   damperConstantL1: 0.6
   connectionRadiusL1: 1
   maxRestLengthL1: 2
-  springConstantL2: 40
+  springConstantL2: 300
   damperConstantL2: 0.5
   connectionRadiusL2: 2
   maxRestLengthL2: 2.5
-  springConstantL3: 20
+  springConstantL3: 240
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
@@ -2941,6 +3162,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &1084887422
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3044,6 +3275,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -3064,6 +3296,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &1304115355
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3167,6 +3409,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -3187,6 +3430,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &1344387142
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3290,6 +3543,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -3310,6 +3564,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &1388939973
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3413,6 +3677,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -3433,6 +3698,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &1469524019
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3536,6 +3811,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -3556,6 +3832,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &1563347105
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3659,6 +3945,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -3679,6 +3966,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &1614564035
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3782,6 +4079,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 100
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -3802,6 +4100,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &1718630222
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3991,6 +4299,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -4011,6 +4320,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &1879789599
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4114,6 +4433,7 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
+  maxConnectionsPerPoint: 18
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -4134,6 +4454,16 @@ MonoBehaviour:
   applyGroundCollision: 1
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+  collisionManager: {fileID: 0}
+  convexHullVertices: []
+  surfacePointsLocalSpace: []
+  surfaceDetectionThreshold: 0.2
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
+  applyVelocity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!23 &1887957618
 MeshRenderer:
   m_ObjectHideFlags: 0
