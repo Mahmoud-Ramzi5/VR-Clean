@@ -35,14 +35,19 @@ public class OctreeSpringFiller : MonoBehaviour
 
     [Header("Mesh Settings")]
     public float totalMass = 100f;
-    public bool applyGravity = true;
-    public Vector3 gravity => new Vector3(0, -9.81f, 0);
+
+    public float bounciness = 0.5f;
+    public float friction = 0.8f;
 
     private Mesh targetMesh;
     private Bounds meshBounds;
     private Vector3[] meshVertices;
     private int[] meshTriangles;
     private Vector3 lastPos;
+
+    [Header("Gravity Settings")]
+    public bool applyGravity = true;
+    public Vector3 gravity => new Vector3(0, -9.81f, 0);
 
     [Header("Collision Settings")]
     public float groundLevel = 0f;       // Y-position of the ground plane
@@ -73,6 +78,9 @@ public class OctreeSpringFiller : MonoBehaviour
 
     private void Awake()
     {
+        //Application.targetFrameRate = 60;
+        Time.fixedDeltaTime = 1f / 30f;
+
         visualizeRenderer = new VisualizeRenderer();
         visualizeRenderer.CreatePointMeshAndMaterial();
         visualizeRenderer.CreateConnectionMaterial();
@@ -90,6 +98,33 @@ public class OctreeSpringFiller : MonoBehaviour
         meshBounds = targetMesh.bounds;
         meshVertices = targetMesh.vertices;
         meshTriangles = targetMesh.triangles;
+
+        // Initialize from MaterialManager if exists
+        var materialManager = GetComponent<MaterialManager>();
+        if (materialManager != null)
+        {
+            var preset = materialManager.GetMaterialProperties();
+            if (preset != null)
+            {
+                // Apply preset properties
+                springConstantL1 = preset.springConstantL1;
+                damperConstantL1 = preset.damperConstantL1;
+                connectionRadiusL1 = preset.connectionRadiusL1;
+                maxRestLengthL1 = preset.maxRestLengthL1;
+                springConstantL2 = preset.springConstantL2;
+                damperConstantL2 = preset.damperConstantL2;
+                connectionRadiusL2 = preset.connectionRadiusL2;
+                maxRestLengthL2 = preset.maxRestLengthL2;
+                springConstantL3 = preset.springConstantL3;
+                damperConstantL3 = preset.damperConstantL3;
+                connectionRadiusL3 = preset.connectionRadiusL3;
+                maxRestLengthL3 = preset.maxRestLengthL3;
+                isRigid = preset.isRigid;
+                totalMass = preset.totalMass;
+                bounciness = preset.bounciness;
+                friction = preset.friction;
+            }
+        }
 
         FillObjectWithSpringPoints();
 
@@ -164,7 +199,7 @@ public class OctreeSpringFiller : MonoBehaviour
             rigidJobManager.ScheduleGravityJobs(gravity, applyGravity);
 
             // 2. Schedule spring jobs
-            rigidJobManager.ScheduleRigidJobs(10, 0.1f, deltaTime);
+            rigidJobManager.ScheduleRigidJobs(10, 0.5f, deltaTime);
 
             // 3. Complete all jobs and apply results
             rigidJobManager.CompleteAllJobsAndApply();
@@ -462,8 +497,8 @@ public class OctreeSpringFiller : MonoBehaviour
             velocity: new float3(0, 0, 0),
             mass: 1.0f,
             isFixed: 0,
-            bounciness: 0.5f,
-            friction: 0.8f,
+            bounciness: bounciness,
+            friction: friction,
             boundsMin: center - extents,
             boundsMax: center + extents,
             triangleIndex: -1,

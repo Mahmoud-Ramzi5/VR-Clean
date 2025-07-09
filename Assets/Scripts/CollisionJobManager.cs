@@ -33,15 +33,23 @@ public class CollisionJobManager : MonoBehaviour
         public void Execute(int i)
         {
             SpringPointData point = springPoints[i];
-            float3 pos = point.position;
+            float3 pointPosition = point.position;
 
-            if (pos.y < groundLevel)
+            float combinedBounce = (point.bounciness + groundBounce) * 0.5f;
+            float combinedFriction = math.sqrt(point.friction * groundFriction);
+
+            if (pointPosition.y < groundLevel)
             {
-                point.position = new float3(pos.x, groundLevel, pos.z);
+                point.position = new float3(
+                    pointPosition.x,
+                    groundLevel,
+                    pointPosition.z
+                );
+
                 point.velocity = new float3(
-                    point.velocity.x * groundFriction,
-                    -point.velocity.y * groundBounce,
-                    point.velocity.z * groundFriction
+                    point.velocity.x * combinedFriction,
+                    -point.velocity.y * combinedBounce,
+                    point.velocity.z * combinedFriction
                 );
             }
 
