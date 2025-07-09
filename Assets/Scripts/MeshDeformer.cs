@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq.Expressions;
 using UnityEngine;
 
 public class MeshDeformer : MonoBehaviour
@@ -15,6 +17,8 @@ public class MeshDeformer : MonoBehaviour
     private List<WeightedInfluence>[] vertexInfluences;
     private Vector3[] baseVertices;
     private Vector3[] currentVertices;
+    private int[] baseTriangles;
+    private int[] currentTriangles;
 
     private struct TriangleData
     {
@@ -23,7 +27,7 @@ public class MeshDeformer : MonoBehaviour
         public bool canSubdivide;
     }
     private List<TriangleData> triangleDataList;
-
+    public bool isInitialized = false;
     void Start()
     {
         if (!meshFilter) meshFilter = GetComponent<MeshFilter>();
@@ -32,6 +36,7 @@ public class MeshDeformer : MonoBehaviour
 
         InitializeDeformationMesh();
         BuildInfluenceMapping();
+        isInitialized = true;
     }
 
 
@@ -41,6 +46,8 @@ public class MeshDeformer : MonoBehaviour
 
         baseVertices = workingMesh.vertices;
         currentVertices = baseVertices.Clone() as Vector3[];
+        baseTriangles = workingMesh.triangles;
+        currentTriangles = baseTriangles.Clone() as int[];
 
         triangleDataList = new List<TriangleData>();
         int triangleCount = workingMesh.triangles.Length / 3;
@@ -239,7 +246,238 @@ public class MeshDeformer : MonoBehaviour
         }
     }
 
-    private void SubdivideSelectedTriangles(List<int> triangleIndices)
+    
+
+    private void AddEdgeToMap(Edge edge, int triangleIdx, Dictionary<Edge, List<int>> edgeToTriangles)
+    {
+        if (!edgeToTriangles.ContainsKey(edge))
+        {
+            edgeToTriangles[edge] = new List<int>();
+        }
+        edgeToTriangles[edge].Add(triangleIdx);
+    }
+
+    private int GetMidpoint(int a, int b, Vector3[] verts, List<Vector3> newVerts, Dictionary<Edge, int> midpoints, bool create = true)
+    {
+        Edge edge = new Edge(a, b, verts);
+        if (midpoints.TryGetValue(edge, out int index)) return index;
+
+        Vector3 mid = (verts[a] + verts[b]) * 0.5f;
+        newVerts.Add(mid);
+        int newIndex = newVerts.Count - 1;
+        midpoints.Add(edge, newIndex);
+
+        Vector3 worldPos = transform.TransformPoint(mid);
+        if (create)
+        {
+            springFiller.AddSpringPointAtPosition(worldPos);
+        }
+
+        return newIndex;
+    }
+    void BuildInfluenceMapping()
+    {
+        vertexInfluences = new List<WeightedInfluence>[baseVertices.Length];
+
+        for (int i = 0; i < baseVertices.Length; i++)
+        {
+            vertexInfluences[i] = new List<WeightedInfluence>();
+            Vector3 vertexWorld = transform.TransformPoint(baseVertices[i]);
+
+            foreach (SpringPointData sp in springFiller.allSpringPoints)
+            {
+                float distance = Vector3.Distance(vertexWorld, sp.position);
+                if (distance < influenceRadius)
+                {
+                    float weight = Mathf.Exp(-distance * distance);
+                    vertexInfluences[i].Add(new WeightedInfluence
+                    {
+                        springPoint = sp,
+                        weight = weight
+                    });
+                }
+            }
+        }
+    }
+
+    void LateUpdate()
+    {
+        UpdateDeformation();
+    }
+
+    void UpdateDeformation()
+    {
+        for (int i = 0; i < currentVertices.Length; i++)
+        {
+            Vector3 newPos = Vector3.zero;
+            float totalWeight = 0f;
+
+            foreach (var inf in vertexInfluences[i])
+            {
+                Vector3 displacement = inf.springPoint.position - inf.springPoint.initialPosition;
+                newPos += displacement * inf.weight;
+                totalWeight += inf.weight;
+            }
+
+            currentVertices[i] = totalWeight > 0.01f ?
+                baseVertices[i] + newPos / totalWeight :
+                baseVertices[i];
+        }
+
+
+        NotifyMeshChanged();
+    }
+    public void NotifyMeshChanged()
+    {
+        if (springFiller != null)
+        {
+
+        }
+    }
+
+
+
+    
+
+    
+
+    void OnDrawGizmosSelected()
+    {
+        if (!showWeights || vertexInfluences == null) return;
+
+        Gizmos.color = Color.cyan;
+        for (int i = 0; i < currentVertices.Length; i++)
+        {
+            Vector3 worldPos = transform.TransformPoint(currentVertices[i]);
+            foreach (var inf in vertexInfluences[i])
+            {
+                Gizmos.DrawLine(worldPos, inf.springPoint.position);
+            }
+        }
+    }
+
+    public void SubdivideMeshWithPoints(List<SpringPointData> newPoints)
+    {
+        Debug.Log("whata");
+        if (newPoints == null || newPoints.Count == 0)
+        {
+            Debug.LogWarning("No new points supplied for subdivision.");
+            return;
+        }
+
+        // Convert current vertices to world space for distance checks
+        Debug.Log("wtff");
+        Vector3[] worldVertices = new Vector3[currentVertices.Length];
+        for (int i = 0; i < currentVertices.Length; i++)
+        {
+            worldVertices[i] = transform.TransformPoint(currentVertices[i]);
+        }
+
+        // Create a list to track triangles that need subdivision
+        try {
+            List<int> trianglesToSubdivide = new List<int>();
+            Debug.Log("wtfffff");
+            // First pass: Identify triangles with more than 3 spring points
+            for (int i = 0; i < currentTriangles.Length; i += 3)
+            {
+                int triangleIndex = i / 3;
+                if (triangleIndex >= triangleDataList.Count) continue;
+
+                TriangleData data = triangleDataList[triangleIndex];
+                if (!data.canSubdivide || data.subdivisionLevel >= maxSubdivisionLevel) {
+                    Debug.Log("wtf3");
+                    continue; }
+
+                int idx0 = currentTriangles[i];
+                int idx1 = currentTriangles[i + 1];
+                int idx2 = currentTriangles[i + 2];
+
+                Vector3 v0 = worldVertices[idx0];
+                Vector3 v1 = worldVertices[idx1];
+                Vector3 v2 = worldVertices[idx2];
+                Vector3 centroid = (v0 + v1 + v2) / 3f;
+
+                // Count spring points near this triangle
+                int springPointCount = 0;
+                Debug.Log(newPoints.Count);
+                foreach (SpringPointData pointData in newPoints)
+                {
+                    Debug.Log("point");
+                    Vector3 point = pointData.position;
+                    Debug.Log(point);
+                    if (Vector3.Distance(point, centroid) < influenceRadius)
+                    {
+                        springPointCount++;
+                    }
+                }
+
+                if (springPointCount > 3)
+                {
+                    trianglesToSubdivide.Add(triangleIndex);
+                }
+            }
+
+            // Recursively subdivide problem tffriangles
+            while (trianglesToSubdivide.Count > 0)
+            {
+                // Create a copy of triangles to process in this iteration
+                List<int> currentBatch = new List<int>(trianglesToSubdivide);
+                trianglesToSubdivide.Clear();
+
+                // Subdivide all marked triangles
+                Debug.Log("yo");
+                SubdivideSelectedTriangles(currentBatch, false);
+
+                // Update world vertices after subdivision
+                worldVertices = new Vector3[currentVertices.Length];
+                for (int i = 0; i < currentVertices.Length; i++)
+                {
+                    worldVertices[i] = transform.TransformPoint(currentVertices[i]);
+                }
+
+                // Check newly created triangles
+                for (int i = triangleDataList.Count - currentBatch.Count * 4; i < triangleDataList.Count; i++)
+                {
+                    TriangleData data = triangleDataList[i];
+                    if (!data.canSubdivide || data.subdivisionLevel >= maxSubdivisionLevel)
+                        continue;
+
+                    int triStart = i * 3;
+                    if (triStart + 2 >= currentTriangles.Length) continue;
+
+                    int idx0 = currentTriangles[triStart];
+                    int idx1 = currentTriangles[triStart + 1];
+                    int idx2 = currentTriangles[triStart + 2];
+
+                    Vector3 v0 = worldVertices[idx0];
+                    Vector3 v1 = worldVertices[idx1];
+                    Vector3 v2 = worldVertices[idx2];
+                    Vector3 centroid = (v0 + v1 + v2) / 3f;
+
+                    // Count spring points near this new triangle
+                    int springPointCount = 0;
+                    foreach (SpringPointData pointData in newPoints)
+                    {
+                        Vector3 point = pointData.position;
+                        if (Vector3.Distance(point, centroid) < influenceRadius)
+                        {
+                            springPointCount++;
+                        }
+                    }
+
+                    if (springPointCount > 3)
+                    {
+                        trianglesToSubdivide.Add(i);
+                    }
+                }
+            }
+        }
+        catch (Exception ex) {
+            Debug.Log(ex.Message);
+        }
+    }
+
+    private void SubdivideSelectedTriangles(List<int> triangleIndices, bool create = true)
     {
         Vector3[] oldVertices = workingMesh.vertices;
         int[] oldTriangles = workingMesh.triangles;
@@ -316,9 +554,9 @@ public class MeshDeformer : MonoBehaviour
             int i1 = oldTriangles[triIdx * 3 + 1];
             int i2 = oldTriangles[triIdx * 3 + 2];
 
-            GetMidpoint(i0, i1, oldVertices, newVertices, edgeMidpoints);
-            GetMidpoint(i1, i2, oldVertices, newVertices, edgeMidpoints);
-            GetMidpoint(i2, i0, oldVertices, newVertices, edgeMidpoints);
+            GetMidpoint(i0, i1, oldVertices, newVertices, edgeMidpoints, create);
+            GetMidpoint(i1, i2, oldVertices, newVertices, edgeMidpoints, create);
+            GetMidpoint(i2, i0, oldVertices, newVertices, edgeMidpoints, create);
         }
 
         // Rebuild all triangles
@@ -426,8 +664,6 @@ public class MeshDeformer : MonoBehaviour
                     break;
             }
         }
-
-        // Update the mesh
         workingMesh.Clear();
         workingMesh.vertices = newVertices.ToArray();
         workingMesh.triangles = newTriangles.ToArray();
@@ -437,118 +673,6 @@ public class MeshDeformer : MonoBehaviour
         triangleDataList = newTriangleData;
         baseVertices = workingMesh.vertices;
         currentVertices = baseVertices.Clone() as Vector3[];
-        NotifyMeshChanged();
-
-        if (logSubdividedTriangles)
-        {
-            Debug.Log($"Subdivision complete. New vertex count: {newVertices.Count}, new triangle count: {newTriangles.Count / 3}");
-        }
-    }
-
-    private void AddEdgeToMap(Edge edge, int triangleIdx, Dictionary<Edge, List<int>> edgeToTriangles)
-    {
-        if (!edgeToTriangles.ContainsKey(edge))
-        {
-            edgeToTriangles[edge] = new List<int>();
-        }
-        edgeToTriangles[edge].Add(triangleIdx);
-    }
-
-    private int GetMidpoint(int a, int b, Vector3[] verts, List<Vector3> newVerts, Dictionary<Edge, int> midpoints)
-    {
-        Edge edge = new Edge(a, b, verts);
-        if (midpoints.TryGetValue(edge, out int index)) return index;
-
-        Vector3 mid = (verts[a] + verts[b]) * 0.5f;
-        newVerts.Add(mid);
-        int newIndex = newVerts.Count - 1;
-        midpoints.Add(edge, newIndex);
-
-        Vector3 worldPos = transform.TransformPoint(mid);
-
-        springFiller.AddSpringPointAtPosition(worldPos);
-
-        return newIndex;
-    }
-    void BuildInfluenceMapping()
-    {
-        vertexInfluences = new List<WeightedInfluence>[baseVertices.Length];
-
-        for (int i = 0; i < baseVertices.Length; i++)
-        {
-            vertexInfluences[i] = new List<WeightedInfluence>();
-            Vector3 vertexWorld = transform.TransformPoint(baseVertices[i]);
-
-            foreach (SpringPointData sp in springFiller.allSpringPoints)
-            {
-                float distance = Vector3.Distance(vertexWorld, sp.position);
-                if (distance < influenceRadius)
-                {
-                    float weight = Mathf.Exp(-distance * distance);
-                    vertexInfluences[i].Add(new WeightedInfluence
-                    {
-                        springPoint = sp,
-                        weight = weight
-                    });
-                }
-            }
-        }
-    }
-
-    void LateUpdate()
-    {
-        UpdateDeformation();
-    }
-
-    void UpdateDeformation()
-    {
-        for (int i = 0; i < currentVertices.Length; i++)
-        {
-            Vector3 newPos = Vector3.zero;
-            float totalWeight = 0f;
-
-            foreach (var inf in vertexInfluences[i])
-            {
-                Vector3 displacement = inf.springPoint.position - inf.springPoint.initialPosition;
-                newPos += displacement * inf.weight;
-                totalWeight += inf.weight;
-            }
-
-            currentVertices[i] = totalWeight > 0.01f ?
-                baseVertices[i] + newPos / totalWeight :
-                baseVertices[i];
-        }
-
-
-        NotifyMeshChanged();
-    }
-    public void NotifyMeshChanged()
-    {
-        if (springFiller != null)
-        {
-
-        }
-    }
-
-
-
-    
-
-    
-
-    void OnDrawGizmosSelected()
-    {
-        if (!showWeights || vertexInfluences == null) return;
-
-        Gizmos.color = Color.cyan;
-        for (int i = 0; i < currentVertices.Length; i++)
-        {
-            Vector3 worldPos = transform.TransformPoint(currentVertices[i]);
-            foreach (var inf in vertexInfluences[i])
-            {
-                Gizmos.DrawLine(worldPos, inf.springPoint.position);
-            }
-        }
     }
 
     private struct WeightedInfluence

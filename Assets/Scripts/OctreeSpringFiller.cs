@@ -1,5 +1,6 @@
 using NUnit.Framework.Internal;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
@@ -75,6 +76,7 @@ public class OctreeSpringFiller : MonoBehaviour
 
     [Header("External Systems")]
     public CollisionManager collisionManager;
+    public MeshDeformer meshDeformer;
 
     // NEW: Surface point tracking
     private NativeList<SpringPointData> surfaceSpringPoints2;
@@ -167,7 +169,11 @@ public class OctreeSpringFiller : MonoBehaviour
 
 
         //RebuildSurfaceRepresentation();
-        meshJobManager.ScheduleSurfacePointsJobs(meshVertices, transform.worldToLocalMatrix);
+        meshJobManager.ScheduleSurfacePointsJobs(
+         meshVertices,
+         meshTriangles,
+         transform.worldToLocalMatrix
+     );
         meshJobManager.CompleteAllJobsAndApply();
 
         for (int i = 0; i < surfaceSpringPoints2.Length; i++)
@@ -182,10 +188,18 @@ public class OctreeSpringFiller : MonoBehaviour
             surfacePointsLocalSpace.Add(new Vector3(point.x, point.y, point.z));
         }
 
-        // NEW: After filling, identify surface points and subdivide mesh
-        if (enableMeshSubdivision)
+        if(meshDeformer== null)
         {
-            SubdivideMeshWithSurfacePoints();
+            meshDeformer = GetComponent<MeshDeformer>();
+        }
+        // NEW: After filling, identify surface points and subdivide mesh
+       
+
+        if (true)
+        {
+            //SubdivideMeshWithSurfacePoints();
+            Debug.Log("kkk");
+            StartCoroutine(WaitForMeshDeformerInitialization());
 
             //(Vector3[] finalVertices, int[] finalTriangles) = meshJobManager.ApplyMeshSubdivisionJobs(meshTriangles, transform.worldToLocalMatrix);
             //UpdateMeshGeometry(finalVertices, finalTriangles);
@@ -201,6 +215,17 @@ public class OctreeSpringFiller : MonoBehaviour
         }
     }
 
+    private IEnumerator WaitForMeshDeformerInitialization()
+    {
+        while (!meshDeformer.isInitialized)
+        {
+            Debug.Log("Waiting for MeshDeformer to initialize...");
+            yield return null; // Wait one frame
+        }
+
+        Debug.Log("MeshDeformer is ready, proceeding with subdivision...");
+        meshDeformer.SubdivideMeshWithPoints(surfaceSpringPoints);
+    }
     //private void Update()
     //{
     //    if (Time.frameCount % 5 == 0)
@@ -335,7 +360,7 @@ public class OctreeSpringFiller : MonoBehaviour
         else
         {
             // NEW DEBUG LOG: This will alert you if the manager isn't assigned.
-            if (enableMeshSubdivision) Debug.LogWarning($"{gameObject.name}: CollisionManager is not assigned in the inspector!", this);
+           // if (enableMeshSubdivision) Debug.LogWarning($"{gameObject.name}: CollisionManager is not assigned in the inspector!", this);
         }
 
         if (Time.frameCount % 3 == 0) // Every 3 frames
@@ -984,7 +1009,11 @@ public class OctreeSpringFiller : MonoBehaviour
 
         collisionJobManager.InitializeArrays(allSpringPoints);
 
-        meshJobManager.ScheduleSurfacePointsJobs(meshVertices, transform.worldToLocalMatrix);
+        meshJobManager.ScheduleSurfacePointsJobs(
+        meshVertices,
+        meshTriangles,
+        transform.worldToLocalMatrix
+    );
         meshJobManager.CompleteAllJobsAndApply();
     }
 
@@ -1345,5 +1374,55 @@ public class OctreeSpringFiller : MonoBehaviour
             }
         }
         return points;
+    }
+    // Helper method to get a triangle's normal
+    private Vector3 GetTriangleNormal(int triangleIndex)
+    {
+        int idx0 = meshTriangles[triangleIndex * 3];
+        int idx1 = meshTriangles[triangleIndex * 3 + 1];
+        int idx2 = meshTriangles[triangleIndex * 3 + 2];
+
+        Vector3 v0 = meshVertices[idx0];
+        Vector3 v1 = meshVertices[idx1];
+        Vector3 v2 = meshVertices[idx2];
+
+        Vector3 edge1 = v1 - v0;
+        Vector3 edge2 = v2 - v0;
+        return Vector3.Cross(edge1, edge2).normalized;
+    }
+
+    // Helper method to get a triangle's center
+    private Vector3 GetTriangleCenter(int triangleIndex)
+    {
+        int idx0 = meshTriangles[triangleIndex * 3];
+        int idx1 = meshTriangles[triangleIndex * 3 + 1];
+        int idx2 = meshTriangles[triangleIndex * 3 + 2];
+
+        Vector3 v0 = meshVertices[idx0];
+        Vector3 v1 = meshVertices[idx1];
+        Vector3 v2 = meshVertices[idx2];
+
+        return (v0 + v1 + v2) / 3f;
+    }
+
+    // Helper method to find the nearest triangle to a point
+    private int FindNearestTriangle(Vector3 localPoint)
+    {
+        int nearestTri = -1;
+        float minDistance = float.MaxValue;
+
+        for (int i = 0; i < meshTriangles.Length / 3; i++)
+        {
+            Vector3 center = GetTriangleCenter(i);
+            float distance = Vector3.Distance(localPoint, center);
+
+            if (distance < minDistance)
+            {
+                minDistance = distance;
+                nearestTri = i;
+            }
+        }
+
+        return nearestTri;
     }
 }

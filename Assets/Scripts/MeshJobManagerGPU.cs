@@ -158,7 +158,9 @@ public class MeshJobManagerGPU : MonoBehaviour
     {
         [ReadOnly] public NativeArray<SpringPointData> allSpringPoints;
         [ReadOnly] public NativeArray<float3> meshVertices;
+        [ReadOnly] public NativeArray<int> meshTriangles;
         [ReadOnly] public float surfaceDetectionThreshold;
+        [ReadOnly] public float angleThreshold; // New: Added angle threshold (e.g., 45 degrees)
         [ReadOnly] public float4x4 worldToLocalMatrix;
 
         [WriteOnly] public NativeList<SpringPointData>.ParallelWriter surfacePoints;
@@ -168,22 +170,70 @@ public class MeshJobManagerGPU : MonoBehaviour
             SpringPointData point = allSpringPoints[index];
             float3 localPoint = math.transform(worldToLocalMatrix, point.position);
 
-            float closestDistance = float.MaxValue;
-            for (int j = 0; j < meshVertices.Length; j++)
+            // Find nearest triangle
+            int nearestTri = FindNearestTriangle(localPoint);
+            if (nearestTri == -1) return;
+
+            // Get triangle normal
+            float3 triNormal = GetTriangleNormal(nearestTri);
+
+            // Vector from point to triangle center
+            float3 triCenter = GetTriangleCenter(nearestTri);
+            float3 pointToTri = math.normalize(triCenter - localPoint);
+
+            // Compare angles (dot product)
+            float angle = math.degrees(math.acos(math.dot(triNormal, pointToTri)));
+
+            // If angle is large, it's likely a surface point
+            if (angle > angleThreshold)
             {
-                float distance = math.distance(localPoint, meshVertices[j]);
-                if (distance < closestDistance)
+                surfacePoints.AddNoResize(point);
+            }
+        }
+
+        private int FindNearestTriangle(float3 point)
+        {
+            int nearestTri = -1;
+            float minDistance = float.MaxValue;
+
+            for (int i = 0; i < meshTriangles.Length / 3; i++)
+            {
+                float3 v0 = meshVertices[meshTriangles[i * 3]];
+                float3 v1 = meshVertices[meshTriangles[i * 3 + 1]];
+                float3 v2 = meshVertices[meshTriangles[i * 3 + 2]];
+                float3 center = (v0 + v1 + v2) / 3f;
+
+                float distance = math.distance(point, center);
+                if (distance < minDistance)
                 {
-                    closestDistance = distance;
+                    minDistance = distance;
+                    nearestTri = i;
                 }
             }
 
-            if (closestDistance <= surfaceDetectionThreshold)
-            {
-                surfacePoints.AddNoResize(point); // Safe with ParallelWriter
-            }
+            return nearestTri;
+        }
+
+        private float3 GetTriangleNormal(int triIndex)
+        {
+            float3 v0 = meshVertices[meshTriangles[triIndex * 3]];
+            float3 v1 = meshVertices[meshTriangles[triIndex * 3 + 1]];
+            float3 v2 = meshVertices[meshTriangles[triIndex * 3 + 2]];
+
+            float3 edge1 = v1 - v0;
+            float3 edge2 = v2 - v0;
+            return math.normalize(math.cross(edge1, edge2));
+        }
+
+        private float3 GetTriangleCenter(int triIndex)
+        {
+            float3 v0 = meshVertices[meshTriangles[triIndex * 3]];
+            float3 v1 = meshVertices[meshTriangles[triIndex * 3 + 1]];
+            float3 v2 = meshVertices[meshTriangles[triIndex * 3 + 2]];
+            return (v0 + v1 + v2) / 3f;
         }
     }
+
 
     [BurstCompile]
     struct GenerateLocalSurfacePointsJob : IJobParallelFor
@@ -289,31 +339,34 @@ public class MeshJobManagerGPU : MonoBehaviour
         }
     }
 
-    public void ScheduleSurfacePointsJobs(Vector3[] meshVerts, Matrix4x4 worldToLocal)
+    public void ScheduleSurfacePointsJobs(Vector3[] meshVerts, int[] meshTris, Matrix4x4 worldToLocal)
     {
         surfaceSpringPoints.Clear();
         surfacePointsLocalSpace.Clear();
 
+        // Convert mesh data to NativeArrays for the job
+        NativeArray<float3> nativeVerts = new NativeArray<float3>(meshVerts.Length, Allocator.TempJob);
+        NativeArray<int> nativeTris = new NativeArray<int>(meshTris.Length, Allocator.TempJob);
+
+        for (int i = 0; i < meshVerts.Length; i++) nativeVerts[i] = meshVerts[i];
+        for (int i = 0; i < meshTris.Length; i++) nativeTris[i] = meshTris[i];
+
         var identifyJob = new IdentifySurfacePointsJob
         {
             allSpringPoints = springPoints,
-            meshVertices = meshVerticesNative,
+            meshVertices = nativeVerts,
+            meshTriangles = nativeTris,
             surfaceDetectionThreshold = surfaceDetectionThreshold,
+            angleThreshold = 45f, // Configurable angle threshold (e.g., 45 degrees)
             worldToLocalMatrix = worldToLocal,
-
             surfacePoints = surfaceSpringPoints.AsParallelWriter()
         };
 
-        var generateLocalJob = new GenerateLocalSurfacePointsJob
-        {
-            surfacePoints = surfaceSpringPoints,
-            worldToLocalMatrix = worldToLocal,
-
-            localPositions = surfacePointsLocalSpace.AsParallelWriter()
-        };
-
         jobHandle = identifyJob.Schedule(springPoints.Length, 64);
-        jobHandle = generateLocalJob.Schedule(springPoints.Length, 64, jobHandle);
+
+        // Don't forget to dispose temporary NativeArrays later!
+        nativeVerts.Dispose(jobHandle);
+        nativeTris.Dispose(jobHandle);
     }
 
     public (Vector3[], int[]) ApplyMeshSubdivisionJobs(int[] meshTriangles, Matrix4x4 worldToLocal)
