@@ -466,11 +466,7 @@ public class MeshDeformer : MonoBehaviour
 
         Vector3 worldPos = transform.TransformPoint(mid);
 
-        Vector3 worldCenter = transform.TransformPoint(workingMesh.bounds.center);
-        Vector3 worldSize = Vector3.Scale(workingMesh.bounds.size, transform.lossyScale);
-        Bounds worldBounds = new Bounds(worldCenter, worldSize);
-
-        springFiller.CreateSpringPoint(worldPos, worldBounds, false);
+        springFiller.AddSpringPointAtPosition(worldPos);
 
         return newIndex;
     }
