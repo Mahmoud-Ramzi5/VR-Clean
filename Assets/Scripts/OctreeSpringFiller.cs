@@ -1,4 +1,4 @@
-using NUnit.Framework.Internal;
+﻿using NUnit.Framework.Internal;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -369,6 +369,7 @@ public class OctreeSpringFiller : MonoBehaviour
         }
 
         // Handle Mesh Update
+        //meshJobManager.CompleteAllJobsAndApply();
         UpdateMeshFromPoints();
         //meshJobManager.DispatchMeshUpdate(meshVertices, transform.worldToLocalMatrix, targetMesh);
         //meshJobManager.ScheduleMeshUpdateJobs(
@@ -1040,9 +1041,11 @@ public class OctreeSpringFiller : MonoBehaviour
 
     void UpdateMeshFromPoints()
     {
-        if (allSpringPoints == null || allSpringPoints.Length == 0 || meshVertices == null) return;
+        if (allSpringPoints == null || allSpringPoints.Length == 0) return;
 
-        Vector3[] vertices = new Vector3[meshVertices.Length];
+        // Get current mesh data directly from the mesh
+        Vector3[] currentVertices = targetMesh.vertices;
+        int[] currentTriangles = targetMesh.triangles;
 
         // --- 1. Find average position of all spring points (in world space) ---
         Vector3 averagePos = Vector3.zero;
@@ -1056,27 +1059,48 @@ public class OctreeSpringFiller : MonoBehaviour
         transform.position = averagePos;
 
         // --- 3. For each original mesh vertex, find the closest spring point ---
-        for (int i = 0; i < meshVertices.Length; i++)
+        Vector3[] newVertices = new Vector3[currentVertices.Length];
+        for (int i = 0; i < currentVertices.Length; i++)
         {
-            Vector3 worldVertex = transform.TransformPoint(meshVertices[i]);
+            Vector3 worldVertex = transform.TransformPoint(currentVertices[i]);
             SpringPointData closestPoint = FindClosestPoint(worldVertex);
-
+            Debug.Log(closestPoint);
             // Defensive check
             if (closestPoint.mass > 0 || closestPoint.isFixed == 0)
             {
-                vertices[i] = transform.InverseTransformPoint(closestPoint.position);
+                newVertices[i] = transform.InverseTransformPoint(closestPoint.position);
             }
             else
             {
                 // Fallback to keeping the original vertex
-                vertices[i] = meshVertices[i];
+                newVertices[i] = currentVertices[i];
             }
         }
 
         // --- 4. Update mesh vertices and recalculate bounds ---
-        targetMesh.vertices = vertices;
+        targetMesh.vertices = newVertices;
+
+        // Ensure triangles array is valid for new vertex count
+        if (currentTriangles.Length > 0)
+        {
+            // Validate triangle indices
+            int maxIndex = newVertices.Length - 1;
+            for (int i = 0; i < currentTriangles.Length; i++)
+            {
+                if (currentTriangles[i] > maxIndex)
+                {
+                    currentTriangles[i] = maxIndex;
+                }
+            }
+            targetMesh.triangles = currentTriangles;
+        }
+
         targetMesh.RecalculateNormals();
         targetMesh.RecalculateBounds();
+
+        // Update cached references
+        meshVertices = newVertices;
+        meshTriangles = currentTriangles;
     }
 
 
@@ -1087,6 +1111,25 @@ public class OctreeSpringFiller : MonoBehaviour
 
         foreach (var point in allSpringPoints)
         {
+            float dist = Vector3.Distance(worldPos, point.position);
+            if (dist < minDist)
+            {
+                minDist = dist;
+                closest = point;
+            }
+        }
+
+        return closest;
+    }
+    SpringPointData FindClosestSurfacePoint(Vector3 worldPos)
+    {
+        SpringPointData closest = default;
+        float minDist = float.MaxValue;
+
+        foreach (var point in allSpringPoints)
+        {
+            Debug.Log(point.isMeshVertex);
+            if (point.isMeshVertex==0) continue;
             float dist = Vector3.Distance(worldPos, point.position);
             if (dist < minDist)
             {

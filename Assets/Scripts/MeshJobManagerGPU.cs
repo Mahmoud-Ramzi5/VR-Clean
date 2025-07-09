@@ -26,7 +26,7 @@ public class MeshJobManagerGPU : MonoBehaviour
     }
 
     private NativeArray<SpringPointData> springPoints;
-    private VertexWeightBinding[] vertexWeightBindings;
+    public VertexWeightBinding[] vertexWeightBindings;
 
     private ComputeShader meshUpdater;
     private int kernelId;
@@ -187,6 +187,7 @@ public class MeshJobManagerGPU : MonoBehaviour
             // If angle is large, it's likely a surface point
             if (angle > angleThreshold)
             {
+                point.isMeshVertex = 1;
                 surfacePoints.AddNoResize(point);
             }
         }
