@@ -345,9 +345,10 @@ public class MeshJobManagerGPU : MonoBehaviour
         surfaceSpringPoints.Clear();
         surfacePointsLocalSpace.Clear();
 
-        // Set capacity based on expected maximum size
-        surfaceSpringPoints.Capacity = springPoints.Length;
-        surfacePointsLocalSpace.Capacity = springPoints.Length;
+        // // Set capacity based on expected maximum size
+        // surfaceSpringPoints.Capacity = springPoints.Length;
+        // surfacePointsLocalSpace.Capacity = springPoints.Length;
+
         // Convert mesh data to NativeArrays for the job
         NativeArray<float3> nativeVerts = new NativeArray<float3>(meshVerts.Length, Allocator.TempJob);
         NativeArray<int> nativeTris = new NativeArray<int>(meshTris.Length, Allocator.TempJob);

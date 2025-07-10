@@ -235,9 +235,8 @@ public class OctreeSpringFiller : MonoBehaviour
             surfacePointsLocalSpace.Add(new Vector3(point.x, point.y, point.z));
         }
 
-
-        RebuildSurfaceRepresentation();
-        if(meshDeformer== null)
+        // RebuildSurfaceRepresentation();
+        if (meshDeformer == null)
         {
             meshDeformer = GetComponent<MeshDeformer>();
         }
@@ -246,7 +245,7 @@ public class OctreeSpringFiller : MonoBehaviour
         // NEW: After filling, identify surface points and subdivide mesh
         if (true/*enableMeshSubdivision*/)
         {
-            SubdivideMeshWithSurfacePoints();
+            //SubdivideMeshWithSurfacePoints();
             Debug.Log("kkk");
             StartCoroutine(WaitForMeshDeformerInitialization());
 
@@ -1191,7 +1190,11 @@ public class OctreeSpringFiller : MonoBehaviour
 
         collisionJobManager.InitializeArrays(allSpringPoints);
 
-        meshJobManager.ScheduleSurfacePointsJobs(meshVertices, meshTriangles, transform.worldToLocalMatrix);
+        meshJobManager.ScheduleSurfacePointsJobs(
+            meshVertices,
+            meshTriangles,
+            transform.worldToLocalMatrix
+        );
         meshJobManager.CompleteAllJobsAndApply();
     }
 
@@ -1700,6 +1703,7 @@ public class OctreeSpringFiller : MonoBehaviour
         GenerateLocalSurfacePoints();
         Debug.Log($"{gameObject.name}: Surface representation rebuilt. New surface point count: {surfaceSpringPoints.Count}", this);
     }
+
     // Helper method to get a triangle's normal
     private Vector3 GetTriangleNormal(int triangleIndex)
     {

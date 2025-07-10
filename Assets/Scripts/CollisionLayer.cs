@@ -14,7 +14,7 @@ public class CollisionLayer
     public bool[] collidesWith = new bool[32];
 
     [Header("Material Properties")]
-    public float density = 1000f;        // kg/m³
+    public float density = 1000f;        // kg/m^3
     public float restitution = 0.6f;     // 0.0-1.0 (bounciness)
     public float friction = 0.4f;        // 0.0-1.0+ (surface friction)
 
