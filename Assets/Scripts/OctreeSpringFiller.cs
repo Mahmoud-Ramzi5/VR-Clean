@@ -1039,6 +1039,9 @@ public class OctreeSpringFiller : MonoBehaviour
     }
 
 
+    // Add this dictionary as a class member to cache closest points
+    private Dictionary<int, int> vertexToClosestPointMap = new Dictionary<int, int>();
+
     void UpdateMeshFromPoints()
     {
         if (allSpringPoints == null || allSpringPoints.Length == 0) return;
@@ -1059,24 +1062,43 @@ public class OctreeSpringFiller : MonoBehaviour
         transform.position = averagePos;
 
         // --- 3. For each original mesh vertex, find the closest spring point ---
+        // Initialize the dictionary if it's empty or if vertex count changed
+        if (vertexToClosestPointMap.Count == 0 || vertexToClosestPointMap.Count != currentVertices.Length)
+        {
+            vertexToClosestPointMap.Clear();
+            for (int i = 0; i < currentVertices.Length; i++)
+            {
+                Vector3 worldVertex = transform.TransformPoint(currentVertices[i]);
+                int closestPointIndex = FindClosestPointIndex(worldVertex);
+                vertexToClosestPointMap[i] = closestPointIndex;
+            }
+        }
+
         Vector3[] newVertices = new Vector3[currentVertices.Length];
         for (int i = 0; i < currentVertices.Length; i++)
         {
-            Vector3 worldVertex = transform.TransformPoint(currentVertices[i]);
-            SpringPointData closestPoint;
-
-             closestPoint = FindClosestPoint(worldVertex);
-
-            Debug.Log(closestPoint);
-            // Defensive check
-            if (closestPoint.mass > 0 || closestPoint.isFixed == 0)
+            if (vertexToClosestPointMap.TryGetValue(i, out int pointIndex) &&
+                pointIndex >= 0 && pointIndex < allSpringPoints.Length)
             {
-                newVertices[i] = transform.InverseTransformPoint(closestPoint.position);
+                SpringPointData closestPoint = allSpringPoints[pointIndex];
+
+                // Defensive check
+                if (closestPoint.mass > 0 || closestPoint.isFixed == 0)
+                {
+                    newVertices[i] = transform.InverseTransformPoint(closestPoint.position);
+                }
+                else
+                {
+                    // Fallback to keeping the original vertex
+                    newVertices[i] = currentVertices[i];
+                }
             }
             else
             {
-                // Fallback to keeping the original vertex
-                newVertices[i] = currentVertices[i];
+                // Fallback if cache is invalid
+                Vector3 worldVertex = transform.TransformPoint(currentVertices[i]);
+                SpringPointData closestPoint = FindClosestPoint(worldVertex);
+                newVertices[i] = transform.InverseTransformPoint(closestPoint.position);
             }
         }
 
@@ -1106,7 +1128,32 @@ public class OctreeSpringFiller : MonoBehaviour
         meshTriangles = currentTriangles;
     }
 
-    
+    // Helper method to find the index of the closest point
+    private int FindClosestPointIndex(Vector3 worldPos)
+    {
+        int closestIndex = 0;
+        float minDist = float.MaxValue;
+
+        for (int i = 0; i < allSpringPoints.Length; i++)
+        {
+            float dist = Vector3.Distance(worldPos, allSpringPoints[i].position);
+            if (dist < minDist)
+            {
+                minDist = dist;
+                closestIndex = i;
+            }
+        }
+
+        return closestIndex;
+    }
+
+    // Clear the cache when points change (call this when adding/removing points)
+    public void ClearVertexPointCache()
+    {
+        vertexToClosestPointMap.Clear();
+    }
+
+
     SpringPointData FindClosestPoint(Vector3 worldPos)
     {
         SpringPointData closest = default;
