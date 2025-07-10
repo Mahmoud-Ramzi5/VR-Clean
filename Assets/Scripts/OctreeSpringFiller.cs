@@ -82,6 +82,13 @@ public class OctreeSpringFiller : MonoBehaviour
     private NativeList<SpringPointData> surfaceSpringPoints2;
     private NativeList<float3> surfacePointsLocalSpace2;
 
+    [Header("Collision Layer System")]
+    [SerializeField] private CollisionLayer collisionLayer;
+
+    // Layer presets for easy setup
+    [Header("Layer Presets")]
+    [SerializeField] private CollisionLayerPreset layerPreset = CollisionLayerPreset.Default;
+
 
 
     private List<SpringPointData> surfaceSpringPoints = new List<SpringPointData>();
@@ -213,6 +220,139 @@ public class OctreeSpringFiller : MonoBehaviour
                 Debug.LogWarning($"{gameObject.name}: No CollisionManager found in scene!");
             }
         }
+
+        if (collisionLayer == null)
+        {
+            InitializeCollisionLayer();
+        }
+
+        // Apply layer preset if selected
+        ApplyLayerPreset();
+    }
+
+    private void InitializeCollisionLayer()
+    {
+        collisionLayer = new CollisionLayer();
+        collisionLayer.layerName = gameObject.name + "_Layer";
+        collisionLayer.layerIndex = 0; // Default layer
+    }
+
+    private void ApplyLayerPreset()
+    {
+        switch (layerPreset)
+        {
+            case CollisionLayerPreset.Default:
+                // Already initialized with default values
+                break;
+
+            case CollisionLayerPreset.Rubber:
+                collisionLayer.density = 1200f;
+                collisionLayer.restitution = 0.9f;
+                collisionLayer.friction = 0.8f;
+                collisionLayer.youngsModulus = 0.01e6f;
+                collisionLayer.poissonRatio = 0.49f;
+                break;
+
+            case CollisionLayerPreset.Metal:
+                collisionLayer.density = 7800f;
+                collisionLayer.restitution = 0.3f;
+                collisionLayer.friction = 0.6f;
+                collisionLayer.youngsModulus = 200e9f;
+                collisionLayer.poissonRatio = 0.27f;
+                break;
+
+            case CollisionLayerPreset.Plastic:
+                collisionLayer.density = 1400f;
+                collisionLayer.restitution = 0.5f;
+                collisionLayer.friction = 0.4f;
+                collisionLayer.youngsModulus = 3e9f;
+                collisionLayer.poissonRatio = 0.35f;
+                break;
+
+            case CollisionLayerPreset.Gel:
+                collisionLayer.density = 1000f;
+                collisionLayer.restitution = 0.1f;
+                collisionLayer.friction = 0.2f;
+                collisionLayer.youngsModulus = 0.001e6f;
+                collisionLayer.poissonRatio = 0.45f;
+                collisionLayer.dampingFactor = 0.5f;
+                break;
+        }
+    }
+
+    // Public methods for collision layer system
+    public bool CanCollideWith(OctreeSpringFiller other)
+    {
+        if (collisionLayer == null || other.collisionLayer == null)
+            return true; // Default behavior if layers not set
+
+        return collisionLayer.CanCollideWith(other.collisionLayer.layerIndex);
+    }
+
+    public CollisionLayer GetCollisionLayer()
+    {
+        return collisionLayer;
+    }
+
+    public void SetCollisionLayer(CollisionLayer newLayer)
+    {
+        collisionLayer = newLayer;
+        ApplyMaterialProperties();
+    }
+
+    public void SetLayerIndex(int newIndex)
+    {
+        if (collisionLayer != null)
+        {
+            collisionLayer.layerIndex = newIndex;
+        }
+    }
+
+    private void ApplyMaterialProperties()
+    {
+        if (collisionLayer == null) return;
+
+        // Apply density to total mass
+        totalMass = CalculateVolumeFromMesh() * collisionLayer.density;
+
+        // Apply material properties to spring constants
+        CalculateRealisticSpringConstants();
+
+        // Apply to collision properties
+        collisionManager.coefficientOfRestitution = collisionLayer.restitution;
+        collisionManager.coefficientOfFriction = collisionLayer.friction;
+    }
+
+    private float CalculateVolumeFromMesh()
+    {
+        if (meshBounds.size.magnitude == 0) return 1f;
+
+        // Simple volume calculation - can be improved with actual mesh volume calculation
+        return meshBounds.size.x * meshBounds.size.y * meshBounds.size.z;
+    }
+
+    private void CalculateRealisticSpringConstants()
+    {
+        if (collisionLayer == null) return;
+
+        float volume = CalculateVolumeFromMesh();
+        float avgSpacing = PointSpacing;
+
+        // Convert Young's modulus to spring constant
+        float area = avgSpacing * avgSpacing;
+        float length = avgSpacing;
+
+        springConstantL1 = (collisionLayer.youngsModulus * area) / length;
+        springConstantL2 = springConstantL1 * 0.6f;
+        springConstantL3 = springConstantL1 * 0.4f;
+
+        // Calculate damping for critical damping
+        float avgMass = totalMass / (allSpringPoints.IsCreated ? allSpringPoints.Length : 100);
+        float baseDamping = 2.0f * Mathf.Sqrt(springConstantL1 * avgMass);
+
+        damperConstantL1 = baseDamping * collisionLayer.dampingFactor;
+        damperConstantL2 = baseDamping * collisionLayer.dampingFactor * 0.8f;
+        damperConstantL3 = baseDamping * collisionLayer.dampingFactor * 0.6f;
     }
 
     private IEnumerator WaitForMeshDeformerInitialization()
@@ -1520,5 +1660,15 @@ public class OctreeSpringFiller : MonoBehaviour
         }
 
         return nearestTri;
+    }
+
+    public enum CollisionLayerPreset
+    {
+        Default,
+        Rubber,
+        Metal,
+        Plastic,
+        Gel,
+        Custom
     }
 }
