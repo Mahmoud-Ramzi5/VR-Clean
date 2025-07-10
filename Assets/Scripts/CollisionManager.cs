@@ -70,8 +70,11 @@ public class CollisionManager : MonoBehaviour
                 OctreeSpringFiller obj2 = AllSoftBodies[j];
                 obj2.UpdateBoundingVolume();
 
-                DebugDrawBounds(obj1.boundingVolume, Color.green);
-                DebugDrawBounds(obj2.boundingVolume, Color.blue);
+                // CHECK COLLISION LAYERS FIRST
+                if (!obj1.CanCollideWith(obj2))
+                {
+                    continue; // Skip collision if layers don't interact
+                }
 
                 if (!obj1.boundingVolume.Intersects(obj2.boundingVolume)) continue;
 
@@ -79,6 +82,10 @@ public class CollisionManager : MonoBehaviour
                 {
                     totalCollisionsThisFrame++;
                     lastFrameCollisions.Add(info);
+
+                    // Apply layer-specific collision properties
+                    ApplyLayerSpecificCollision(obj1, obj2, info);
+
                     if (enableContactPointResponse)
                     {
                         HandleContactPointCollision(obj1, obj2, info);
@@ -89,6 +96,19 @@ public class CollisionManager : MonoBehaviour
                     }
                 }
             }
+        }
+    }
+
+    private void ApplyLayerSpecificCollision(OctreeSpringFiller obj1, OctreeSpringFiller obj2, CollisionInfo info)
+    {
+        var layer1 = obj1.GetCollisionLayer();
+        var layer2 = obj2.GetCollisionLayer();
+
+        if (layer1 != null && layer2 != null)
+        {
+            // Blend material properties for collision response
+            coefficientOfRestitution = (layer1.restitution + layer2.restitution) * 0.5f;
+            coefficientOfFriction = (layer1.friction + layer2.friction) * 0.5f;
         }
     }
 
@@ -114,36 +134,101 @@ public class CollisionManager : MonoBehaviour
     {
         List<ContactPoint> contacts = new List<ContactPoint>();
 
+        // Method 1: Use EPA result for primary contact (most accurate)
+        Vector3 primaryContactPos = GetPrimaryContactPosition(obj1, obj2, info);
+        ContactPoint primaryContact = CreatePrimaryContact(obj1, obj2, info, primaryContactPos);
+        if (primaryContact.point1Index >= 0 && primaryContact.point2Index >= 0)
+        {
+            contacts.Add(primaryContact);
+        }
+
+        // Method 2: Find additional penetrating surface points for multiple contact points
+        List<ContactPoint> penetratingContacts = FindPenetratingContacts(obj1, obj2, info);
+
+        // Merge and filter contacts to avoid duplicates
+        foreach (var contact in penetratingContacts)
+        {
+            if (!IsContactDuplicate(contact, contacts))
+            {
+                contacts.Add(contact);
+            }
+        }
+
+        // Limit number of contacts for performance and stability
+        if (contacts.Count > maxContactsPerCollision)
+        {
+            contacts = SelectBestContacts(contacts);
+        }
+
+        return contacts;
+    }
+
+    private Vector3 GetPrimaryContactPosition(OctreeSpringFiller obj1, OctreeSpringFiller obj2, CollisionInfo info)
+    {
+        // Use EPA penetration vector to estimate contact location
+        // The contact should be roughly at the midpoint of the penetration
+        Vector3 obj1Center = GetObjectCenter(obj1);
+        Vector3 obj2Center = GetObjectCenter(obj2);
+
+        // Move from obj1 center along the collision normal by half the penetration depth
+        Vector3 contactPos = obj1Center + info.Normal * (info.Depth * 0.5f);
+
+        return contactPos;
+    }
+
+    private ContactPoint CreatePrimaryContact(OctreeSpringFiller obj1, OctreeSpringFiller obj2, CollisionInfo info, Vector3 contactWorldPos)
+    {
+        // Find closest surface points to the estimated contact location
+        int closest1 = FindClosestSurfacePointIndex(obj1, contactWorldPos);
+        int closest2 = FindClosestSurfacePointIndex(obj2, contactWorldPos);
+
+        ContactPoint contact = new ContactPoint();
+
+        if (closest1 >= 0 && closest2 >= 0)
+        {
+            SpringPointData point1 = obj1.SurfacePoints[closest1];
+            SpringPointData point2 = obj2.SurfacePoints[closest2];
+
+            Vector3 relativeVel = point1.velocity - point2.velocity;
+            float impactSpeed = Vector3.Dot(relativeVel, info.Normal);
+
+            contact = new ContactPoint
+            {
+                worldPosition = Vector3.Lerp(point1.position, point2.position, 0.5f),
+                normal = info.Normal, // Use EPA normal for accuracy
+                penetrationDepth = info.Depth, // Use EPA depth for accuracy
+                impactVelocity = impactSpeed,
+                point1Index = closest1,
+                point2Index = closest2,
+                influenceRadius = contactRadius
+            };
+        }
+        else
+        {
+            // Fallback if surface points aren't found
+            contact.point1Index = -1;
+            contact.point2Index = -1;
+        }
+
+        return contact;
+    }
+
+    private List<ContactPoint> FindPenetratingContacts(OctreeSpringFiller obj1, OctreeSpringFiller obj2, CollisionInfo info)
+    {
+        List<ContactPoint> penetratingContacts = new List<ContactPoint>();
+
         // Find surface points of obj1 that are penetrating obj2
         for (int i = 0; i < obj1.SurfacePoints.Count; i++)
         {
             SpringPointData point1 = obj1.SurfacePoints[i];
             Vector3 localPoint = obj2.transform.InverseTransformPoint(point1.position);
+
             if (obj2.IsPointInside(localPoint))
             {
-                // Find the closest surface point on obj2 to determine contact details
-                int closestIndex = FindClosestSurfacePointIndex(obj2, point1.position);
-                if (closestIndex >= 0)
+                ContactPoint contact = CreateContactFromPenetration(obj1, obj2, i, true, info);
+                if (contact.point2Index >= 0)
                 {
-                    SpringPointData closestPoint2 = obj2.SurfacePoints[closestIndex];
-                    float penetration = Vector3.Distance(point1.position, closestPoint2.position);
-                    Vector3 contactNormal = (Vector3)(point1.position - closestPoint2.position);
-                    contactNormal = contactNormal.normalized;
-
-                    // Calculate impact velocity
-                    Vector3 relativeVel = point1.velocity - closestPoint2.velocity;
-                    float impactSpeed = Vector3.Dot(relativeVel, contactNormal);
-
-                    contacts.Add(new ContactPoint
-                    {
-                        worldPosition = Vector3.Lerp(point1.position, closestPoint2.position, 0.5f),
-                        normal = contactNormal,
-                        penetrationDepth = penetration,
-                        impactVelocity = impactSpeed,
-                        point1Index = i,
-                        point2Index = closestIndex,
-                        influenceRadius = contactRadius
-                    });
+                    penetratingContacts.Add(contact);
                 }
             }
         }
@@ -153,56 +238,171 @@ public class CollisionManager : MonoBehaviour
         {
             SpringPointData point2 = obj2.SurfacePoints[i];
             Vector3 localPoint = obj1.transform.InverseTransformPoint(point2.position);
+
             if (obj1.IsPointInside(localPoint))
             {
-                int closestIndex = FindClosestSurfacePointIndex(obj1, point2.position);
-                if (closestIndex >= 0)
+                ContactPoint contact = CreateContactFromPenetration(obj1, obj2, i, false, info);
+                if (contact.point1Index >= 0)
                 {
-                    SpringPointData closestPoint1 = obj1.SurfacePoints[closestIndex];
-                    float penetration = Vector3.Distance(point2.position, closestPoint1.position);
-                    Vector3 contactNormal = (closestPoint1.position - point2.position);
-                    contactNormal = contactNormal.normalized;
-
-                    Vector3 relativeVel = closestPoint1.velocity - point2.velocity;
-                    float impactSpeed = Vector3.Dot(relativeVel, contactNormal);
-
-                    // Check if we already have a very similar contact point
-                    bool isDuplicate = false;
-                    foreach (var existing in contacts)
-                    {
-                        if (Vector3.Distance(existing.worldPosition, Vector3.Lerp(closestPoint1.position, point2.position, 0.5f)) < 0.1f)
-                        {
-                            isDuplicate = true;
-                            break;
-                        }
-                    }
-
-                    if (!isDuplicate)
-                    {
-                        contacts.Add(new ContactPoint
-                        {
-                            worldPosition = Vector3.Lerp(closestPoint1.position, point2.position, 0.5f),
-                            normal = contactNormal,
-                            penetrationDepth = penetration,
-                            impactVelocity = impactSpeed,
-                            point1Index = closestIndex,
-                            point2Index = i,
-                            influenceRadius = contactRadius
-                        });
-                    }
+                    penetratingContacts.Add(contact);
                 }
             }
         }
 
-        // Limit number of contacts for performance
-        if (contacts.Count > maxContactsPerCollision)
+        return penetratingContacts;
+    }
+
+    private ContactPoint CreateContactFromPenetration(OctreeSpringFiller obj1, OctreeSpringFiller obj2,
+                                                      int penetratingPointIndex, bool isObj1Penetrating, CollisionInfo info)
+    {
+        ContactPoint contact = new ContactPoint();
+
+        if (isObj1Penetrating)
         {
-            // Keep the contacts with highest impact velocity
-            contacts.Sort((a, b) => b.impactVelocity.CompareTo(a.impactVelocity));
-            contacts = contacts.GetRange(0, maxContactsPerCollision);
+            // obj1's point is penetrating obj2
+            SpringPointData point1 = obj1.SurfacePoints[penetratingPointIndex];
+            int closestIndex = FindClosestSurfacePointIndex(obj2, point1.position);
+
+            if (closestIndex >= 0)
+            {
+                SpringPointData closestPoint2 = obj2.SurfacePoints[closestIndex];
+                float penetration = Vector3.Distance(point1.position, closestPoint2.position);
+
+                // Use a blend between local normal and EPA normal for better stability
+                Vector3 localNormal = (point1.position - closestPoint2.position);
+                Vector3 blendedNormal = Vector3.Slerp(localNormal, info.Normal, 0.7f).normalized;
+
+                Vector3 relativeVel = point1.velocity - closestPoint2.velocity;
+                float impactSpeed = Vector3.Dot(relativeVel, blendedNormal);
+
+                contact = new ContactPoint
+                {
+                    worldPosition = Vector3.Lerp(point1.position, closestPoint2.position, 0.5f),
+                    normal = blendedNormal,
+                    penetrationDepth = penetration,
+                    impactVelocity = impactSpeed,
+                    point1Index = penetratingPointIndex,
+                    point2Index = closestIndex,
+                    influenceRadius = contactRadius
+                };
+            }
+            else
+            {
+                contact.point2Index = -1;
+            }
+        }
+        else
+        {
+            // obj2's point is penetrating obj1
+            SpringPointData point2 = obj2.SurfacePoints[penetratingPointIndex];
+            int closestIndex = FindClosestSurfacePointIndex(obj1, point2.position);
+
+            if (closestIndex >= 0)
+            {
+                SpringPointData closestPoint1 = obj1.SurfacePoints[closestIndex];
+                float penetration = Vector3.Distance(point2.position, closestPoint1.position);
+
+                // Use a blend between local normal and EPA normal for better stability
+                Vector3 localNormal = (closestPoint1.position - point2.position);
+                Vector3 blendedNormal = Vector3.Slerp(localNormal, info.Normal, 0.7f).normalized;
+
+                Vector3 relativeVel = closestPoint1.velocity - point2.velocity;
+                float impactSpeed = Vector3.Dot(relativeVel, blendedNormal);
+
+                contact = new ContactPoint
+                {
+                    worldPosition = Vector3.Lerp(closestPoint1.position, point2.position, 0.5f),
+                    normal = blendedNormal,
+                    penetrationDepth = penetration,
+                    impactVelocity = impactSpeed,
+                    point1Index = closestIndex,
+                    point2Index = penetratingPointIndex,
+                    influenceRadius = contactRadius
+                };
+            }
+            else
+            {
+                contact.point1Index = -1;
+            }
         }
 
-        return contacts;
+        return contact;
+    }
+
+    private bool IsContactDuplicate(ContactPoint newContact, List<ContactPoint> existingContacts)
+    {
+        foreach (var existing in existingContacts)
+        {
+            // Check both position and point indices for duplicates
+            float positionDistance = Vector3.Distance(existing.worldPosition, newContact.worldPosition);
+            bool samePoints = (existing.point1Index == newContact.point1Index && existing.point2Index == newContact.point2Index) ||
+                             (existing.point1Index == newContact.point2Index && existing.point2Index == newContact.point1Index);
+
+            if (positionDistance < 0.1f || samePoints)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private List<ContactPoint> SelectBestContacts(List<ContactPoint> contacts)
+    {
+        // Sort contacts by multiple criteria for best selection
+        contacts.Sort((a, b) => {
+            // Primary: Highest impact velocity (most significant collision)
+            int impactComparison = b.impactVelocity.CompareTo(a.impactVelocity);
+            if (impactComparison != 0) return impactComparison;
+
+            // Secondary: Highest penetration depth (most urgent to resolve)
+            int penetrationComparison = b.penetrationDepth.CompareTo(a.penetrationDepth);
+            if (penetrationComparison != 0) return penetrationComparison;
+
+            // Tertiary: Spread contacts spatially for stability
+            return 0;
+        });
+
+        // Take the top contacts, but ensure spatial distribution
+        List<ContactPoint> selectedContacts = new List<ContactPoint>();
+        selectedContacts.Add(contacts[0]); // Always take the most significant contact
+
+        for (int i = 1; i < contacts.Count && selectedContacts.Count < maxContactsPerCollision; i++)
+        {
+            ContactPoint candidate = contacts[i];
+            bool tooClose = false;
+
+            // Ensure minimum distance between selected contacts for stability
+            foreach (var selected in selectedContacts)
+            {
+                if (Vector3.Distance(candidate.worldPosition, selected.worldPosition) < contactRadius * 0.5f)
+                {
+                    tooClose = true;
+                    break;
+                }
+            }
+
+            if (!tooClose)
+            {
+                selectedContacts.Add(candidate);
+            }
+        }
+
+        return selectedContacts;
+    }
+
+    private Vector3 GetObjectCenter(OctreeSpringFiller obj)
+    {
+        // Calculate center of mass or geometric center
+        Vector3 center = Vector3.zero;
+        float totalMass = 0f;
+
+        foreach (var point in obj.allSpringPoints)
+        {
+            center += (Vector3)point.position * point.mass;
+            totalMass += point.mass;
+        }
+
+        return totalMass > 0 ? center / totalMass : obj.transform.position;
     }
 
     private int FindClosestSurfacePointIndex(OctreeSpringFiller body, Vector3 worldPosition)
@@ -468,18 +668,20 @@ public class CollisionManager : MonoBehaviour
         Vector3 velocityChange1 = impulse * invMass1;
         Vector3 velocityChange2 = -impulse * invMass2;
 
-        // Distribute velocity change across all points of the soft body
+        // Apply velocity changes to obj1
         for (int i = 0; i < obj1.allSpringPoints.Length; i++)
         {
             SpringPointData point = obj1.allSpringPoints[i];
             point.velocity += (float3)velocityChange1;
             obj1.allSpringPoints[i] = point;
         }
-        for (int i = 0; i < obj1.allSpringPoints.Length; i++)
+
+        // Apply velocity changes to obj2  
+        for (int i = 0; i < obj2.allSpringPoints.Length; i++)
         {
             SpringPointData point = obj2.allSpringPoints[i];
-            point.velocity += (float3)velocityChange1;
-            obj1.allSpringPoints[i] = point;
+            point.velocity += (float3)velocityChange2;
+            obj2.allSpringPoints[i] = point;
         }
 
         // --- 3. Positional Correction (Resolve Penetration) ---

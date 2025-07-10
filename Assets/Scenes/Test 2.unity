@@ -202,7 +202,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 3, y: 5, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -245,6 +245,7 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -656,6 +657,7 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -699,7 +701,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1133259030
 Transform:
   m_ObjectHideFlags: 0
@@ -728,12 +730,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enableInterObjectCollision: 1
+  enableContactPointResponse: 1
+  contactRadius: 1
+  contactInfluenceFalloff: 2
+  maxContactsPerCollision: 8
   coefficientOfRestitution: 0.6
   coefficientOfFriction: 0.4
   penetrationCorrectionFactor: 0.6
   penetrationSlop: 0.01
   totalCollisionsThisFrame: 0
   showCollisionGizmos: 0
+  showContactPoints: 1
+  showInfluenceRadius: 1
+  logCollisionDetails: 0
 --- !u!1 &1819227290
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,5 +1,6 @@
-using NUnit.Framework.Internal;
+﻿using NUnit.Framework.Internal;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
@@ -81,11 +82,20 @@ public class OctreeSpringFiller : MonoBehaviour
 
     [Header("External Systems")]
     public CollisionManager collisionManager;
+    public MeshDeformer meshDeformer;
 
     // NEW: Surface point tracking
     private NativeList<SpringPointData> surfaceSpringPoints2;
     private NativeList<float3> surfacePointsLocalSpace2;
     private JobHandle meshJobHandle;
+
+    [Header("Collision Layer System")]
+    [SerializeField] private CollisionLayer collisionLayer;
+
+    // Layer presets for easy setup
+    [Header("Layer Presets")]
+    [SerializeField] private CollisionLayerPreset layerPreset = CollisionLayerPreset.Default;
+
 
 
     private List<SpringPointData> surfaceSpringPoints = new List<SpringPointData>();
@@ -103,7 +113,7 @@ public class OctreeSpringFiller : MonoBehaviour
 
     public Bounds boundingVolume;
     public List<SpringPointData> SurfacePoints => surfaceSpringPoints;
-
+    public List<SpringPointData> surfacePoints = new List<SpringPointData>();
 
     private void Awake()
     {
@@ -204,6 +214,14 @@ public class OctreeSpringFiller : MonoBehaviour
 
         //meshJobManager.ScheduleSurfacePointsJobs(meshVertices, transform.worldToLocalMatrix);
         //meshJobManager.CompleteAllJobsAndApply();
+        //RebuildSurfaceRepresentation();
+
+        meshJobManager.ScheduleSurfacePointsJobs(
+            meshVertices,
+            meshTriangles,
+            transform.worldToLocalMatrix
+        );
+        meshJobManager.CompleteAllJobsAndApply();
 
         for (int i = 0; i < surfaceSpringPoints2.Length; i++)
         {
@@ -219,10 +237,18 @@ public class OctreeSpringFiller : MonoBehaviour
 
 
         RebuildSurfaceRepresentation();
+        if(meshDeformer== null)
+        {
+            meshDeformer = GetComponent<MeshDeformer>();
+        }
+
+
         // NEW: After filling, identify surface points and subdivide mesh
-        if (enableMeshSubdivision)
+        if (true/*enableMeshSubdivision*/)
         {
             SubdivideMeshWithSurfacePoints();
+            Debug.Log("kkk");
+            StartCoroutine(WaitForMeshDeformerInitialization());
 
             //(Vector3[] finalVertices, int[] finalTriangles) = meshJobManager.ApplyMeshSubdivisionJobs(meshTriangles, transform.worldToLocalMatrix);
             //UpdateMeshGeometry(finalVertices, finalTriangles);
@@ -236,8 +262,152 @@ public class OctreeSpringFiller : MonoBehaviour
                 Debug.LogWarning($"{gameObject.name}: No CollisionManager found in scene!");
             }
         }
+
+        if (collisionLayer == null)
+        {
+            InitializeCollisionLayer();
+        }
+
+        // Apply layer preset if selected
+        ApplyLayerPreset();
     }
 
+    private void InitializeCollisionLayer()
+    {
+        collisionLayer = new CollisionLayer();
+        collisionLayer.layerName = gameObject.name + "_Layer";
+        collisionLayer.layerIndex = 0; // Default layer
+    }
+
+    private void ApplyLayerPreset()
+    {
+        switch (layerPreset)
+        {
+            case CollisionLayerPreset.Default:
+                // Already initialized with default values
+                break;
+
+            case CollisionLayerPreset.Rubber:
+                collisionLayer.density = 1200f;
+                collisionLayer.restitution = 0.9f;
+                collisionLayer.friction = 0.8f;
+                collisionLayer.youngsModulus = 0.01e6f;
+                collisionLayer.poissonRatio = 0.49f;
+                break;
+
+            case CollisionLayerPreset.Metal:
+                collisionLayer.density = 7800f;
+                collisionLayer.restitution = 0.3f;
+                collisionLayer.friction = 0.6f;
+                collisionLayer.youngsModulus = 200e9f;
+                collisionLayer.poissonRatio = 0.27f;
+                break;
+
+            case CollisionLayerPreset.Plastic:
+                collisionLayer.density = 1400f;
+                collisionLayer.restitution = 0.5f;
+                collisionLayer.friction = 0.4f;
+                collisionLayer.youngsModulus = 3e9f;
+                collisionLayer.poissonRatio = 0.35f;
+                break;
+
+            case CollisionLayerPreset.Gel:
+                collisionLayer.density = 1000f;
+                collisionLayer.restitution = 0.1f;
+                collisionLayer.friction = 0.2f;
+                collisionLayer.youngsModulus = 0.001e6f;
+                collisionLayer.poissonRatio = 0.45f;
+                collisionLayer.dampingFactor = 0.5f;
+                break;
+        }
+    }
+
+    // Public methods for collision layer system
+    public bool CanCollideWith(OctreeSpringFiller other)
+    {
+        if (collisionLayer == null || other.collisionLayer == null)
+            return true; // Default behavior if layers not set
+
+        return collisionLayer.CanCollideWith(other.collisionLayer.layerIndex);
+    }
+
+    public CollisionLayer GetCollisionLayer()
+    {
+        return collisionLayer;
+    }
+
+    public void SetCollisionLayer(CollisionLayer newLayer)
+    {
+        collisionLayer = newLayer;
+        ApplyMaterialProperties();
+    }
+
+    public void SetLayerIndex(int newIndex)
+    {
+        if (collisionLayer != null)
+        {
+            collisionLayer.layerIndex = newIndex;
+        }
+    }
+
+    private void ApplyMaterialProperties()
+    {
+        if (collisionLayer == null) return;
+
+        // Apply density to total mass
+        totalMass = CalculateVolumeFromMesh() * collisionLayer.density;
+
+        // Apply material properties to spring constants
+        CalculateRealisticSpringConstants();
+
+        // Apply to collision properties
+        collisionManager.coefficientOfRestitution = collisionLayer.restitution;
+        collisionManager.coefficientOfFriction = collisionLayer.friction;
+    }
+
+    private float CalculateVolumeFromMesh()
+    {
+        if (meshBounds.size.magnitude == 0) return 1f;
+
+        // Simple volume calculation - can be improved with actual mesh volume calculation
+        return meshBounds.size.x * meshBounds.size.y * meshBounds.size.z;
+    }
+
+    private void CalculateRealisticSpringConstants()
+    {
+        if (collisionLayer == null) return;
+
+        float volume = CalculateVolumeFromMesh();
+        float avgSpacing = PointSpacing;
+
+        // Convert Young's modulus to spring constant
+        float area = avgSpacing * avgSpacing;
+        float length = avgSpacing;
+
+        springConstantL1 = (collisionLayer.youngsModulus * area) / length;
+        springConstantL2 = springConstantL1 * 0.6f;
+        springConstantL3 = springConstantL1 * 0.4f;
+
+        // Calculate damping for critical damping
+        float avgMass = totalMass / (allSpringPoints.IsCreated ? allSpringPoints.Length : 100);
+        float baseDamping = 2.0f * Mathf.Sqrt(springConstantL1 * avgMass);
+
+        damperConstantL1 = baseDamping * collisionLayer.dampingFactor;
+        damperConstantL2 = baseDamping * collisionLayer.dampingFactor * 0.8f;
+        damperConstantL3 = baseDamping * collisionLayer.dampingFactor * 0.6f;
+    }
+
+    private IEnumerator WaitForMeshDeformerInitialization()
+    {
+        while (!meshDeformer.isInitialized)
+        {
+            Debug.Log("Waiting for MeshDeformer to initialize...");
+            yield return null; // Wait one frame
+        }
+
+        Debug.Log("MeshDeformer is ready, proceeding with subdivision...");
+        meshDeformer.SubdivideMeshWithPoints(surfaceSpringPoints);
+    }
     //private void Update()
     //{
     //    if (Time.frameCount % 5 == 0)
@@ -372,7 +542,7 @@ public class OctreeSpringFiller : MonoBehaviour
         else
         {
             // NEW DEBUG LOG: This will alert you if the manager isn't assigned.
-            if (enableMeshSubdivision) Debug.LogWarning($"{gameObject.name}: CollisionManager is not assigned in the inspector!", this);
+            // if (enableMeshSubdivision) Debug.LogWarning($"{gameObject.name}: CollisionManager is not assigned in the inspector!", this);
         }
 
         if (Time.frameCount % 3 == 0) // Every 3 frames
@@ -1021,7 +1191,7 @@ public class OctreeSpringFiller : MonoBehaviour
 
         collisionJobManager.InitializeArrays(allSpringPoints);
 
-        meshJobManager.ScheduleSurfacePointsJobs(meshVertices, transform.worldToLocalMatrix);
+        meshJobManager.ScheduleSurfacePointsJobs(meshVertices, meshTriangles, transform.worldToLocalMatrix);
         meshJobManager.CompleteAllJobsAndApply();
     }
 
@@ -1046,11 +1216,16 @@ public class OctreeSpringFiller : MonoBehaviour
     }
 
 
+    // Add this dictionary as a class member to cache closest points
+    private Dictionary<int, int> vertexToClosestPointMap = new Dictionary<int, int>();
+
     void UpdateMeshFromPoints()
     {
-        if (allSpringPoints == null || allSpringPoints.Length == 0 || meshVertices == null) return;
+        if (allSpringPoints == null || allSpringPoints.Length == 0) return;
 
-        Vector3[] vertices = new Vector3[meshVertices.Length];
+        // Get current mesh data directly from the mesh
+        Vector3[] currentVertices = targetMesh.vertices;
+        int[] currentTriangles = targetMesh.triangles;
 
         // --- 1. Find average position of all spring points (in world space) ---
         Vector3 averagePos = Vector3.zero;
@@ -1064,27 +1239,97 @@ public class OctreeSpringFiller : MonoBehaviour
         transform.position = averagePos;
 
         // --- 3. For each original mesh vertex, find the closest spring point ---
-        for (int i = 0; i < meshVertices.Length; i++)
+        // Initialize the dictionary if it's empty or if vertex count changed
+        if (vertexToClosestPointMap.Count == 0 || vertexToClosestPointMap.Count != currentVertices.Length)
         {
-            Vector3 worldVertex = transform.TransformPoint(meshVertices[i]);
-            SpringPointData closestPoint = FindClosestPoint(worldVertex);
-
-            // Defensive check
-            if (closestPoint.mass > 0 || closestPoint.isFixed == 0)
+            vertexToClosestPointMap.Clear();
+            for (int i = 0; i < currentVertices.Length; i++)
             {
-                vertices[i] = transform.InverseTransformPoint(closestPoint.position);
+                Vector3 worldVertex = transform.TransformPoint(currentVertices[i]);
+                int closestPointIndex = FindClosestPointIndex(worldVertex);
+                vertexToClosestPointMap[i] = closestPointIndex;
+            }
+        }
+
+        Vector3[] newVertices = new Vector3[currentVertices.Length];
+        for (int i = 0; i < currentVertices.Length; i++)
+        {
+            if (vertexToClosestPointMap.TryGetValue(i, out int pointIndex) &&
+                pointIndex >= 0 && pointIndex < allSpringPoints.Length)
+            {
+                SpringPointData closestPoint = allSpringPoints[pointIndex];
+                surfacePoints.Add(closestPoint);
+
+                // Defensive check
+                if (closestPoint.mass > 0 || closestPoint.isFixed == 0)
+                {
+                    newVertices[i] = transform.InverseTransformPoint(closestPoint.position);
+                }
+                else
+                {
+                    // Fallback to keeping the original vertex
+                    newVertices[i] = currentVertices[i];
+                }
             }
             else
             {
-                // Fallback to keeping the original vertex
-                vertices[i] = meshVertices[i];
+                // Fallback if cache is invalid
+                Vector3 worldVertex = transform.TransformPoint(currentVertices[i]);
+                SpringPointData closestPoint = FindClosestPoint(worldVertex);
+                surfacePoints.Add(closestPoint);
+                newVertices[i] = transform.InverseTransformPoint(closestPoint.position);
             }
         }
 
         // --- 4. Update mesh vertices and recalculate bounds ---
-        targetMesh.vertices = vertices;
+        targetMesh.vertices = newVertices;
+
+        // Ensure triangles array is valid for new vertex count
+        if (currentTriangles.Length > 0)
+        {
+            // Validate triangle indices
+            int maxIndex = newVertices.Length - 1;
+            for (int i = 0; i < currentTriangles.Length; i++)
+            {
+                if (currentTriangles[i] > maxIndex)
+                {
+                    currentTriangles[i] = maxIndex;
+                }
+            }
+            targetMesh.triangles = currentTriangles;
+        }
+
         targetMesh.RecalculateNormals();
         targetMesh.RecalculateBounds();
+
+        // Update cached references
+        meshVertices = newVertices;
+        meshTriangles = currentTriangles;
+    }
+
+    // Helper method to find the index of the closest point
+    private int FindClosestPointIndex(Vector3 worldPos)
+    {
+        int closestIndex = 0;
+        float minDist = float.MaxValue;
+
+        for (int i = 0; i < allSpringPoints.Length; i++)
+        {
+            float dist = Vector3.Distance(worldPos, allSpringPoints[i].position);
+            if (dist < minDist)
+            {
+                minDist = dist;
+                closestIndex = i;
+            }
+        }
+
+        return closestIndex;
+    }
+
+    // Clear the cache when points change (call this when adding/removing points)
+    public void ClearVertexPointCache()
+    {
+        vertexToClosestPointMap.Clear();
     }
 
 
@@ -1095,6 +1340,26 @@ public class OctreeSpringFiller : MonoBehaviour
 
         foreach (var point in allSpringPoints)
         {
+            float dist = Vector3.Distance(worldPos, point.position);
+            if (dist < minDist)
+            {
+                minDist = dist;
+                closest = point;
+            }
+
+        }
+
+        return closest;
+    }
+    SpringPointData FindClosestSurfacePoint(Vector3 worldPos)
+    {
+        SpringPointData closest = default;
+        float minDist = float.MaxValue;
+
+        foreach (var point in allSpringPoints)
+        {
+            Debug.Log(point.isMeshVertex);
+            if (point.isMeshVertex == 0) continue;
             float dist = Vector3.Distance(worldPos, point.position);
             if (dist < minDist)
             {
@@ -1434,5 +1699,65 @@ public class OctreeSpringFiller : MonoBehaviour
         IdentifySurfacePoints();
         GenerateLocalSurfacePoints();
         Debug.Log($"{gameObject.name}: Surface representation rebuilt. New surface point count: {surfaceSpringPoints.Count}", this);
+    }
+    // Helper method to get a triangle's normal
+    private Vector3 GetTriangleNormal(int triangleIndex)
+    {
+        int idx0 = meshTriangles[triangleIndex * 3];
+        int idx1 = meshTriangles[triangleIndex * 3 + 1];
+        int idx2 = meshTriangles[triangleIndex * 3 + 2];
+
+        Vector3 v0 = meshVertices[idx0];
+        Vector3 v1 = meshVertices[idx1];
+        Vector3 v2 = meshVertices[idx2];
+
+        Vector3 edge1 = v1 - v0;
+        Vector3 edge2 = v2 - v0;
+        return Vector3.Cross(edge1, edge2).normalized;
+    }
+
+    // Helper method to get a triangle's center
+    private Vector3 GetTriangleCenter(int triangleIndex)
+    {
+        int idx0 = meshTriangles[triangleIndex * 3];
+        int idx1 = meshTriangles[triangleIndex * 3 + 1];
+        int idx2 = meshTriangles[triangleIndex * 3 + 2];
+
+        Vector3 v0 = meshVertices[idx0];
+        Vector3 v1 = meshVertices[idx1];
+        Vector3 v2 = meshVertices[idx2];
+
+        return (v0 + v1 + v2) / 3f;
+    }
+
+    // Helper method to find the nearest triangle to a point
+    private int FindNearestTriangle(Vector3 localPoint)
+    {
+        int nearestTri = -1;
+        float minDistance = float.MaxValue;
+
+        for (int i = 0; i < meshTriangles.Length / 3; i++)
+        {
+            Vector3 center = GetTriangleCenter(i);
+            float distance = Vector3.Distance(localPoint, center);
+
+            if (distance < minDistance)
+            {
+                minDistance = distance;
+                nearestTri = i;
+            }
+        }
+
+        return nearestTri;
+    }
+
+    public enum CollisionLayerPreset
+    {
+        Default,
+        Rubber,
+        Metal,
+        Plastic,
+        Gel,
+        Custom
     }
 }

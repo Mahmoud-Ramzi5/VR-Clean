@@ -53,7 +53,7 @@ public struct SpringPointData
         this.boundsMax = boundsMax;
 
         this.triangleIndex = triangleIndex;
-        this.isMeshVertex = isMeshVertex;
+        this.isMeshVertex = 0;
 
         this.initialPosition = position;
         this.predictedPosition = position;
