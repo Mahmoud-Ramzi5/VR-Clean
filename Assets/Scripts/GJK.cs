@@ -103,19 +103,19 @@ public static class GJK
         Vector3 furthestPoint = Vector3.zero;
         float maxDot = float.NegativeInfinity;
 
-        if (body.SurfacePoints.Count == 0)
+        if (body.surfacePoints.Count == 0)
         {
             Debug.LogWarning($"{body.name} has no surface points for GJK calculation!", body);
             return body.transform.position;
         }
 
         // Initialize with the first point to ensure we have a valid starting point
-        furthestPoint = body.SurfacePoints[0].position;
+        furthestPoint = body.surfacePoints[0].position;
         maxDot = Vector3.Dot(furthestPoint, worldDirection);
 
-        for (int i = 0; i < body.SurfacePoints.Count; i++)
+        for (int i = 0; i < body.surfacePoints.Count; i++)
         {
-            SpringPointData sp = body.SurfacePoints[i];
+            SpringPointData sp = body.surfacePoints[i];
             float dot = Vector3.Dot(sp.position, worldDirection);
             if (dot > maxDot)
             {

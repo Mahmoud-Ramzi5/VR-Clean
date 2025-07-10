@@ -99,7 +99,7 @@ public class OctreeSpringFiller : MonoBehaviour
 
     public Bounds boundingVolume;
     public List<SpringPointData> SurfacePoints => surfaceSpringPoints;
-
+    public List<SpringPointData> surfacePoints = new List<SpringPointData>();
 
     private void Awake()
     {
@@ -1081,6 +1081,7 @@ public class OctreeSpringFiller : MonoBehaviour
                 pointIndex >= 0 && pointIndex < allSpringPoints.Length)
             {
                 SpringPointData closestPoint = allSpringPoints[pointIndex];
+                surfacePoints.Add(closestPoint);
 
                 // Defensive check
                 if (closestPoint.mass > 0 || closestPoint.isFixed == 0)
@@ -1098,6 +1099,7 @@ public class OctreeSpringFiller : MonoBehaviour
                 // Fallback if cache is invalid
                 Vector3 worldVertex = transform.TransformPoint(currentVertices[i]);
                 SpringPointData closestPoint = FindClosestPoint(worldVertex);
+                surfacePoints.Add(closestPoint);
                 newVertices[i] = transform.InverseTransformPoint(closestPoint.position);
             }
         }
