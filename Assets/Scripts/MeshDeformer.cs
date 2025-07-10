@@ -302,7 +302,7 @@ public class MeshDeformer : MonoBehaviour
 
     void LateUpdate()
     {
-        UpdateDeformation();
+        //UpdateDeformation();
     }
 
     void UpdateDeformation()

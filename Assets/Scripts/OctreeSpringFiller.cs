@@ -1063,7 +1063,10 @@ public class OctreeSpringFiller : MonoBehaviour
         for (int i = 0; i < currentVertices.Length; i++)
         {
             Vector3 worldVertex = transform.TransformPoint(currentVertices[i]);
-            SpringPointData closestPoint = FindClosestPoint(worldVertex);
+            SpringPointData closestPoint;
+
+             closestPoint = FindClosestPoint(worldVertex);
+
             Debug.Log(closestPoint);
             // Defensive check
             if (closestPoint.mass > 0 || closestPoint.isFixed == 0)
@@ -1103,7 +1106,7 @@ public class OctreeSpringFiller : MonoBehaviour
         meshTriangles = currentTriangles;
     }
 
-
+    
     SpringPointData FindClosestPoint(Vector3 worldPos)
     {
         SpringPointData closest = default;
@@ -1117,8 +1120,9 @@ public class OctreeSpringFiller : MonoBehaviour
                 minDist = dist;
                 closest = point;
             }
+            
         }
-
+        
         return closest;
     }
     SpringPointData FindClosestSurfacePoint(Vector3 worldPos)
