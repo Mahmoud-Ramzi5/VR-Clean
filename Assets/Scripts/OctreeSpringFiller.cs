@@ -364,7 +364,7 @@ public class OctreeSpringFiller : MonoBehaviour
         }
 
         Debug.Log("MeshDeformer is ready, proceeding with subdivision...");
-        meshDeformer.SubdivideMeshWithPoints(surfaceSpringPoints);
+        meshDeformer.SubdivideMeshWithPoints(surfaceSpringPoints);  
     }
     //private void Update()
     //{
