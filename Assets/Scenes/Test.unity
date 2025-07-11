@@ -178,6 +178,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -372,6 +384,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -508,6 +532,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -644,6 +680,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -780,6 +828,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -916,6 +976,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -1052,6 +1124,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -1325,6 +1409,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -1461,6 +1557,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -1718,6 +1826,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -1854,6 +1974,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -1990,6 +2122,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -2126,6 +2270,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -2262,6 +2418,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -2398,6 +2566,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -2534,6 +2714,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -2719,6 +2911,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -2855,6 +3059,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -2991,6 +3207,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -3127,6 +3355,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -3264,10 +3504,22 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 41275468}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
-  enableMeshSubdivision: 1
+  enableMeshSubdivision: 0
   autoUpdateMeshFromSurface: 1
   applyVelocity: 0
   boundingVolume:
@@ -3414,6 +3666,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -3550,6 +3814,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -3686,6 +3962,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -3822,6 +4110,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -3958,6 +4258,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -4094,6 +4406,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -4230,6 +4554,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -4452,6 +4788,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -4588,6 +4936,18 @@ MonoBehaviour:
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
+  meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2

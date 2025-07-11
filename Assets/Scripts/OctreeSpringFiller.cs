@@ -77,7 +77,7 @@ public class OctreeSpringFiller : MonoBehaviour
     private CollisionJobManager collisionJobManager;
     private SpringJobManager springJobManager;
     private RigidJobManager rigidJobManager;
-    private MeshJobManagerGPU meshJobManager;
+    private MeshJobManagerCPU meshJobManager;
 
 
     [Header("External Systems")]
@@ -170,13 +170,6 @@ public class OctreeSpringFiller : MonoBehaviour
 
         FillObjectWithSpringPoints();
 
-        //RebuildSurfaceRepresentation();
-        //// NEW: After filling, identify surface points and subdivide mesh
-        //if (enableMeshSubdivision)
-        //{
-        //    SubdivideMeshWithSurfacePoints();
-        //}
-
         // Update positions and bounds on start
         for (int i = 0; i < allSpringPoints.Length; i++)
         {
@@ -196,8 +189,8 @@ public class OctreeSpringFiller : MonoBehaviour
         surfaceSpringPoints2 = new NativeList<SpringPointData>(allSpringPoints.Length, Allocator.Persistent);
         surfacePointsLocalSpace2 = new NativeList<float3>(allSpringPoints.Length, Allocator.Persistent);
 
-        meshJobManager = gameObject.AddComponent<MeshJobManagerGPU>();
-        meshJobManager.Initialize(meshVertices, allSpringPoints, surfaceSpringPoints2, surfacePointsLocalSpace2);
+        meshJobManager = gameObject.AddComponent<MeshJobManagerCPU>();
+        meshJobManager.Initialize(meshVertices, meshTriangles, allSpringPoints, surfaceSpringPoints2, surfacePointsLocalSpace2, surfaceDetectionThreshold);
 
         // Spring
         springJobManager = gameObject.AddComponent<SpringJobManager>();
@@ -211,18 +204,14 @@ public class OctreeSpringFiller : MonoBehaviour
         collisionJobManager = gameObject.AddComponent<CollisionJobManager>();
         collisionJobManager.InitializeArrays(allSpringPoints);
 
-
-        //meshJobManager.ScheduleSurfacePointsJobs(meshVertices, transform.worldToLocalMatrix);
-        //meshJobManager.CompleteAllJobsAndApply();
-        //RebuildSurfaceRepresentation();
-
-        meshJobManager.ScheduleSurfacePointsJobs(
+        // Calculate surface points
+        meshJobManager.IdentifySurfacePoints(
             meshVertices,
             meshTriangles,
             transform.worldToLocalMatrix
         );
-        meshJobManager.CompleteAllJobsAndApply();
 
+        // copy data 
         for (int i = 0; i < surfaceSpringPoints2.Length; i++)
         {
             SpringPointData point = surfaceSpringPoints2[i];
@@ -243,14 +232,9 @@ public class OctreeSpringFiller : MonoBehaviour
 
 
         // NEW: After filling, identify surface points and subdivide mesh
-        if (true/*enableMeshSubdivision*/)
+        if (enableMeshSubdivision)
         {
-            //SubdivideMeshWithSurfacePoints();
-            Debug.Log("kkk");
             StartCoroutine(WaitForMeshDeformerInitialization());
-
-            //(Vector3[] finalVertices, int[] finalTriangles) = meshJobManager.ApplyMeshSubdivisionJobs(meshTriangles, transform.worldToLocalMatrix);
-            //UpdateMeshGeometry(finalVertices, finalTriangles);
         }
 
         if (collisionManager == null)
@@ -550,13 +534,10 @@ public class OctreeSpringFiller : MonoBehaviour
         }
 
         // Handle Mesh Update
-        UpdateMeshFromPoints();
-        //meshJobManager.DispatchMeshUpdate(meshVertices, transform.worldToLocalMatrix, targetMesh);
-        //meshJobManager.ScheduleMeshUpdateJobs(
-        //    meshVertices, transform.localToWorldMatrix, transform.worldToLocalMatrix
-        //);
-
-        //meshJobManager.CompleteAllJobsAndApply(targetMesh);
+        //UpdateMeshFromPoints();
+        //meshJobManager.DispatchMeshUpdate(meshVertices, transform.worldToLocalMatrix, targetMesh, transform);
+        meshJobManager.ScheduleMeshVerticesUpdateJobs(meshVertices, meshTriangles, transform.localToWorldMatrix, transform.worldToLocalMatrix);
+        meshJobManager.CompleteAllJobsAndApply(meshVertices, meshTriangles, targetMesh, surfacePoints);
     }
 
     void LateUpdate()
@@ -635,7 +616,7 @@ public class OctreeSpringFiller : MonoBehaviour
         // Fill Object using Octree Algorithms
         OctreeNode rootNode = new OctreeNode(worldBounds, meshBounds);
         int total_nodes = BuildOctree(rootNode);
-        CreateSpringConnections();
+        CreateSpringConnectionsForAllPoints();
 
         // Copy to native arrays
         allSpringPoints = tempPoints.AsArray();
@@ -818,7 +799,7 @@ public class OctreeSpringFiller : MonoBehaviour
         return ((ulong)min << 32) | max;
     }
 
-    void CreateSpringConnections()
+    void CreateSpringConnectionsForAllPoints()
     {
         tempConnections.Clear();
         if (tempPoints.Length == 0) return;
@@ -1182,7 +1163,7 @@ public class OctreeSpringFiller : MonoBehaviour
         surfaceSpringPoints2 = new NativeList<SpringPointData>(allSpringPoints.Length, Allocator.Persistent);
         surfacePointsLocalSpace2 = new NativeList<float3>(allSpringPoints.Length, Allocator.Persistent);
 
-        meshJobManager.Initialize(meshVertices, allSpringPoints, surfaceSpringPoints2, surfacePointsLocalSpace2);
+        meshJobManager.Initialize(meshVertices, meshTriangles, allSpringPoints, surfaceSpringPoints2, surfacePointsLocalSpace2, surfaceDetectionThreshold);
 
         rigidJobManager.InitializeArrays(allSpringPoints, allSpringConnections);
 
@@ -1190,32 +1171,11 @@ public class OctreeSpringFiller : MonoBehaviour
 
         collisionJobManager.InitializeArrays(allSpringPoints);
 
-        meshJobManager.ScheduleSurfacePointsJobs(
+        meshJobManager.IdentifySurfacePoints(
             meshVertices,
             meshTriangles,
             transform.worldToLocalMatrix
         );
-        meshJobManager.CompleteAllJobsAndApply();
-    }
-
-
-    public float GetObjectRadius()
-    {
-        if (allSpringPoints.Length == 0) return 1f;
-
-        Vector3 center = transform.position;
-        float maxDistance = 0f;
-
-        foreach (SpringPointData point in allSpringPoints)
-        {
-            float distance = Vector3.Distance(point.position, center);
-            if (distance > maxDistance)
-            {
-                maxDistance = distance;
-            }
-        }
-
-        return maxDistance;
     }
 
 
@@ -1329,13 +1289,6 @@ public class OctreeSpringFiller : MonoBehaviour
         return closestIndex;
     }
 
-    // Clear the cache when points change (call this when adding/removing points)
-    public void ClearVertexPointCache()
-    {
-        vertexToClosestPointMap.Clear();
-    }
-
-
     SpringPointData FindClosestPoint(Vector3 worldPos)
     {
         SpringPointData closest = default;
@@ -1350,25 +1303,6 @@ public class OctreeSpringFiller : MonoBehaviour
                 closest = point;
             }
 
-        }
-
-        return closest;
-    }
-    SpringPointData FindClosestSurfacePoint(Vector3 worldPos)
-    {
-        SpringPointData closest = default;
-        float minDist = float.MaxValue;
-
-        foreach (var point in allSpringPoints)
-        {
-            Debug.Log(point.isMeshVertex);
-            if (point.isMeshVertex == 0) continue;
-            float dist = Vector3.Distance(worldPos, point.position);
-            if (dist < minDist)
-            {
-                minDist = dist;
-                closest = point;
-            }
         }
 
         return closest;
@@ -1421,13 +1355,6 @@ public class OctreeSpringFiller : MonoBehaviour
         targetMesh.RecalculateBounds();
     }
 
-    //public void UpdateBoundingVolume()
-    //{
-    //    Vector3 center = transform.position;
-    //    float radius = GetObjectRadius();
-    //    boundingVolume = new Bounds(center, Vector3.one * (radius * 2f));
-    //}
-
     public void UpdateBoundingVolume()
     {
         if (allSpringPoints.Length == 0) return;
@@ -1442,107 +1369,6 @@ public class OctreeSpringFiller : MonoBehaviour
         }
 
         boundingVolume = new Bounds((min + max) * 0.5f, max - min);
-    }
-
-    public void SubdivideMeshWithSurfacePoints()
-    {
-        if (surfaceSpringPoints.Count == 0)
-        {
-            Debug.LogWarning("No surface spring points found for subdivision");
-            return;
-        }
-        Debug.Log($"Subdividing mesh with {surfaceSpringPoints.Count} surface points");
-        List<Vector3> newVertices = new List<Vector3>(meshVertices);
-
-        for (int i = 0; i < surfaceSpringPoints.Count; i++)
-        {
-            SpringPointData surfacePoint = surfaceSpringPoints[i];
-            Vector3 localPos = transform.InverseTransformPoint(surfacePoint.position);
-            newVertices.Add(localPos);
-            int newVertexIndex = newVertices.Count - 1;
-            surfacePointToVertexIndex[i] = newVertexIndex; // i = index in surfaceSpringPoints
-        }
-        List<int> newTriangles = new List<int>(meshTriangles);
-        CreateTrianglesForSurfacePoints(newVertices, newTriangles);
-        UpdateMeshGeometry(newVertices.ToArray(), newTriangles.ToArray());
-        Debug.Log($"Mesh subdivision complete. Vertices: {meshVertices.Length}, Triangles: {meshTriangles.Length / 3}");
-    }
-
-    private void CreateTrianglesForSurfacePoints(List<Vector3> vertices, List<int> triangles)
-    {
-        foreach (var kvp in surfacePointToVertexIndex)
-        {
-            SpringPointData surfacePoint = allSpringPoints[kvp.Key];
-            int surfaceVertexIndex = kvp.Value;
-            Vector3 surfaceLocalPos = vertices[surfaceVertexIndex];
-            int closestTriangleIndex = FindClosestTriangleToPoint(surfaceLocalPos);
-
-            if (closestTriangleIndex >= 0)
-            {
-                int baseIndex = closestTriangleIndex * 3;
-                int v1 = meshTriangles[baseIndex];
-                int v2 = meshTriangles[baseIndex + 1];
-                int v3 = meshTriangles[baseIndex + 2];
-                triangles.AddRange(new[] { surfaceVertexIndex, v1, v2 });
-                triangles.AddRange(new[] { surfaceVertexIndex, v2, v3 });
-                triangles.AddRange(new[] { surfaceVertexIndex, v3, v1 });
-            }
-            else
-            {
-                List<int> nearestVertices = FindNearestVertices(surfaceLocalPos, vertices, 3);
-                if (nearestVertices.Count >= 3)
-                {
-                    triangles.AddRange(new[] { surfaceVertexIndex, nearestVertices[0], nearestVertices[1] });
-                    triangles.AddRange(new[] { surfaceVertexIndex, nearestVertices[1], nearestVertices[2] });
-                    triangles.AddRange(new[] { surfaceVertexIndex, nearestVertices[2], nearestVertices[0] });
-                }
-            }
-        }
-    }
-
-    private int FindClosestTriangleToPoint(Vector3 localPoint)
-    {
-        float closestDistance = float.MaxValue;
-        int closestTriangle = -1;
-        for (int i = 0; i < meshTriangles.Length; i += 3)
-        {
-            Vector3 v1 = meshVertices[meshTriangles[i]];
-            Vector3 v2 = meshVertices[meshTriangles[i + 1]];
-            Vector3 v3 = meshVertices[meshTriangles[i + 2]];
-            Vector3 triangleCenter = (v1 + v2 + v3) / 3f;
-            float distance = Vector3.Distance(localPoint, triangleCenter);
-            if (distance < closestDistance)
-            {
-                closestDistance = distance;
-                closestTriangle = i / 3;
-            }
-        }
-        return closestTriangle;
-    }
-
-    private List<int> FindNearestVertices(Vector3 position, List<Vector3> vertices, int count)
-    {
-        var vertexDistances = new List<(int index, float distance)>();
-        for (int i = 0; i < originalVertexCount; i++)
-        {
-            float distance = Vector3.Distance(position, vertices[i]);
-            vertexDistances.Add((i, distance));
-        }
-        return vertexDistances.OrderBy(x => x.distance).Take(count).Select(x => x.index).ToList();
-    }
-
-    private void UpdateMeshGeometry(Vector3[] newVertices, int[] newTriangles)
-    {
-        meshVertices = newVertices;
-        meshTriangles = newTriangles;
-
-        targetMesh.Clear();
-        targetMesh.vertices = newVertices;
-        targetMesh.triangles = newTriangles;
-
-        targetMesh.RecalculateNormals();
-        targetMesh.RecalculateBounds();
-        meshBounds = targetMesh.bounds;
     }
 
     private void UpdateSurfacePointsInMesh()
@@ -1650,109 +1476,6 @@ public class OctreeSpringFiller : MonoBehaviour
             }
         }
         return points;
-    }
-
-
-    private bool IsPointOnSurface(Vector3 worldPoint)
-    {
-        Vector3 localPoint = transform.InverseTransformPoint(worldPoint);
-        float closestDistance = float.MaxValue;
-        for (int i = 0; i < originalVertexCount; i++)
-        {
-            float distance = Vector3.Distance(localPoint, meshVertices[i]);
-            if (distance < closestDistance)
-            {
-                closestDistance = distance;
-            }
-        }
-        return closestDistance <= surfaceDetectionThreshold;
-    }
-    private void IdentifySurfacePoints()
-    {
-        surfaceSpringPoints.Clear();
-        for (int i = 0; i < allSpringPoints.Length; i++)
-        {
-            SpringPointData point = allSpringPoints[i];
-            if (IsPointOnSurface(point.position))
-            {
-                surfaceSpringPoints.Add(point);
-            }
-        }
-        Debug.Log($"Found {surfaceSpringPoints.Count} surface spring points out of {allSpringPoints.Length} total points");
-    }
-
-    private void GenerateLocalSurfacePoints()
-    {
-        surfacePointsLocalSpace = new List<Vector3>();
-        if (surfaceSpringPoints == null || surfaceSpringPoints.Count == 0)
-        {
-            Debug.LogWarning("No surface points found to generate GJK shape.", this);
-            return;
-        }
-        for (int i = 0; i < surfaceSpringPoints.Count; i++)
-        {
-            SpringPointData sp = surfaceSpringPoints[i];
-            surfacePointsLocalSpace.Add(transform.InverseTransformPoint(sp.initialPosition));
-        }
-    }
-
-    // NEW Public Method to be called by MeshDeformer
-    public void RebuildSurfaceRepresentation()
-    {
-        IdentifySurfacePoints();
-        GenerateLocalSurfacePoints();
-        Debug.Log($"{gameObject.name}: Surface representation rebuilt. New surface point count: {surfaceSpringPoints.Count}", this);
-    }
-
-    // Helper method to get a triangle's normal
-    private Vector3 GetTriangleNormal(int triangleIndex)
-    {
-        int idx0 = meshTriangles[triangleIndex * 3];
-        int idx1 = meshTriangles[triangleIndex * 3 + 1];
-        int idx2 = meshTriangles[triangleIndex * 3 + 2];
-
-        Vector3 v0 = meshVertices[idx0];
-        Vector3 v1 = meshVertices[idx1];
-        Vector3 v2 = meshVertices[idx2];
-
-        Vector3 edge1 = v1 - v0;
-        Vector3 edge2 = v2 - v0;
-        return Vector3.Cross(edge1, edge2).normalized;
-    }
-
-    // Helper method to get a triangle's center
-    private Vector3 GetTriangleCenter(int triangleIndex)
-    {
-        int idx0 = meshTriangles[triangleIndex * 3];
-        int idx1 = meshTriangles[triangleIndex * 3 + 1];
-        int idx2 = meshTriangles[triangleIndex * 3 + 2];
-
-        Vector3 v0 = meshVertices[idx0];
-        Vector3 v1 = meshVertices[idx1];
-        Vector3 v2 = meshVertices[idx2];
-
-        return (v0 + v1 + v2) / 3f;
-    }
-
-    // Helper method to find the nearest triangle to a point
-    private int FindNearestTriangle(Vector3 localPoint)
-    {
-        int nearestTri = -1;
-        float minDistance = float.MaxValue;
-
-        for (int i = 0; i < meshTriangles.Length / 3; i++)
-        {
-            Vector3 center = GetTriangleCenter(i);
-            float distance = Vector3.Distance(localPoint, center);
-
-            if (distance < minDistance)
-            {
-                minDistance = distance;
-                nearestTri = i;
-            }
-        }
-
-        return nearestTri;
     }
 
     public enum CollisionLayerPreset

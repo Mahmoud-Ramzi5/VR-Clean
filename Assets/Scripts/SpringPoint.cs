@@ -37,7 +37,7 @@ public struct SpringPointData
     float3 boundsMax,
     int triangleIndex,
     int isMeshVertex
-)
+    )
     {
         this.position = position;
         this.velocity = velocity;

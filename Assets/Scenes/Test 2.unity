@@ -237,6 +237,8 @@ MonoBehaviour:
   connectionRadiusL3: 3
   maxRestLengthL3: 3
   totalMass: 100
+  bounciness: 0.5
+  friction: 0.8
   applyGravity: 0
   groundLevel: 0
   groundBounce: 0.5
@@ -246,6 +248,17 @@ MonoBehaviour:
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -273,6 +286,7 @@ MonoBehaviour:
   influenceRadius: 1
   showWeights: 0
   logSubdividedTriangles: 1
+  isInitialized: 0
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -649,6 +663,8 @@ MonoBehaviour:
   connectionRadiusL3: 3
   maxRestLengthL3: 3
   totalMass: 100
+  bounciness: 0.5
+  friction: 0.8
   applyGravity: 0
   groundLevel: 0
   groundBounce: 0.5
@@ -658,6 +674,17 @@ MonoBehaviour:
   visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
+  collisionLayer:
+    layerName: Default
+    layerIndex: 0
+    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
+    density: 1000
+    restitution: 0.6
+    friction: 0.4
+    youngsModulus: 1000000
+    poissonRatio: 0.3
+    dampingFactor: 0.1
+  layerPreset: 0
   convexHullVertices: []
   surfacePointsLocalSpace: []
   surfaceDetectionThreshold: 0.2
@@ -685,6 +712,7 @@ MonoBehaviour:
   influenceRadius: 1
   showWeights: 0
   logSubdividedTriangles: 1
+  isInitialized: 0
 --- !u!1 &1133259028
 GameObject:
   m_ObjectHideFlags: 0
@@ -701,7 +729,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1133259030
 Transform:
   m_ObjectHideFlags: 0

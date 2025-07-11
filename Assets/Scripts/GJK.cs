@@ -34,15 +34,12 @@ public static class GJK
         {
             direction = Vector3.right;
         }
-        // direction = direction.normalized;
-
+        direction = direction.normalized;
 
         // Initial support point
         Vector3 support = Support(bodyA, bodyB, direction);
         simplex.Add(support);
         direction = -support;
-
-        Debug.Log(direction);
 
         // GJK Main Loop
         for (int i = 0; i < MaxGJKIterations; i++)
@@ -52,11 +49,8 @@ public static class GJK
 
             support = Support(bodyA, bodyB, direction);
 
-            Debug.Log(support);
-
             if (Vector3.Dot(support, direction) < 0)
             {
-                Debug.Log(Vector3.Dot(support, direction));
                 // No collision
                 info.DidCollide = false;
                 Debug.Log($"GJK End: No Collision found after {i} iterations!"); // DEBUG
