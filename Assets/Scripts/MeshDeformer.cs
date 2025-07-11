@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
 using UnityEngine;
 
 public class MeshDeformer : MonoBehaviour
@@ -29,6 +27,7 @@ public class MeshDeformer : MonoBehaviour
     }
     private List<TriangleData> triangleDataList;
     public bool isInitialized = false;
+
     void Start()
     {
         if (!meshFilter) meshFilter = GetComponent<MeshFilter>();
@@ -39,7 +38,6 @@ public class MeshDeformer : MonoBehaviour
         BuildInfluenceMapping();
         isInitialized = true;
     }
-
 
     void InitializeDeformationMesh()
     {
@@ -61,8 +59,6 @@ public class MeshDeformer : MonoBehaviour
                 canSubdivide = true
             });
         }
-
-
     }
 
     void Update()
@@ -161,7 +157,6 @@ public class MeshDeformer : MonoBehaviour
 
         SubdivideSelectedTriangles(new List<int> { triangleIndex });
         BuildInfluenceMapping();
-
     }
 
     public void HandleCollisionPoints(List<Vector3> collisionPoints)
@@ -171,7 +166,6 @@ public class MeshDeformer : MonoBehaviour
             Vector3 localPoint = transform.InverseTransformPoint(point);
             FindAndSubdivideAffectedTriangles(localPoint);
         }
-
 
         NotifyMeshChanged();
     }
@@ -220,10 +214,11 @@ public class MeshDeformer : MonoBehaviour
         return distance < influenceRadius;
     }
 
-    private struct Edge
+    private struct Edge : IEquatable<Edge>
     {
-        public int v1, v2;
-        public Vector3 pos1, pos2;
+        public readonly int v1, v2;
+        public readonly Vector3 pos1, pos2;
+        private readonly int hashCode;
 
         public Edge(int a, int b, Vector3[] vertices)
         {
@@ -231,31 +226,17 @@ public class MeshDeformer : MonoBehaviour
             v2 = Mathf.Max(a, b);
             pos1 = vertices[v1];
             pos2 = vertices[v2];
+            hashCode = pos1.GetHashCode() ^ pos2.GetHashCode();
         }
 
-        public override bool Equals(object obj)
+        public bool Equals(Edge other)
         {
-            if (!(obj is Edge)) return false;
-            Edge other = (Edge)obj;
-            return (pos1 == other.pos1 && pos2 == other.pos2) ||
-                   (pos1 == other.pos2 && pos2 == other.pos1);
+            return (pos1.Equals(other.pos1) && pos2.Equals(other.pos2)) ||
+                   (pos1.Equals(other.pos2) && pos2.Equals(other.pos1));
         }
 
-        public override int GetHashCode()
-        {
-            return pos1.GetHashCode() ^ pos2.GetHashCode();
-        }
-    }
-
-    
-
-    private void AddEdgeToMap(Edge edge, int triangleIdx, Dictionary<Edge, List<int>> edgeToTriangles)
-    {
-        if (!edgeToTriangles.ContainsKey(edge))
-        {
-            edgeToTriangles[edge] = new List<int>();
-        }
-        edgeToTriangles[edge].Add(triangleIdx);
+        public override bool Equals(object obj) => obj is Edge e && Equals(e);
+        public override int GetHashCode() => hashCode;
     }
 
     private int GetMidpoint(int a, int b, Vector3[] verts, List<Vector3> newVerts, Dictionary<Edge, int> midpoints, bool create = true)
@@ -276,6 +257,7 @@ public class MeshDeformer : MonoBehaviour
 
         return newIndex;
     }
+
     void BuildInfluenceMapping()
     {
         vertexInfluences = new List<WeightedInfluence>[baseVertices.Length];
@@ -325,22 +307,16 @@ public class MeshDeformer : MonoBehaviour
                 baseVertices[i];
         }
 
-
         NotifyMeshChanged();
     }
+
     public void NotifyMeshChanged()
     {
         if (springFiller != null)
         {
-
+            // Mesh change notification logic here
         }
     }
-
-
-
-    
-
-    
 
     void OnDrawGizmosSelected()
     {
@@ -401,20 +377,18 @@ public class MeshDeformer : MonoBehaviour
         if (trianglesToSubdivide.Count > 0)
         {
             SubdivideAllTriangles(false);
-            // Optional: Add recursive call if needed (remove if causing stack overflow)
-            SubdivideMeshWithPoints(newPoints); 
+            SubdivideMeshWithPoints(newPoints);
         }
     }
+
     public void SubdivideAllTriangles(bool create = true)
     {
-        // Create a list of all triangle indices
         List<int> allTriangleIndices = new List<int>();
         for (int i = 0; i < currentTriangles.Length / 3; i++)
         {
             allTriangleIndices.Add(i);
         }
 
-        // Call subdivision with all triangles
         SubdivideSelectedTriangles(allTriangleIndices, create);
     }
 
@@ -424,7 +398,7 @@ public class MeshDeformer : MonoBehaviour
         int[] oldTriangles = workingMesh.triangles;
         List<Vector3> newVertices = new List<Vector3>(oldVertices);
 
-        // Build vertex-to-triangles mapping
+        // Build vertex-to-triangles mapping (required for original stitching behavior)
         Dictionary<int, List<int>> vertexToTriangles = new Dictionary<int, List<int>>();
         for (int i = 0; i < oldTriangles.Length; i++)
         {
@@ -436,7 +410,7 @@ public class MeshDeformer : MonoBehaviour
             vertexToTriangles[vertexIndex].Add(i / 3);
         }
 
-        // Build edge-to-triangles mapping with position-aware edges
+        // Build edge-to-triangles mapping with position-aware edges (critical for stitching)
         Dictionary<Edge, List<int>> edgeToTriangles = new Dictionary<Edge, List<int>>();
         for (int i = 0; i < oldTriangles.Length; i += 3)
         {
@@ -450,7 +424,7 @@ public class MeshDeformer : MonoBehaviour
             AddEdgeToMap(new Edge(i2, i0, oldVertices), triangleIdx, edgeToTriangles);
         }
 
-        // Find all triangles to subdivide using BFS
+        // Find all triangles to subdivide using original BFS approach
         HashSet<int> trianglesToSubdivide = new HashSet<int>();
         Queue<int> trianglesToProcess = new Queue<int>(triangleIndices);
 
@@ -459,7 +433,7 @@ public class MeshDeformer : MonoBehaviour
             int currentTri = trianglesToProcess.Dequeue();
 
             if (trianglesToSubdivide.Contains(currentTri)) continue;
-            
+
             TriangleData data = triangleDataList[currentTri];
             if (!data.canSubdivide || data.subdivisionLevel >= maxSubdivisionLevel) continue;
 
@@ -500,7 +474,7 @@ public class MeshDeformer : MonoBehaviour
             GetMidpoint(i2, i0, oldVertices, newVertices, edgeMidpoints, create);
         }
 
-        // Rebuild all triangles
+        // Rebuild all triangles using original splitting logic
         List<int> newTriangles = new List<int>();
         List<TriangleData> newTriangleData = new List<TriangleData>();
 
@@ -605,6 +579,8 @@ public class MeshDeformer : MonoBehaviour
                     break;
             }
         }
+
+        // Update mesh data
         workingMesh.Clear();
         workingMesh.vertices = newVertices.ToArray();
         workingMesh.triangles = newTriangles.ToArray();
@@ -616,11 +592,18 @@ public class MeshDeformer : MonoBehaviour
         currentVertices = baseVertices.Clone() as Vector3[];
     }
 
+    private void AddEdgeToMap(Edge edge, int triangleIdx, Dictionary<Edge, List<int>> edgeToTriangles)
+    {
+        if (!edgeToTriangles.ContainsKey(edge))
+        {
+            edgeToTriangles[edge] = new List<int>();
+        }
+        edgeToTriangles[edge].Add(triangleIdx);
+    }
+
     private struct WeightedInfluence
     {
         public SpringPointData springPoint;
         public float weight;
     }
-
-
 }

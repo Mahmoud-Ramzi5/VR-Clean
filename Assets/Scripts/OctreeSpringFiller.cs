@@ -364,7 +364,7 @@ public class OctreeSpringFiller : MonoBehaviour
         }
 
         Debug.Log("MeshDeformer is ready, proceeding with subdivision...");
-        meshDeformer.SubdivideMeshWithPoints(surfaceSpringPoints);
+        meshDeformer.SubdivideMeshWithPoints(surfaceSpringPoints);  
     }
     //private void Update()
     //{
@@ -1557,14 +1557,14 @@ public class OctreeSpringFiller : MonoBehaviour
     // NEW Gizmos for debugging surface points
     private void OnDrawGizmosSelected()
     {
-        if (surfaceSpringPoints != null && surfaceSpringPoints.Count > 0)
-        {
-            Gizmos.color = Color.yellow;
-            foreach (var sp in surfaceSpringPoints)
-            {
-                Gizmos.DrawSphere(sp.position, 0.05f);
-            }
-        }
+        //if (surfaceSpringPoints != null && surfaceSpringPoints.Count > 0)
+        //{
+        //    Gizmos.color = Color.yellow;
+        //    foreach (var sp in surfaceSpringPoints)
+        //    {
+        //        Gizmos.DrawSphere(sp.position, 0.05f);
+        //    }
+        //}
     }
 
     // TODO:change
