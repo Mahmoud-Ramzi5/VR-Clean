@@ -89,7 +89,7 @@ public class MeshDeformer : MonoBehaviour
         Vector3[] vertices = workingMesh.vertices;
         int[] triangles = workingMesh.triangles;
 
-        for (int i = 0; i < triangles.Length; i += 3)
+        for (int i = 0; i < triangles.Length - 2; i += 3)
         {
             Vector3 v0 = localToWorld.MultiplyPoint3x4(vertices[triangles[i]]);
             Vector3 v1 = localToWorld.MultiplyPoint3x4(vertices[triangles[i + 1]]);
@@ -176,9 +176,13 @@ public class MeshDeformer : MonoBehaviour
         int[] triangles = workingMesh.triangles;
         List<int> trianglesToSubdivide = new List<int>();
 
-        for (int i = 0; i < triangles.Length; i += 3)
+        for (int i = 0; i < triangles.Length - 2; i += 3)
         {
             int triangleIndex = i / 3;
+
+            // bounds check
+            if (triangleIndex >= triangleDataList.Count) continue;
+
             TriangleData data = triangleDataList[triangleIndex];
 
             if (!data.canSubdivide || data.subdivisionLevel >= maxSubdivisionLevel)
@@ -345,7 +349,7 @@ public class MeshDeformer : MonoBehaviour
 
         List<int> trianglesToSubdivide = new List<int>();
 
-        for (int i = 0; i < currentTriangles.Length; i += 3)
+        for (int i = 0; i < currentTriangles.Length - 2; i += 3)
         {
             int triangleIndex = i / 3;
             if (triangleIndex >= triangleDataList.Count) continue;
@@ -412,7 +416,7 @@ public class MeshDeformer : MonoBehaviour
 
         // Build edge-to-triangles mapping with position-aware edges (critical for stitching)
         Dictionary<Edge, List<int>> edgeToTriangles = new Dictionary<Edge, List<int>>();
-        for (int i = 0; i < oldTriangles.Length; i += 3)
+        for (int i = 0; i < oldTriangles.Length - 2; i += 3)
         {
             int triangleIdx = i / 3;
             int i0 = oldTriangles[i];
@@ -431,6 +435,13 @@ public class MeshDeformer : MonoBehaviour
         while (trianglesToProcess.Count > 0)
         {
             int currentTri = trianglesToProcess.Dequeue();
+
+            // bounds check
+            if (currentTri < 0 || currentTri >= triangleDataList.Count)
+            {
+                Debug.LogWarning($"Invalid triangle index: {currentTri}");
+                continue;
+            }
 
             if (trianglesToSubdivide.Contains(currentTri)) continue;
 
@@ -478,7 +489,7 @@ public class MeshDeformer : MonoBehaviour
         List<int> newTriangles = new List<int>();
         List<TriangleData> newTriangleData = new List<TriangleData>();
 
-        for (int i = 0; i < oldTriangles.Length; i += 3)
+        for (int i = 0; i < oldTriangles.Length - 2; i += 3)
         {
             int originalTriangleIndex = i / 3;
             TriangleData originalData = triangleDataList[originalTriangleIndex];
@@ -588,8 +599,11 @@ public class MeshDeformer : MonoBehaviour
         workingMesh.RecalculateBounds();
 
         triangleDataList = newTriangleData;
+
         baseVertices = workingMesh.vertices;
         currentVertices = baseVertices.Clone() as Vector3[];
+        baseTriangles = workingMesh.triangles;
+        currentTriangles = baseTriangles.Clone() as int[];
     }
 
     private void AddEdgeToMap(Edge edge, int triangleIdx, Dictionary<Edge, List<int>> edgeToTriangles)
