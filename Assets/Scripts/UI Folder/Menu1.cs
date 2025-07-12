@@ -4,7 +4,8 @@ using UnityEngine.UI;
 
 public class Menu1 : MenuDataBinderBase
 {
-    public TMP_InputField distribution;
+    public TMP_InputField Min_node;
+    public TMP_InputField Point;
 
     void Start()
     {
@@ -20,16 +21,17 @@ public class Menu1 : MenuDataBinderBase
     {
         if (target == null) return;
 
-        distribution.text = target.minNodeSize.ToString("F2"); // "F2" = 2 decimal places
+        Min_node.text = target.minNodeSize.ToString("F2"); // "F2" = 2 decimal places
+        Point.text = target.PointSpacing.ToString("F2"); // "F2" = 2 decimal places
     }
 
     public override void ApplyTo(OctreeSpringFiller target)
     {
-        float O = 1.0f;
-        if (distribution != null && !string.IsNullOrWhiteSpace(distribution.text))
-            float.TryParse(distribution.text, out O);
+        if (Min_node != null && !string.IsNullOrWhiteSpace(Min_node.text))
+            float.TryParse(Min_node.text, out target.minNodeSize);
 
-        target.minNodeSize = O;
-        target.PointSpacing = O;
+        if (Point != null && !string.IsNullOrWhiteSpace(Point.text))
+            float.TryParse(Point.text, out target.PointSpacing);
+
     }
 }

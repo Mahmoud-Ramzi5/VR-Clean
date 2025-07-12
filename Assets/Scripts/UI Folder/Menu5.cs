@@ -23,10 +23,10 @@ public class Menu5 : MenuDataBinderBase
     {
         if (target == null) return;
 
-        Layer3_spring_constant.text = target.springConstantL1.ToString("F2"); // "F2" = 2 decimal places
-        Layer3_spring_damper.text = target.damperConstantL1.ToString("F2");
-        Layer3_connection_radius.text = target.connectionRadiusL1.ToString("F2");
-        Layer3_max_rest_length.text = target.maxRestLengthL1.ToString("F2");
+        Layer3_spring_constant.text = target.springConstantL3.ToString("F2"); // "F2" = 2 decimal places
+        Layer3_spring_damper.text = target.damperConstantL3.ToString("F2");
+        Layer3_connection_radius.text = target.connectionRadiusL3.ToString("F2");
+        Layer3_max_rest_length.text = target.maxRestLengthL3.ToString("F2");
     }
 
     public override void ApplyTo(OctreeSpringFiller target)

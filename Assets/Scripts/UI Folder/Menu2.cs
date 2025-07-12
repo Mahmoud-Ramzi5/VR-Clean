@@ -4,7 +4,7 @@ using static UnityEngine.GraphicsBuffer;
 
 public class Menu2 : MenuDataBinderBase
 {
-    public Toggle Apply_gravity;
+    public Toggle Apply_ground_collision;
 
     public Toggle Is_filled;
     public Toggle Is_rigid;
@@ -28,7 +28,7 @@ public class Menu2 : MenuDataBinderBase
     {
         if (target == null) return;
 
-        Apply_gravity.isOn = target.applyGravity;
+        Apply_ground_collision.isOn = target.applyGroundCollision;
 
         Is_rigid.isOn = target.isRigid;
         Is_filled.isOn = target.isFilled;
@@ -39,7 +39,7 @@ public class Menu2 : MenuDataBinderBase
 
     public override void ApplyTo(OctreeSpringFiller target)
     {
-        target.applyGravity = Apply_gravity.isOn;
+        target.applyGroundCollision = Apply_ground_collision.isOn;
 
         target.isFilled = Is_filled.isOn;
         target.isRigid = Is_rigid.isOn;

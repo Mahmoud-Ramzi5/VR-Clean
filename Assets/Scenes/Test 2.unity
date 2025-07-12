@@ -201,7 +201,7 @@ Transform:
   m_GameObject: {fileID: 111400010}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 3, y: 5, z: 0}
+  m_LocalPosition: {x: 3.49, y: 4.39, z: 0}
   m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -221,31 +221,32 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   minNodeSize: 0.5
   PointSpacing: 0.5
-  isFilled: 1
+  isFilled: 0
   isRigid: 0
   maxConnectionsPerPoint: 18
-  springConstantL1: 100
+  springConstantL1: 50
   damperConstantL1: 0.6
   connectionRadiusL1: 1
-  maxRestLengthL1: 2
-  springConstantL2: 60
+  maxRestLengthL1: 5
+  springConstantL2: 30
   damperConstantL2: 0.5
   connectionRadiusL2: 2
-  maxRestLengthL2: 2.5
-  springConstantL3: 40
+  maxRestLengthL2: 7.5
+  springConstantL3: 10
   damperConstantL3: 0.4
   connectionRadiusL3: 3
-  maxRestLengthL3: 3
+  maxRestLengthL3: 10
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
-  applyGravity: 0
+  applyGravity: 1
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -259,15 +260,12 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
+  surfaceDetectionThreshold: 0.2
   applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
 --- !u!114 &111400016
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -666,12 +664,13 @@ MonoBehaviour:
   bounciness: 0.5
   friction: 0.8
   applyGravity: 0
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -685,15 +684,12 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 1
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
+  applyVelocity: 0
 --- !u!114 &968068591
 MonoBehaviour:
   m_ObjectHideFlags: 0

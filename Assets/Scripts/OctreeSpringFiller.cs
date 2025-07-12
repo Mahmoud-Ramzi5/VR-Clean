@@ -39,6 +39,7 @@ public class OctreeSpringFiller : MonoBehaviour
 
     public float bounciness = 0.5f;
     public float friction = 0.8f;
+        public Vector3 velocity;
 
     private Mesh targetMesh;
     private Bounds meshBounds;
@@ -48,7 +49,7 @@ public class OctreeSpringFiller : MonoBehaviour
 
     [Header("Gravity Settings")]
     public bool applyGravity = true;
-    public Vector3 gravity => new Vector3(0, -9.81f, 0);
+    public Vector3 gravity = new Vector3(0, -9.81f, 0);
 
     [Header("Collision Settings")]
     public Bounds boundingVolume;
