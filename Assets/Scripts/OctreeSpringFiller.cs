@@ -95,6 +95,9 @@ public class OctreeSpringFiller : MonoBehaviour
     private NativeList<SpringPointData> surfaceSpringPoints2;
     private NativeList<float3> surfacePointsLocalSpace;
 
+    public NativeList<SpringPointData> surfacePoints2 => surfaceSpringPoints2;
+
+
     // Surface integration settings
     [Header("Surface Integration")]
     public bool enableMeshSubdivision = true;
