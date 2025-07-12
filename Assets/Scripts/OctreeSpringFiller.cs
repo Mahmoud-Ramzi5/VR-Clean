@@ -1,5 +1,4 @@
-﻿using NUnit.Framework.Internal;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,8 +15,6 @@ public class OctreeSpringFiller : MonoBehaviour
     public float PointSpacing = 0.5f;
     public bool isFilled = true;
     public bool isRigid = true;
-
-    public int maxConnectionsPerPoint = 18;
 
     [Header("Spring Settings")]
     [Header("Spring Settings / Layer 1")]
@@ -111,30 +108,29 @@ public class OctreeSpringFiller : MonoBehaviour
     public List<SpringPointData> surfacePoints = new List<SpringPointData>();
 
 
-
     // changes for the new connections
     public enum ConnectionType
     {
         Structure,  // 6 cardinal directions (axis-aligned)
         Shear,      // 12 edge diagonals (45° to axes)
-        Bend        // 8 face diagonals (next layer)
+        Bend        // 26 face diagonals (next layer)
     }
 
     // Directions normalized to unit length
     private static readonly float3[] _structureDirections = {
-    new float3(1, 0, 0), new float3(-1, 0, 0),
-    new float3(0, 1, 0), new float3(0, -1, 0),
-    new float3(0, 0, 1), new float3(0, 0, -1)
-};
+        new float3(1, 0, 0), new float3(-1, 0, 0),
+        new float3(0, 1, 0), new float3(0, -1, 0),
+        new float3(0, 0, 1), new float3(0, 0, -1)
+    };
 
     private static readonly float3[] _shearDirections = {
-    new float3(1, 1, 0), new float3(1, -1, 0),
-    new float3(-1, 1, 0), new float3(-1, -1, 0),
-    new float3(1, 0, 1), new float3(1, 0, -1),
-    new float3(-1, 0, 1), new float3(-1, 0, -1),
-    new float3(0, 1, 1), new float3(0, 1, -1),
-    new float3(0, -1, 1), new float3(0, -1, -1)
-};
+        new float3(1, 1, 0), new float3(1, -1, 0),
+        new float3(-1, 1, 0), new float3(-1, -1, 0),
+        new float3(1, 0, 1), new float3(1, 0, -1),
+        new float3(-1, 0, 1), new float3(-1, 0, -1),
+        new float3(0, 1, 1), new float3(0, 1, -1),
+        new float3(0, -1, 1), new float3(0, -1, -1)
+    };
 
     private static readonly float3[] _bendDirections = {
         new float3(1, 0, 0), new float3(-1, 0, 0),
@@ -153,7 +149,17 @@ public class OctreeSpringFiller : MonoBehaviour
         new float3(-1, 0, 1), new float3(-1, 0, -1),
         new float3(0, 1, 1), new float3(0, 1, -1),
         new float3(0, -1, 1), new float3(0, -1, -1)
-};
+    };
+
+    public enum CollisionLayerPreset
+    {
+        Default,
+        Rubber,
+        Metal,
+        Plastic,
+        Gel,
+        Custom
+    }
 
     private void Awake()
     {
@@ -697,10 +703,7 @@ public class OctreeSpringFiller : MonoBehaviour
             }
             else
             {
-                if (isFilled)
-                {
-                    FillNodeWithSpringPoints(node);
-                }
+                FillNodeWithSpringPoints(node);
             }
         }
 
@@ -784,11 +787,23 @@ public class OctreeSpringFiller : MonoBehaviour
 
                     if (!alreadyExists)
                     {
-                        if (IsPointInsideMesh(worldPos))
+                        if (isFilled)
                         {
-                            allPointPositions.Add(worldPos);
-                            CreateSpringPoint(worldPos, node.worldBounds, false);
+                            if (IsPointInsideMesh(worldPos))
+                            {
+                                allPointPositions.Add(worldPos);
+                                CreateSpringPoint(worldPos, node.worldBounds, false);
+                            }
+                        } 
+                        else
+                        {
+                            if (IsPointOnMeshSurface(worldPos))
+                            {
+                                allPointPositions.Add(worldPos);
+                                CreateSpringPoint(worldPos, node.worldBounds, false);
+                            }
                         }
+
                     }
                 }
             }
@@ -819,15 +834,6 @@ public class OctreeSpringFiller : MonoBehaviour
 
     // Before: O(n^2) complexity - 1,000 points = 500,000 distance checks (two for loops)
     // After: O(n * 27 * k) complexity - 1,000 points, approx: 27,000 checks(with k = 1)
-    int3 GetCell(float3 position, float size)
-    {
-        return new int3(
-            (int)math.floor(position.x / size),
-            (int)math.floor(position.y / size),
-            (int)math.floor(position.z / size)
-        );
-    }
-
     ulong HashPair(int a, int b)
     {
         uint min = (uint)math.min(a, b);
@@ -835,112 +841,53 @@ public class OctreeSpringFiller : MonoBehaviour
         return ((ulong)min << 32) | max;
     }
 
-    //void CreateSpringConnectionsForAllPoints()
-    //{
-    //    tempConnections.Clear();
-    //    if (tempPoints.Length == 0) return;
-
-    //    // Calculate maximum connection radius
-    //    float maxRadius = math.max(math.max(connectionRadiusL3, connectionRadiusL2), connectionRadiusL1) * PointSpacing;
-    //    if (maxRadius <= 0) return;
-
-    //    // Initialize spatial grid
-    //    float cellSize = maxRadius;
-    //    Dictionary<int3, List<int>> grid = new Dictionary<int3, List<int>>();
-
-    //    var connectedPairs = new HashSet<ulong>();
-
-    //    // Assign points to grid cells
-    //    for (int i = 0; i < tempPoints.Length; i++)
-    //    {
-    //        int3 cell = GetCell(tempPoints[i].position, cellSize);
-    //        if (!grid.TryGetValue(cell, out List<int> list))
-    //        {
-    //            list = new List<int>();
-    //            grid.Add(cell, list);
-    //        }
-    //        list.Add(i);
-    //    }
-
-    //    // Create connections using spatial queries
-    //    for (int i = 0; i < tempPoints.Length; i++)
-    //    {
-    //        float3 posA = tempPoints[i].position;
-    //        int3 cell = GetCell(posA, cellSize);
-
-    //        List<(int, float)> candidates = new List<(int, float)>();
-    //        // Check 3x3x3 neighbor cells
-    //        for (int x = -1; x <= 1; x++)
-    //        {
-    //            for (int y = -1; y <= 1; y++)
-    //            {
-    //                for (int z = -1; z <= 1; z++)
-    //                {
-    //                    int3 neighborCell = cell + new int3(x, y, z);
-    //                    if (!grid.TryGetValue(neighborCell, out List<int> points))
-    //                        continue;
-
-    //                    foreach (int j in points)
-    //                    {
-    //                        // Ensure each pair is only processed once (i < j)
-    //                        if (j <= i || IsConnected(i, j)) continue;
-
-    //                        ulong pair = HashPair(i, j);
-    //                        if (connectedPairs.Contains(pair)) continue;
-
-    //                        float3 posB = tempPoints[j].position;
-    //                        float dist = math.distance(posA, posB);
-    //                        if (dist <= maxRadius)
-    //                            candidates.Add((j, dist));
-    //                    }
-    //                }
-    //            }
-    //        }
-
-    //        // Sort by distance, prioritize closest connections
-    //        candidates.Sort((a, b) => a.Item2.CompareTo(b.Item2));
-
-    //        int added = 0;
-    //        foreach (var (j, dist) in candidates)
-    //        {
-    //            if (added >= maxConnectionsPerPoint) break;
-
-    //            float threshold1 = connectionRadiusL1 * PointSpacing;
-    //            float threshold2 = connectionRadiusL2 * PointSpacing;
-    //            float threshold3 = connectionRadiusL3 * PointSpacing;
-
-    //            if (dist <= threshold1)
-    //            {
-    //                AddConnection(i, j, dist, maxRestLengthL1, springConstantL1, damperConstantL1);
-    //            }
-    //            else if (dist <= threshold2)
-    //            {
-    //                AddConnection(i, j, dist, maxRestLengthL2, springConstantL2, damperConstantL2);
-    //            }
-    //            else if (dist <= threshold3)
-    //            {
-    //                AddConnection(i, j, dist, maxRestLengthL3, springConstantL3, damperConstantL3);
-    //            }
-    //            else
-    //            {
-    //                continue;
-    //            }
-
-    //            connectedPairs.Add(HashPair(i, j));
-    //            added++;
-    //        }
-    //    }
-    //}
-
-
-    // testing new connect function
     void CreateSpringConnectionsForAllPoints()
     {
         tempConnections.Clear();
         if (tempPoints.Length == 0) return;
 
         // Build a spatial hash for fast radius queries
-        var spatialHash = new SpatialHash(PointSpacing * 10f); // Larger cell size for bend connections
+        float maxRadius = math.max(connectionRadiusL1, math.max(connectionRadiusL2, connectionRadiusL3));
+        var spatialHash = new SpatialHash(maxRadius * 1.1f); // Slightly larger cell size for bend connections
+        for (int i = 0; i < tempPoints.Length; i++)
+        {
+            spatialHash.Add(tempPoints[i].position, i);
+        }
+
+        var connectedPairs = new HashSet<ulong>();
+        for (int i = 0; i < tempPoints.Length; i++)
+        {
+            float3 posA = tempPoints[i].position;
+
+            // Precompute neighbor lists ONCE per connection type
+            var structNeighbors = spatialHash.Query(posA, connectionRadiusL1);
+            var shearNeighbors = spatialHash.Query(posA, connectionRadiusL2);
+            var bendNeighbors = spatialHash.Query(posA, connectionRadiusL3);
+
+            // Structure connections (6)
+            FindAndConnectNeighbors(i, posA, _structureDirections,
+                /*PointSpacing * 1.5f*/ connectionRadiusL1, 15f, ConnectionType.Structure,
+                structNeighbors, connectedPairs);
+
+            // Shear connections (12)
+            FindAndConnectNeighbors(i, posA, _shearDirections,
+                /*PointSpacing * 3.5f*/connectionRadiusL2, 35f, ConnectionType.Shear,
+                shearNeighbors, connectedPairs);
+
+            // Bend connections (26)
+            FindAndConnectNeighbors(i, posA, _bendDirections,
+                /*PointSpacing * 5f*/connectionRadiusL3, 50f, ConnectionType.Bend,
+                bendNeighbors, connectedPairs);
+        }
+    }
+
+    void CreateSpringConnectionsForPoint(int pointIndex, SpringPointData pointData)
+    {
+        if (tempPoints.Length == 0) return;
+
+        // Build a spatial hash for fast radius queries
+        float maxRadius = math.max(connectionRadiusL1, math.max(connectionRadiusL2, connectionRadiusL3));
+        var spatialHash = new SpatialHash(maxRadius * 1.1f); // Slightly larger cell size for bend connections
         for (int i = 0; i < tempPoints.Length; i++)
         {
             spatialHash.Add(tempPoints[i].position, i);
@@ -948,30 +895,30 @@ public class OctreeSpringFiller : MonoBehaviour
 
         var connectedPairs = new HashSet<ulong>();
 
-        for (int i = 0; i < tempPoints.Length; i++)
-        {
-            float3 posA = tempPoints[i].position;
+        // Precompute neighbor lists ONCE per connection type
+        var structNeighbors = spatialHash.Query(pointData.position, connectionRadiusL1);
+        var shearNeighbors = spatialHash.Query(pointData.position, connectionRadiusL2);
+        var bendNeighbors = spatialHash.Query(pointData.position, connectionRadiusL3);
 
-            // Structure connections (6)
-            FindAndConnectNeighbors(i, posA, _structureDirections,
-                PointSpacing * 1.5f, 15f, ConnectionType.Structure,
-                spatialHash, connectedPairs);
+        // Structure connections (6)
+        FindAndConnectNeighbors(pointIndex, pointData.position, _structureDirections,
+            /*PointSpacing * 1.5f*/ connectionRadiusL1, 15f, ConnectionType.Structure,
+            structNeighbors, connectedPairs);
 
-            // Shear connections (12)
-            FindAndConnectNeighbors(i, posA, _shearDirections,
-                PointSpacing * 4f, 35f, ConnectionType.Shear,
-                spatialHash, connectedPairs);
+        // Shear connections (12)
+        FindAndConnectNeighbors(pointIndex, pointData.position, _shearDirections,
+            /*PointSpacing * 3.5f*/connectionRadiusL2, 35f, ConnectionType.Shear,
+            shearNeighbors, connectedPairs);
 
-            // Bend connections (8)
-            FindAndConnectNeighbors(i, posA, _bendDirections,
-                PointSpacing * 10f, 50f, ConnectionType.Bend,
-                spatialHash, connectedPairs);
-        }
+        // Bend connections (26)
+        FindAndConnectNeighbors(pointIndex, pointData.position, _bendDirections,
+            /*PointSpacing * 5f*/connectionRadiusL3, 50f, ConnectionType.Bend,
+            bendNeighbors, connectedPairs);
     }
 
     void FindAndConnectNeighbors(int pointIndex, float3 position, float3[] directions,
         float maxDistance, float maxAngleDegrees, ConnectionType type,
-        SpatialHash spatialHash, HashSet<ulong> connectedPairs)
+        IEnumerable<int> neighbors, HashSet<ulong> connectedPairs)
     {
         foreach (var dir in directions)
         {
@@ -979,7 +926,7 @@ public class OctreeSpringFiller : MonoBehaviour
             int bestNeighbor = -1;
             float bestDot = -1f; // Direction alignment score (-1 to 1)
 
-            foreach (int j in spatialHash.Query(position, maxDistance))
+            foreach (int j in neighbors/*spatialHash.Query(position, maxDistance)*/)
             {
                 if (j == pointIndex) continue;
 
@@ -1007,164 +954,30 @@ public class OctreeSpringFiller : MonoBehaviour
                     switch (type)
                     {
                         case ConnectionType.Structure:
-                            AddConnection(pointIndex, bestNeighbor, dist,
+                            if (!IsConnected(pointIndex, bestNeighbor))
+                            {
+                                AddConnection(pointIndex, bestNeighbor, dist,
                                 maxRestLengthL1, springConstantL1, damperConstantL1);
+                            }
                             break;
                         case ConnectionType.Shear:
-                            AddConnection(pointIndex, bestNeighbor, dist,
+                            if (!IsConnected(pointIndex, bestNeighbor))
+                            {
+                                AddConnection(pointIndex, bestNeighbor, dist,
                                 maxRestLengthL2, springConstantL2, damperConstantL2);
+                            }
                             break;
                         case ConnectionType.Bend:
-                            AddConnection(pointIndex, bestNeighbor, dist,
+                            if (!IsConnected(pointIndex, bestNeighbor))
+                            {
+                                AddConnection(pointIndex, bestNeighbor, dist,
                                 maxRestLengthL3, springConstantL3, damperConstantL3);
+                            }
                             break;
                     }
                     connectedPairs.Add(pair);
                 }
             }
-        }
-    }
-
-    // Fast spatial partitioning for radius queries
-    public class SpatialHash
-    {
-        private readonly float _cellSize;
-        private readonly Dictionary<int3, List<int>> _cells = new Dictionary<int3, List<int>>();
-
-        public SpatialHash(float cellSize) { _cellSize = cellSize; }
-
-        public void Add(float3 position, int index)
-        {
-            int3 cell = new int3(
-                (int)math.floor(position.x / _cellSize),
-                (int)math.floor(position.y / _cellSize),
-                (int)math.floor(position.z / _cellSize)
-            );
-            if (!_cells.TryGetValue(cell, out var list))
-            {
-                list = new List<int>();
-                _cells.Add(cell, list);
-            }
-            list.Add(index);
-        }
-
-        public IEnumerable<int> Query(float3 position, float radius)
-        {
-            int3 minCell = GetCell(position - radius, _cellSize);
-            int3 maxCell = GetCell(position + radius, _cellSize);
-
-            for (int x = minCell.x; x <= maxCell.x; x++)
-            {
-                for (int y = minCell.y; y <= maxCell.y; y++)
-                {
-                    for (int z = minCell.z; z <= maxCell.z; z++)
-                    {
-                        if (_cells.TryGetValue(new int3(x, y, z), out var list))
-                        {
-                            foreach (int idx in list) yield return idx;
-                        }
-                    }
-                }
-            }
-        }
-        int3 GetCell(float3 position, float size)
-        {
-            return new int3(
-                (int)math.floor(position.x / size),
-                (int)math.floor(position.y / size),
-                (int)math.floor(position.z / size)
-            );
-        }
-    }
-
-
-    void CreateSpringConnectionsForPoint(int pointIndex, SpringPointData pointData)
-    {
-        if (tempPoints.Length == 0) return;
-
-        // Calculate maximum connection radius
-        float maxRadius = math.max(math.max(connectionRadiusL3, connectionRadiusL2), connectionRadiusL1) * PointSpacing;
-        if (maxRadius <= 0) return;
-
-        // Initialize spatial grid
-        float cellSize = maxRadius;
-        Dictionary<int3, List<int>> grid = new Dictionary<int3, List<int>>();
-
-        var connectedPairs = new HashSet<ulong>();
-
-        // Assign points to grid cells
-        for (int i = 0; i < tempPoints.Length; i++)
-        {
-            int3 cell = GetCell(tempPoints[i].position, cellSize);
-            if (!grid.TryGetValue(cell, out List<int> list))
-            {
-                list = new List<int>();
-                grid.Add(cell, list);
-            }
-            list.Add(i);
-        }
-
-        // Get the position of our target point
-        float3 posA = pointData.position;
-        int3 wantedCell = GetCell(posA, cellSize);
-
-        List<(int, float)> candidates = new List<(int, float)>();
-
-        // Check 3x3x3 neighbor cells (assuming grid is accessible)
-        for (int x = -1; x <= 1; x++)
-        {
-            for (int y = -1; y <= 1; y++)
-            {
-                for (int z = -1; z <= 1; z++)
-                {
-                    int3 neighborCell = wantedCell + new int3(x, y, z);
-                    if (!grid.TryGetValue(neighborCell, out List<int> points))
-                        continue;
-
-                    foreach (int j in points)
-                    {
-                        // Skip self and already connected points
-                        if (j == pointIndex || IsConnected(pointIndex, j)) continue;
-
-                        float3 posB = tempPoints[j].position;
-                        float dist = math.distance(posA, posB);
-                        if (dist <= maxRadius)
-                            candidates.Add((j, dist));
-                    }
-                }
-            }
-        }
-
-        // Sort by distance, prioritize closest connections
-        candidates.Sort((a, b) => a.Item2.CompareTo(b.Item2));
-
-        int added = 0;
-        foreach (var (j, dist) in candidates)
-        {
-            if (added >= maxConnectionsPerPoint) break;
-
-            float threshold1 = connectionRadiusL1 * PointSpacing;
-            float threshold2 = connectionRadiusL2 * PointSpacing;
-            float threshold3 = connectionRadiusL3 * PointSpacing;
-
-            if (dist <= threshold1)
-            {
-                AddConnection(pointIndex, j, dist, maxRestLengthL1, springConstantL1, damperConstantL1);
-            }
-            else if (dist <= threshold2)
-            {
-                AddConnection(pointIndex, j, dist, maxRestLengthL2, springConstantL2, damperConstantL2);
-            }
-            else if (dist <= threshold3)
-            {
-                AddConnection(pointIndex, j, dist, maxRestLengthL3, springConstantL3, damperConstantL3);
-            }
-            else
-            {
-                continue;
-            }
-
-            added++;
         }
     }
 
@@ -1280,6 +1093,66 @@ public class OctreeSpringFiller : MonoBehaviour
         return dist >= -epsilon;
     }
     //  
+
+    /// <summary>
+    /// Checks if a point is on the surface of the given mesh within a specified tolerance.
+    /// </summary>
+    bool IsPointOnMeshSurface(Vector3 point, float tolerance = 0.0001f)
+    {
+        Vector3[] vertices = meshVertices;
+        int[] triangles = meshTriangles;
+
+        for (int i = 0; i < triangles.Length; i += 3)
+        {
+            Vector3 p0 = transform.TransformPoint(vertices[triangles[i]]);
+            Vector3 p1 = transform.TransformPoint(vertices[triangles[i + 1]]);
+            Vector3 p2 = transform.TransformPoint(vertices[triangles[i + 2]]);
+
+            if (IsPointOnTriangle(point, p0, p1, p2, tolerance))
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Checks if a point is on a specific triangle using barycentric coordinates and distance.
+    /// </summary>
+    bool IsPointOnTriangle(Vector3 point, Vector3 a, Vector3 b, Vector3 c, float tolerance)
+    {
+        // Compute normal
+        Vector3 normal = Vector3.Cross(b - a, c - a).normalized;
+
+        // Project point onto triangle plane
+        float distanceToPlane = Vector3.Dot(normal, point - a);
+        if (Mathf.Abs(distanceToPlane) > tolerance)
+            return false;
+
+        // Closest point on plane
+        Vector3 projectedPoint = point - distanceToPlane * normal;
+
+        // Compute barycentric coordinates
+        Vector3 v0 = b - a;
+        Vector3 v1 = c - a;
+        Vector3 v2 = projectedPoint - a;
+
+        float d00 = Vector3.Dot(v0, v0);
+        float d01 = Vector3.Dot(v0, v1);
+        float d11 = Vector3.Dot(v1, v1);
+        float d20 = Vector3.Dot(v2, v0);
+        float d21 = Vector3.Dot(v2, v1);
+
+        float denom = d00 * d11 - d01 * d01;
+        if (Mathf.Abs(denom) < Mathf.Epsilon)
+            return false;
+
+        float v = (d11 * d20 - d01 * d21) / denom;
+        float w = (d00 * d21 - d01 * d20) / denom;
+        float u = 1.0f - v - w;
+
+        // Check if point is inside triangle using barycentric coordinates
+        return (u >= -tolerance && v >= -tolerance && w >= -tolerance);
+    }
 
     // Debug
     private void DrawDebugConnections()
@@ -1532,13 +1405,4 @@ public class OctreeSpringFiller : MonoBehaviour
         return points;
     }
 
-    public enum CollisionLayerPreset
-    {
-        Default,
-        Rubber,
-        Metal,
-        Plastic,
-        Gel,
-        Custom
-    }
 }
