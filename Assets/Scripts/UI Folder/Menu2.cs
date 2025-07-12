@@ -16,10 +16,16 @@ public class Menu2 : MenuDataBinderBase
     // Option 1: Initialize when UI becomes active (recommended)
     void Start()
     {
-        OctreeSpringFiller springFiller = FindObjectOfType<OctreeSpringFiller>();
-        if (springFiller != null)
+        // Get the main panel reference
+        MainPanelReference mainPanel = GetComponentInParent<MainPanelReference>(true);
+
+        if (mainPanel != null && mainPanel.springFillerRef != null)
         {
-            InitializeToggles(springFiller);
+            InitializeToggles(mainPanel.springFillerRef);
+        }
+        else
+        {
+            Debug.LogError("MainPanelReference or OctreeSpringFiller not found!");
         }
     }
 

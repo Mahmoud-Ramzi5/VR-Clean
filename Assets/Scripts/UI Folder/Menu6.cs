@@ -14,10 +14,16 @@ public class Menu6 : MenuDataBinderBase
     public TMP_InputField Bounciness;
     void Start()
     {
-        OctreeSpringFiller springFiller = FindObjectOfType<OctreeSpringFiller>();
-        if (springFiller != null)
+        // Get the main panel reference
+        MainPanelReference mainPanel = GetComponentInParent<MainPanelReference>(true);
+
+        if (mainPanel != null && mainPanel.springFillerRef != null)
         {
-            Initializethings(springFiller);
+            Initializethings(mainPanel.springFillerRef);
+        }
+        else
+        {
+            Debug.LogError("MainPanelReference or OctreeSpringFiller not found!");
         }
     }
 
@@ -26,6 +32,7 @@ public class Menu6 : MenuDataBinderBase
     {
         if (target == null) return;
         Vector3 velocity = target.velocity;
+        Debug.Log("velocity is"+velocity);
         Mass.text = target.totalMass.ToString("F2");
         Gravity.text = target.gravity.y.ToString("F2");
         target.applyGravity = Apply_Gravity.isOn;

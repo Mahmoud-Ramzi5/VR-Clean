@@ -29,7 +29,7 @@ public class MaterialManager : MonoBehaviour
         ApplyMaterial(currentObject, materialType);
     }
 
-    private void ApplyMaterial(GameObject parent, MaterialType type)
+    public void ApplyMaterial(GameObject parent, MaterialType type)
     {
         var preset = materialDatabase.GetPreset(type);
         Debug.LogWarning($"Preset {preset}");
@@ -48,6 +48,35 @@ public class MaterialManager : MonoBehaviour
                         renderer.sharedMaterial = preset.material;
                 }
             } 
+            else
+            {
+                Debug.LogWarning("No children found in " + parent.name);
+                var renderer = parent.GetComponent<Renderer>();
+                if (preset != null && renderer != null)
+                    renderer.sharedMaterial = preset.material;
+            }
+            // Apply physics properties to OctreeSpringFiller
+            ApplyPhysicsProperties(preset);
+        }
+    }
+
+
+    public void ApplyMaterial(GameObject parent, MaterialPreset preset)
+    {
+        if (preset != null && parent != null)
+        {
+            // ProcessChildren
+            if (parent.transform.childCount > 0)
+            {
+                Debug.LogWarning("Children found in " + parent.name);
+                foreach (Transform child in parent.transform)
+                {
+                    // Process each child
+                    var renderer = child.GetComponent<Renderer>();
+                    if (preset != null && renderer != null)
+                        renderer.sharedMaterial = preset.material;
+                }
+            }
             else
             {
                 Debug.LogWarning("No children found in " + parent.name);

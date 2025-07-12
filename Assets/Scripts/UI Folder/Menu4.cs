@@ -11,10 +11,16 @@ public class Menu4 : MenuDataBinderBase
 
     void Start()
     {
-        OctreeSpringFiller springFiller = FindObjectOfType<OctreeSpringFiller>();
-        if (springFiller != null)
+        // Get the main panel reference
+        MainPanelReference mainPanel = GetComponentInParent<MainPanelReference>(true);
+
+        if (mainPanel != null && mainPanel.springFillerRef != null)
         {
-            Initializethings(springFiller);
+            Initializethings(mainPanel.springFillerRef);
+        }
+        else
+        {
+            Debug.LogError("MainPanelReference or OctreeSpringFiller not found!");
         }
     }
 
