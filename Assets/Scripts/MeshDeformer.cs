@@ -27,7 +27,26 @@ public class MeshDeformer : MonoBehaviour
     }
     private List<TriangleData> triangleDataList;
     public bool isInitialized = false;
+    
+    private bool deformationActive = true;
+    private float lastDeformationUpdate = 0f;
+    private const float DEFORMATION_UPDATE_INTERVAL = 1f / 60f; // 60fps updates
+    private Dictionary<int, int> vertexToSpringPointMap = new Dictionary<int, int>();
 
+    // Add these methods to your MeshDeformer class:
+
+    // Method to force immediate deformation update
+    public void ForceDeformationUpdate()
+    {
+        UpdateDeformation();
+    }
+
+    // Public method to enable/disable deformation
+    public void SetDeformationActive(bool active)
+    {
+        deformationActive = active;
+        Debug.Log($"Mesh deformation {(active ? "enabled" : "disabled")}");
+    }
     void Start()
     {
         if (!meshFilter) meshFilter = GetComponent<MeshFilter>();
@@ -36,20 +55,25 @@ public class MeshDeformer : MonoBehaviour
 
         InitializeDeformationMesh();
         BuildInfluenceMapping();
+        BuildVertexToSpringPointMapping();
         isInitialized = true;
     }
 
     void InitializeDeformationMesh()
     {
-        workingMesh = originalMesh;
+        workingMesh = Instantiate(originalMesh); // Create a copy to avoid modifying original
+        meshFilter.mesh = workingMesh; // Assign the copy to the mesh filter
 
         baseVertices = workingMesh.vertices;
-        currentVertices = baseVertices.Clone() as Vector3[];
+        currentVertices = (Vector3[])baseVertices.Clone();
         baseTriangles = workingMesh.triangles;
-        currentTriangles = baseTriangles.Clone() as int[];
+        currentTriangles = (int[])baseTriangles.Clone();
 
         triangleDataList = new List<TriangleData>();
-        int triangleCount = workingMesh.triangles.Length / 3;
+        int triangleCount = baseTriangles.Length / 3;
+
+        Debug.Log($"Initializing {triangleCount} triangles from {baseTriangles.Length} triangle indices");
+
         for (int i = 0; i < triangleCount; i++)
         {
             triangleDataList.Add(new TriangleData
@@ -59,6 +83,8 @@ public class MeshDeformer : MonoBehaviour
                 canSubdivide = true
             });
         }
+
+        Debug.Log($"Triangle data list initialized with {triangleDataList.Count} entries");
     }
 
     void Update()
@@ -146,6 +172,13 @@ public class MeshDeformer : MonoBehaviour
 
     private void SubdivideSingleTriangle(int triangleIndex, Vector3 localPoint)
     {
+        // Validate triangle index
+        if (triangleIndex < 0 || triangleIndex >= triangleDataList.Count)
+        {
+            Debug.LogError($"Invalid triangle index: {triangleIndex}. Triangle data list has {triangleDataList.Count} entries.");
+            return;
+        }
+
         TriangleData data = triangleDataList[triangleIndex];
         if (!data.canSubdivide || data.subdivisionLevel >= maxSubdivisionLevel)
             return;
@@ -161,6 +194,12 @@ public class MeshDeformer : MonoBehaviour
 
     public void HandleCollisionPoints(List<Vector3> collisionPoints)
     {
+        if (collisionPoints == null || collisionPoints.Count == 0)
+        {
+            Debug.LogWarning("HandleCollisionPoints called with null or empty collision points list");
+            return;
+        }
+
         foreach (Vector3 point in collisionPoints)
         {
             Vector3 localPoint = transform.InverseTransformPoint(point);
@@ -176,17 +215,38 @@ public class MeshDeformer : MonoBehaviour
         int[] triangles = workingMesh.triangles;
         List<int> trianglesToSubdivide = new List<int>();
 
+        // Ensure we have valid triangles array
+        if (triangles == null || triangles.Length < 3)
+        {
+            Debug.LogError("Invalid triangles array in FindAndSubdivideAffectedTriangles");
+            return;
+        }
+
+        int triangleCount = triangles.Length / 3;
+        Debug.Log($"Checking {triangleCount} triangles against {triangleDataList.Count} triangle data entries");
+
         for (int i = 0; i < triangles.Length - 2; i += 3)
         {
             int triangleIndex = i / 3;
 
-            // bounds check
-            if (triangleIndex >= triangleDataList.Count) continue;
+            // Bounds check for triangle data list
+            if (triangleIndex >= triangleDataList.Count)
+            {
+                Debug.LogError($"Triangle index {triangleIndex} exceeds triangle data list size {triangleDataList.Count}");
+                continue;
+            }
 
             TriangleData data = triangleDataList[triangleIndex];
 
             if (!data.canSubdivide || data.subdivisionLevel >= maxSubdivisionLevel)
                 continue;
+
+            // Bounds check for vertex indices
+            if (triangles[i] >= vertices.Length || triangles[i + 1] >= vertices.Length || triangles[i + 2] >= vertices.Length)
+            {
+                Debug.LogError($"Triangle {triangleIndex} has invalid vertex indices: {triangles[i]}, {triangles[i + 1]}, {triangles[i + 2]}. Vertex count: {vertices.Length}");
+                continue;
+            }
 
             Vector3 v1 = vertices[triangles[i]];
             Vector3 v2 = vertices[triangles[i + 1]];
@@ -253,9 +313,9 @@ public class MeshDeformer : MonoBehaviour
         int newIndex = newVerts.Count - 1;
         midpoints.Add(edge, newIndex);
 
-        Vector3 worldPos = transform.TransformPoint(mid);
-        if (create)
+        if (create && springFiller != null)
         {
+            Vector3 worldPos = transform.TransformPoint(mid);
             springFiller.AddSpringPointAtPosition(worldPos);
         }
 
@@ -264,6 +324,18 @@ public class MeshDeformer : MonoBehaviour
 
     void BuildInfluenceMapping()
     {
+        if (baseVertices == null || baseVertices.Length == 0)
+        {
+            Debug.LogWarning("BuildInfluenceMapping called with null or empty baseVertices");
+            return;
+        }
+
+        if (springFiller == null || springFiller.allSpringPoints.Length == 0)
+        {
+            Debug.LogWarning("BuildInfluenceMapping called with null springFiller or empty spring points");
+            return;
+        }
+
         vertexInfluences = new List<WeightedInfluence>[baseVertices.Length];
 
         for (int i = 0; i < baseVertices.Length; i++)
@@ -289,29 +361,174 @@ public class MeshDeformer : MonoBehaviour
 
     void LateUpdate()
     {
-        //UpdateDeformation();
+        if (deformationActive && Time.time - lastDeformationUpdate >= DEFORMATION_UPDATE_INTERVAL)
+        {
+            UpdateDeformation();
+            lastDeformationUpdate = Time.time;
+        }
+    }
+
+    public void OnMeshTopologyChanged()
+    {
+        Debug.Log("Mesh topology changed, rebuilding mappings...");
+
+        // Update cached mesh data
+        if (workingMesh != null)
+        {
+            baseVertices = workingMesh.vertices;
+            currentVertices = (Vector3[])baseVertices.Clone();
+            baseTriangles = workingMesh.triangles;
+            currentTriangles = (int[])baseTriangles.Clone();
+        }
+
+        // Rebuild mappings
+        BuildInfluenceMapping();
+        BuildVertexToSpringPointMapping();
     }
 
     void UpdateDeformation()
     {
-        for (int i = 0; i < currentVertices.Length; i++)
+        if (!deformationActive || currentVertices == null || baseVertices == null)
+            return;
+
+        if (springFiller == null || !springFiller.allSpringPoints.IsCreated || springFiller.allSpringPoints.Length == 0)
+            return;
+
+        bool meshChanged = false;
+
+        // Method 1: Use vertex to spring point mapping (primary method)
+        if (vertexToSpringPointMap.Count > 0)
         {
-            Vector3 newPos = Vector3.zero;
-            float totalWeight = 0f;
-
-            foreach (var inf in vertexInfluences[i])
+            foreach (var kvp in vertexToSpringPointMap)
             {
-                Vector3 displacement = inf.springPoint.position - inf.springPoint.initialPosition;
-                newPos += displacement * inf.weight;
-                totalWeight += inf.weight;
-            }
+                int vertexIndex = kvp.Key;
+                int springPointIndex = kvp.Value;
 
-            currentVertices[i] = totalWeight > 0.01f ?
-                baseVertices[i] + newPos / totalWeight :
-                baseVertices[i];
+                if (vertexIndex >= 0 && vertexIndex < currentVertices.Length &&
+                    springPointIndex >= 0 && springPointIndex < springFiller.allSpringPoints.Length)
+                {
+                    SpringPointData springPoint = springFiller.allSpringPoints[springPointIndex];
+                    Vector3 newLocalPos = transform.InverseTransformPoint(springPoint.position);
+
+                    // Check if vertex needs updating
+                    if (Vector3.Distance(currentVertices[vertexIndex], newLocalPos) > 0.001f)
+                    {
+                        currentVertices[vertexIndex] = newLocalPos;
+                        meshChanged = true;
+                    }
+                }
+            }
+        }
+        else
+        {
+            // Method 2: Fallback using influence mapping
+            if (vertexInfluences != null)
+            {
+                for (int i = 0; i < currentVertices.Length; i++)
+                {
+                    if (i >= vertexInfluences.Length) continue;
+
+                    Vector3 newPos = Vector3.zero;
+                    float totalWeight = 0f;
+                    int influenceCount = 0;
+
+                    foreach (var inf in vertexInfluences[i])
+                    {
+                        Vector3 springWorldPos = inf.springPoint.position;
+                        Vector3 initialWorldPos = inf.springPoint.initialPosition;
+                        Vector3 displacement = springWorldPos - initialWorldPos;
+
+                        newPos += displacement * inf.weight;
+                        totalWeight += inf.weight;
+                        influenceCount++;
+                    }
+
+                    if (totalWeight > 0.01f && influenceCount > 0)
+                    {
+                        Vector3 finalPos = baseVertices[i] + newPos / totalWeight;
+
+                        if (Vector3.Distance(currentVertices[i], finalPos) > 0.001f)
+                        {
+                            currentVertices[i] = finalPos;
+                            meshChanged = true;
+                        }
+                    }
+                }
+            }
         }
 
-        NotifyMeshChanged();
+        // Apply mesh changes if any occurred
+        if (meshChanged)
+        {
+            ApplyMeshDeformation();
+        }
+    }
+
+    void ApplyMeshDeformation()
+    {
+        if (workingMesh == null || currentVertices == null)
+            return;
+
+        try
+        {
+            workingMesh.vertices = currentVertices;
+            workingMesh.RecalculateNormals();
+            workingMesh.RecalculateBounds();
+
+            // Update base vertices for next frame
+            baseVertices = (Vector3[])currentVertices.Clone();
+
+            NotifyMeshChanged();
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Error applying mesh deformation: {e.Message}");
+        }
+    }
+
+    void BuildVertexToSpringPointMapping()
+    {
+        if (springFiller == null || !springFiller.allSpringPoints.IsCreated || springFiller.allSpringPoints.Length == 0)
+        {
+            Debug.LogWarning("Cannot build vertex mapping: spring filler not ready");
+            return;
+        }
+
+        vertexToSpringPointMap.Clear();
+
+        if (baseVertices == null || baseVertices.Length == 0)
+        {
+            Debug.LogWarning("Cannot build vertex mapping: no base vertices");
+            return;
+        }
+
+        Debug.Log($"Building vertex to spring point mapping for {baseVertices.Length} vertices and {springFiller.allSpringPoints.Length} spring points");
+
+        for (int vertexIndex = 0; vertexIndex < baseVertices.Length; vertexIndex++)
+        {
+            Vector3 worldVertexPos = transform.TransformPoint(baseVertices[vertexIndex]);
+
+            int closestSpringPointIndex = -1;
+            float minDistance = float.MaxValue;
+
+            // Find closest spring point
+            for (int springIndex = 0; springIndex < springFiller.allSpringPoints.Length; springIndex++)
+            {
+                float distance = Vector3.Distance(worldVertexPos, springFiller.allSpringPoints[springIndex].position);
+                if (distance < minDistance)
+                {
+                    minDistance = distance;
+                    closestSpringPointIndex = springIndex;
+                }
+            }
+
+            if (closestSpringPointIndex >= 0)
+            {
+                vertexToSpringPointMap[vertexIndex] = closestSpringPointIndex;
+            }
+        }
+
+        Debug.Log($"Mapped {vertexToSpringPointMap.Count} vertices to spring points");
     }
 
     public void NotifyMeshChanged()
@@ -324,11 +541,13 @@ public class MeshDeformer : MonoBehaviour
 
     void OnDrawGizmosSelected()
     {
-        if (!showWeights || vertexInfluences == null) return;
+        if (!showWeights || vertexInfluences == null || currentVertices == null) return;
 
         Gizmos.color = Color.cyan;
         for (int i = 0; i < currentVertices.Length; i++)
         {
+            if (i >= vertexInfluences.Length) continue;
+
             Vector3 worldPos = transform.TransformPoint(currentVertices[i]);
             foreach (var inf in vertexInfluences[i])
             {
@@ -339,7 +558,17 @@ public class MeshDeformer : MonoBehaviour
 
     public void SubdivideMeshWithPoints(List<SpringPointData> newPoints)
     {
-        if (newPoints == null || newPoints.Count == 0) return;
+        if (newPoints == null || newPoints.Count == 0)
+        {
+            Debug.LogWarning("SubdivideMeshWithPoints called with null or empty points list");
+            return;
+        }
+
+        if (currentVertices == null || currentTriangles == null)
+        {
+            Debug.LogError("SubdivideMeshWithPoints called with null mesh data");
+            return;
+        }
 
         Vector3[] worldVertices = new Vector3[currentVertices.Length];
         for (int i = 0; i < currentVertices.Length; i++)
@@ -348,14 +577,32 @@ public class MeshDeformer : MonoBehaviour
         }
 
         List<int> trianglesToSubdivide = new List<int>();
+        int triangleCount = currentTriangles.Length / 3;
+
+        Debug.Log($"SubdivideMeshWithPoints: Checking {triangleCount} triangles against {triangleDataList.Count} triangle data entries");
 
         for (int i = 0; i < currentTriangles.Length - 2; i += 3)
         {
             int triangleIndex = i / 3;
-            if (triangleIndex >= triangleDataList.Count) continue;
+
+            // Bounds check
+            if (triangleIndex >= triangleDataList.Count)
+            {
+                Debug.LogError($"Triangle index {triangleIndex} exceeds triangle data list size {triangleDataList.Count}");
+                continue;
+            }
 
             TriangleData data = triangleDataList[triangleIndex];
             if (!data.canSubdivide || data.subdivisionLevel >= maxSubdivisionLevel) continue;
+
+            // Vertex bounds check
+            if (currentTriangles[i] >= worldVertices.Length ||
+                currentTriangles[i + 1] >= worldVertices.Length ||
+                currentTriangles[i + 2] >= worldVertices.Length)
+            {
+                Debug.LogError($"Triangle {triangleIndex} has invalid vertex indices");
+                continue;
+            }
 
             Vector3 v0 = worldVertices[currentTriangles[i]];
             Vector3 v1 = worldVertices[currentTriangles[i + 1]];
@@ -381,40 +628,94 @@ public class MeshDeformer : MonoBehaviour
         if (trianglesToSubdivide.Count > 0)
         {
             SubdivideAllTriangles(false);
-            SubdivideMeshWithPoints(newPoints);
+            // Recursive call - be careful of infinite recursion
+            if (trianglesToSubdivide.Count < triangleCount) // Only recurse if we're making progress
+            {
+                SubdivideMeshWithPoints(newPoints);
+            }
         }
     }
 
     public void SubdivideAllTriangles(bool create = true)
     {
+        if (currentTriangles == null || currentTriangles.Length == 0)
+        {
+            Debug.LogError("SubdivideAllTriangles called with null or empty triangles");
+            return;
+        }
+
         List<int> allTriangleIndices = new List<int>();
-        for (int i = 0; i < currentTriangles.Length / 3; i++)
+        int triangleCount = currentTriangles.Length / 3;
+
+        for (int i = 0; i < triangleCount; i++)
         {
             allTriangleIndices.Add(i);
         }
 
+        Debug.Log($"SubdivideAllTriangles: Processing {allTriangleIndices.Count} triangles");
         SubdivideSelectedTriangles(allTriangleIndices, create);
     }
 
     private void SubdivideSelectedTriangles(List<int> triangleIndices, bool create = true)
     {
+        if (triangleIndices == null || triangleIndices.Count == 0)
+        {
+            Debug.LogWarning("SubdivideSelectedTriangles called with null or empty triangle indices");
+            return;
+        }
+
+        if (workingMesh == null)
+        {
+            Debug.LogError("SubdivideSelectedTriangles called with null working mesh");
+            return;
+        }
+
         Vector3[] oldVertices = workingMesh.vertices;
         int[] oldTriangles = workingMesh.triangles;
+
+        if (oldVertices == null || oldTriangles == null)
+        {
+            Debug.LogError("SubdivideSelectedTriangles: Mesh has null vertices or triangles");
+            return;
+        }
+
+        Debug.Log($"SubdivideSelectedTriangles: Starting with {oldVertices.Length} vertices, {oldTriangles.Length / 3} triangles, {triangleDataList.Count} triangle data entries");
+
         List<Vector3> newVertices = new List<Vector3>(oldVertices);
 
-        // Build vertex-to-triangles mapping (required for original stitching behavior)
+        // Validate all triangle indices before processing
+        foreach (int triangleIndex in triangleIndices)
+        {
+            if (triangleIndex < 0 || triangleIndex >= triangleDataList.Count)
+            {
+                Debug.LogError($"Invalid triangle index in subdivision: {triangleIndex}. Valid range: 0-{triangleDataList.Count - 1}");
+                return;
+            }
+
+            int baseIdx = triangleIndex * 3;
+            if (baseIdx + 2 >= oldTriangles.Length)
+            {
+                Debug.LogError($"Triangle index {triangleIndex} points to invalid triangle array position {baseIdx}. Array length: {oldTriangles.Length}");
+                return;
+            }
+        }
+
+        // Build vertex-to-triangles mapping
         Dictionary<int, List<int>> vertexToTriangles = new Dictionary<int, List<int>>();
         for (int i = 0; i < oldTriangles.Length; i++)
         {
             int vertexIndex = oldTriangles[i];
-            if (!vertexToTriangles.ContainsKey(vertexIndex))
+            if (vertexIndex >= 0 && vertexIndex < oldVertices.Length)
             {
-                vertexToTriangles[vertexIndex] = new List<int>();
+                if (!vertexToTriangles.ContainsKey(vertexIndex))
+                {
+                    vertexToTriangles[vertexIndex] = new List<int>();
+                }
+                vertexToTriangles[vertexIndex].Add(i / 3);
             }
-            vertexToTriangles[vertexIndex].Add(i / 3);
         }
 
-        // Build edge-to-triangles mapping with position-aware edges (critical for stitching)
+        // Build edge-to-triangles mapping
         Dictionary<Edge, List<int>> edgeToTriangles = new Dictionary<Edge, List<int>>();
         for (int i = 0; i < oldTriangles.Length - 2; i += 3)
         {
@@ -423,12 +724,18 @@ public class MeshDeformer : MonoBehaviour
             int i1 = oldTriangles[i + 1];
             int i2 = oldTriangles[i + 2];
 
-            AddEdgeToMap(new Edge(i0, i1, oldVertices), triangleIdx, edgeToTriangles);
-            AddEdgeToMap(new Edge(i1, i2, oldVertices), triangleIdx, edgeToTriangles);
-            AddEdgeToMap(new Edge(i2, i0, oldVertices), triangleIdx, edgeToTriangles);
+            // Validate vertex indices
+            if (i0 >= 0 && i0 < oldVertices.Length &&
+                i1 >= 0 && i1 < oldVertices.Length &&
+                i2 >= 0 && i2 < oldVertices.Length)
+            {
+                AddEdgeToMap(new Edge(i0, i1, oldVertices), triangleIdx, edgeToTriangles);
+                AddEdgeToMap(new Edge(i1, i2, oldVertices), triangleIdx, edgeToTriangles);
+                AddEdgeToMap(new Edge(i2, i0, oldVertices), triangleIdx, edgeToTriangles);
+            }
         }
 
-        // Find all triangles to subdivide using original BFS approach
+        // Find all triangles to subdivide using BFS
         HashSet<int> trianglesToSubdivide = new HashSet<int>();
         Queue<int> trianglesToProcess = new Queue<int>(triangleIndices);
 
@@ -436,10 +743,9 @@ public class MeshDeformer : MonoBehaviour
         {
             int currentTri = trianglesToProcess.Dequeue();
 
-            // bounds check
             if (currentTri < 0 || currentTri >= triangleDataList.Count)
             {
-                Debug.LogWarning($"Invalid triangle index: {currentTri}");
+                Debug.LogWarning($"Invalid triangle index during BFS: {currentTri}");
                 continue;
             }
 
@@ -450,53 +756,77 @@ public class MeshDeformer : MonoBehaviour
 
             trianglesToSubdivide.Add(currentTri);
 
-            // Get all vertices of this triangle
+            // Get vertices of this triangle
             int baseIdx = currentTri * 3;
-            int v0 = oldTriangles[baseIdx];
-            int v1 = oldTriangles[baseIdx + 1];
-            int v2 = oldTriangles[baseIdx + 2];
-
-            // Find all triangles sharing these vertices (including on other faces)
-            foreach (int vertexIndex in new[] { v0, v1, v2 })
+            if (baseIdx + 2 < oldTriangles.Length)
             {
-                if (vertexToTriangles.TryGetValue(vertexIndex, out List<int> connectedTris))
+                int v0 = oldTriangles[baseIdx];
+                int v1 = oldTriangles[baseIdx + 1];
+                int v2 = oldTriangles[baseIdx + 2];
+
+                // Find connected triangles through shared vertices
+                foreach (int vertexIndex in new[] { v0, v1, v2 })
                 {
-                    foreach (int connectedTri in connectedTris)
+                    if (vertexToTriangles.TryGetValue(vertexIndex, out List<int> connectedTris))
                     {
-                        if (!trianglesToSubdivide.Contains(connectedTri))
+                        foreach (int connectedTri in connectedTris)
                         {
-                            trianglesToProcess.Enqueue(connectedTri);
+                            if (!trianglesToSubdivide.Contains(connectedTri))
+                            {
+                                trianglesToProcess.Enqueue(connectedTri);
+                            }
                         }
                     }
                 }
             }
         }
 
-        // Create midpoints for all edges of triangles to be subdivided
+        // Create midpoints for edges of triangles to be subdivided
         Dictionary<Edge, int> edgeMidpoints = new Dictionary<Edge, int>();
         foreach (int triIdx in trianglesToSubdivide)
         {
-            int i0 = oldTriangles[triIdx * 3];
-            int i1 = oldTriangles[triIdx * 3 + 1];
-            int i2 = oldTriangles[triIdx * 3 + 2];
+            int baseIdx = triIdx * 3;
+            if (baseIdx + 2 < oldTriangles.Length)
+            {
+                int i0 = oldTriangles[baseIdx];
+                int i1 = oldTriangles[baseIdx + 1];
+                int i2 = oldTriangles[baseIdx + 2];
 
-            GetMidpoint(i0, i1, oldVertices, newVertices, edgeMidpoints, create);
-            GetMidpoint(i1, i2, oldVertices, newVertices, edgeMidpoints, create);
-            GetMidpoint(i2, i0, oldVertices, newVertices, edgeMidpoints, create);
+                if (i0 < oldVertices.Length && i1 < oldVertices.Length && i2 < oldVertices.Length)
+                {
+                    GetMidpoint(i0, i1, oldVertices, newVertices, edgeMidpoints, create);
+                    GetMidpoint(i1, i2, oldVertices, newVertices, edgeMidpoints, create);
+                    GetMidpoint(i2, i0, oldVertices, newVertices, edgeMidpoints, create);
+                }
+            }
         }
 
-        // Rebuild all triangles using original splitting logic
+        // Rebuild triangles
         List<int> newTriangles = new List<int>();
         List<TriangleData> newTriangleData = new List<TriangleData>();
 
         for (int i = 0; i < oldTriangles.Length - 2; i += 3)
         {
             int originalTriangleIndex = i / 3;
+
+            if (originalTriangleIndex >= triangleDataList.Count)
+            {
+                Debug.LogError($"Original triangle index {originalTriangleIndex} out of range");
+                continue;
+            }
+
             TriangleData originalData = triangleDataList[originalTriangleIndex];
 
             int i0 = oldTriangles[i];
             int i1 = oldTriangles[i + 1];
             int i2 = oldTriangles[i + 2];
+
+            // Validate vertex indices
+            if (i0 >= oldVertices.Length || i1 >= oldVertices.Length || i2 >= oldVertices.Length)
+            {
+                Debug.LogError($"Invalid vertex indices in triangle {originalTriangleIndex}: {i0}, {i1}, {i2}");
+                continue;
+            }
 
             bool has_m01 = edgeMidpoints.TryGetValue(new Edge(i0, i1, oldVertices), out int m01);
             bool has_m12 = edgeMidpoints.TryGetValue(new Edge(i1, i2, oldVertices), out int m12);
@@ -591,6 +921,25 @@ public class MeshDeformer : MonoBehaviour
             }
         }
 
+        Debug.Log($"SubdivideSelectedTriangles: Final result - {newVertices.Count} vertices, {newTriangles.Count / 3} triangles, {newTriangleData.Count} triangle data entries");
+
+        // Validate final arrays before applying
+        if (newTriangles.Count % 3 != 0)
+        {
+            Debug.LogError($"Invalid triangle count: {newTriangles.Count} (should be multiple of 3)");
+            return;
+        }
+
+        // Validate all triangle indices
+        for (int i = 0; i < newTriangles.Count; i++)
+        {
+            if (newTriangles[i] < 0 || newTriangles[i] >= newVertices.Count)
+            {
+                Debug.LogError($"Invalid triangle vertex index: {newTriangles[i]} (vertex count: {newVertices.Count})");
+                return;
+            }
+        }
+
         // Update mesh data
         workingMesh.Clear();
         workingMesh.vertices = newVertices.ToArray();
@@ -601,9 +950,11 @@ public class MeshDeformer : MonoBehaviour
         triangleDataList = newTriangleData;
 
         baseVertices = workingMesh.vertices;
-        currentVertices = baseVertices.Clone() as Vector3[];
+        currentVertices = (Vector3[])baseVertices.Clone();
         baseTriangles = workingMesh.triangles;
-        currentTriangles = baseTriangles.Clone() as int[];
+        currentTriangles = (int[])baseTriangles.Clone();
+
+        Debug.Log($"Mesh subdivision complete. New mesh: {baseVertices.Length} vertices, {baseTriangles.Length / 3} triangles");
     }
 
     private void AddEdgeToMap(Edge edge, int triangleIdx, Dictionary<Edge, List<int>> edgeToTriangles)
@@ -619,5 +970,127 @@ public class MeshDeformer : MonoBehaviour
     {
         public SpringPointData springPoint;
         public float weight;
+    }
+
+    // Additional validation methods
+    private bool ValidateMeshData()
+    {
+        if (workingMesh == null)
+        {
+            Debug.LogError("Working mesh is null");
+            return false;
+        }
+
+        Vector3[] vertices = workingMesh.vertices;
+        int[] triangles = workingMesh.triangles;
+
+        if (vertices == null || vertices.Length == 0)
+        {
+            Debug.LogError("Mesh has no vertices");
+            return false;
+        }
+
+        if (triangles == null || triangles.Length == 0)
+        {
+            Debug.LogError("Mesh has no triangles");
+            return false;
+        }
+
+        if (triangles.Length % 3 != 0)
+        {
+            Debug.LogError($"Triangle array length {triangles.Length} is not divisible by 3");
+            return false;
+        }
+
+        // Check triangle indices
+        for (int i = 0; i < triangles.Length; i++)
+        {
+            if (triangles[i] < 0 || triangles[i] >= vertices.Length)
+            {
+                Debug.LogError($"Triangle index {i} has invalid vertex reference: {triangles[i]} (vertex count: {vertices.Length})");
+                return false;
+            }
+        }
+
+        int expectedTriangleDataCount = triangles.Length / 3;
+        if (triangleDataList.Count != expectedTriangleDataCount)
+        {
+            Debug.LogError($"Triangle data count mismatch: {triangleDataList.Count} vs expected {expectedTriangleDataCount}");
+            return false;
+        }
+
+        return true;
+    }
+
+    private void RepairMeshData()
+    {
+        Debug.Log("Attempting to repair mesh data...");
+
+        if (workingMesh == null)
+        {
+            Debug.LogError("Cannot repair null working mesh");
+            return;
+        }
+
+        Vector3[] vertices = workingMesh.vertices;
+        int[] triangles = workingMesh.triangles;
+
+        if (vertices == null || vertices.Length == 0)
+        {
+            Debug.LogError("Cannot repair mesh with no vertices");
+            return;
+        }
+
+        if (triangles == null)
+        {
+            triangles = new int[0];
+        }
+
+        // Remove invalid triangles
+        List<int> validTriangles = new List<int>();
+        for (int i = 0; i < triangles.Length - 2; i += 3)
+        {
+            if (triangles[i] >= 0 && triangles[i] < vertices.Length &&
+                triangles[i + 1] >= 0 && triangles[i + 1] < vertices.Length &&
+                triangles[i + 2] >= 0 && triangles[i + 2] < vertices.Length)
+            {
+                validTriangles.Add(triangles[i]);
+                validTriangles.Add(triangles[i + 1]);
+                validTriangles.Add(triangles[i + 2]);
+            }
+        }
+
+        // Update mesh
+        workingMesh.triangles = validTriangles.ToArray();
+
+        // Rebuild triangle data list
+        int triangleCount = validTriangles.Count / 3;
+        triangleDataList.Clear();
+        for (int i = 0; i < triangleCount; i++)
+        {
+            triangleDataList.Add(new TriangleData
+            {
+                originalIndex = i,
+                subdivisionLevel = 0,
+                canSubdivide = true
+            });
+        }
+
+        // Update cached arrays
+        baseVertices = workingMesh.vertices;
+        currentVertices = (Vector3[])baseVertices.Clone();
+        baseTriangles = workingMesh.triangles;
+        currentTriangles = (int[])baseTriangles.Clone();
+
+        Debug.Log($"Mesh repair complete: {vertices.Length} vertices, {triangleCount} triangles");
+    }
+
+    // Call this method periodically or when errors occur
+    public void ValidateAndRepairMesh()
+    {
+        if (!ValidateMeshData())
+        {
+            RepairMeshData();
+        }
     }
 }

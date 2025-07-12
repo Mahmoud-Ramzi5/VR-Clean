@@ -72,6 +72,13 @@ public class OctreeSpringFiller : MonoBehaviour
     [Header("Layer Presets")]
     [SerializeField] private CollisionLayerPreset layerPreset = CollisionLayerPreset.Default;
 
+    [Header("Mesh Deformation")]
+    public bool meshDeformationEnabled = true;
+    public float influenceRadius = 2.0f;
+    private float lastMeshUpdate = 0f;
+    private const float MESH_UPDATE_INTERVAL = 1f / 30f;
+
+
 
     [Header("Visualize Settings")]
     public bool visualizeSpringPoints = true;
@@ -110,6 +117,11 @@ public class OctreeSpringFiller : MonoBehaviour
     public List<SpringPointData> SurfacePoints => surfaceSpringPoints;
     public List<SpringPointData> surfacePoints = new List<SpringPointData>();
 
+
+    //Track mesh state
+    private int lastMeshVertexCount = 0;
+    private int lastMeshTriangleCount = 0;
+    private bool meshNeedsUpdate = false;
 
 
     // changes for the new connections
@@ -226,6 +238,19 @@ public class OctreeSpringFiller : MonoBehaviour
         surfaceSpringPoints2 = new NativeList<SpringPointData>(allSpringPoints.Length, Allocator.Persistent);
         surfacePointsLocalSpace = new NativeList<float3>(allSpringPoints.Length, Allocator.Persistent);
 
+        if (surfaceSpringPoints2.IsCreated && surfaceSpringPoints2.Length > 0)
+        {
+            // Copy data from NativeList to regular List (existing code)
+            for (int i = 0; i < surfaceSpringPoints2.Length; i++)
+            {
+                SpringPointData point = surfaceSpringPoints2[i];
+                surfaceSpringPoints.Add(point);
+            }
+
+            // NEW: Build the surface point to vertex mapping
+            BuildInitialSurfacePointMapping();
+        }
+
         meshJobManager = gameObject.AddComponent<MeshJobManagerCPU>();
         meshJobManager.Initialize(meshVertices, meshTriangles, allSpringPoints, surfaceSpringPoints2, surfacePointsLocalSpace, surfaceDetectionThreshold);
 
@@ -287,8 +312,60 @@ public class OctreeSpringFiller : MonoBehaviour
             InitializeCollisionLayer();
         }
 
+
         // Apply layer preset if selected
         ApplyLayerPreset();
+
+        ValidateAndSyncMesh();
+    }
+
+    // Add this method to validate and sync mesh data
+    private void ValidateAndSyncMesh()
+    {
+        if (targetMesh == null)
+        {
+            Debug.LogError("Target mesh is null!");
+            return;
+        }
+
+        Vector3[] currentVertices = targetMesh.vertices;
+        int[] currentTriangles = targetMesh.triangles;
+
+        if (currentVertices == null || currentVertices.Length == 0)
+        {
+            Debug.LogError("Mesh has no vertices!");
+            return;
+        }
+
+        if (currentTriangles == null || currentTriangles.Length == 0)
+        {
+            Debug.LogError("Mesh has no triangles!");
+            return;
+        }
+
+        if (currentTriangles.Length % 3 != 0)
+        {
+            Debug.LogError($"Invalid triangle count: {currentTriangles.Length} (should be multiple of 3)");
+            return;
+        }
+
+        // Validate triangle indices
+        for (int i = 0; i < currentTriangles.Length; i++)
+        {
+            if (currentTriangles[i] < 0 || currentTriangles[i] >= currentVertices.Length)
+            {
+                Debug.LogError($"Invalid triangle index: {currentTriangles[i]} at position {i} (vertex count: {currentVertices.Length})");
+                return;
+            }
+        }
+
+        // Update cached data
+        meshVertices = currentVertices;
+        meshTriangles = currentTriangles;
+        lastMeshVertexCount = currentVertices.Length;
+        lastMeshTriangleCount = currentTriangles.Length;
+
+        Debug.Log($"Mesh validated: {lastMeshVertexCount} vertices, {lastMeshTriangleCount / 3} triangles");
     }
 
     private void InitializeCollisionLayer()
@@ -416,16 +493,52 @@ public class OctreeSpringFiller : MonoBehaviour
         damperConstantL3 = baseDamping * collisionLayer.dampingFactor * 0.6f;
     }
 
-    private IEnumerator WaitForMeshDeformerInitialization()
+    // Modified WaitForMeshDeformerInitialization with better error handling
+    private System.Collections.IEnumerator WaitForMeshDeformerInitialization()
     {
-        while (!meshDeformer.isInitialized)
+        int waitFrames = 0;
+        const int maxWaitFrames = 300; // 5 seconds at 60fps
+
+        while (!meshDeformer.isInitialized && waitFrames < maxWaitFrames)
         {
-            Debug.Log("Waiting for MeshDeformer to initialize...");
-            yield return null; // Wait one frame
+            Debug.Log($"Waiting for MeshDeformer to initialize... ({waitFrames}/{maxWaitFrames})");
+            waitFrames++;
+            yield return null;
+        }
+
+        if (waitFrames >= maxWaitFrames)
+        {
+            Debug.LogError("MeshDeformer failed to initialize within timeout!");
+            yield break;
         }
 
         Debug.Log("MeshDeformer is ready, proceeding with subdivision...");
-        meshDeformer.SubdivideMeshWithPoints(surfaceSpringPoints);
+
+        // Validate mesh before subdivision
+        ValidateAndSyncMesh();
+
+        // Validate surface points
+        if (surfaceSpringPoints == null || surfaceSpringPoints.Count == 0)
+        {
+            Debug.LogWarning("No surface spring points found for subdivision");
+            yield break;
+        }
+
+        try
+        {
+            // Validate MeshDeformer state
+            if (meshDeformer != null)
+            {
+                meshDeformer.ValidateAndRepairMesh();
+            }
+
+            meshDeformer.SubdivideMeshWithPoints(surfaceSpringPoints);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Error during mesh subdivision: {e.Message}");
+            Debug.LogError($"Stack trace: {e.StackTrace}");
+        }
     }
     //private void Update()
     //{
@@ -455,127 +568,278 @@ public class OctreeSpringFiller : MonoBehaviour
     {
         float deltaTime = Time.fixedDeltaTime;
 
+        // Check if mesh needs validation and synchronization
+        if (targetMesh != null)
+        {
+            Vector3[] currentVertices = targetMesh.vertices;
+            int[] currentTriangles = targetMesh.triangles;
+
+            // Detect mesh changes and validate
+            if (currentVertices.Length != lastMeshVertexCount ||
+                currentTriangles.Length != lastMeshTriangleCount)
+            {
+                Debug.Log($"Mesh changed detected: vertices {lastMeshVertexCount} -> {currentVertices.Length}, triangles {lastMeshTriangleCount} -> {currentTriangles.Length}");
+                ValidateAndSyncMesh();
+
+                // Reinitialize mesh job manager with new data
+                if (meshJobManager != null)
+                {
+                    try
+                    {
+                        meshJobManager.UpdateMeshData(meshVertices, meshTriangles);
+                    }
+                    catch (System.Exception e)
+                    {
+                        Debug.LogError($"Error updating mesh job manager: {e.Message}");
+                    }
+                }
+            }
+        }
+
+        // Validate spring points array before physics operations
+        if (!allSpringPoints.IsCreated || allSpringPoints.Length == 0)
+        {
+            Debug.LogWarning("Spring points array is not created or empty, skipping physics update");
+            return;
+        }
+
+        // ----- PHYSICS SIMULATION -----
         if (isRigid)
         {
             // ----- RIGID MODE -----
-            // 1. Schedule gravity job
-            rigidJobManager.ScheduleGravityJobs(gravity, applyGravity);
+            try
+            {
+                // 1. Schedule gravity job
+                rigidJobManager.ScheduleGravityJobs(gravity, applyGravity);
 
-            // 2. Schedule spring jobs
-            rigidJobManager.ScheduleRigidJobs(10, 0.5f, deltaTime);
+                // 2. Schedule spring jobs
+                rigidJobManager.ScheduleRigidJobs(10, 0.5f, deltaTime);
 
-            // 3. Complete all jobs and apply results
-            rigidJobManager.CompleteAllJobsAndApply();
-
-            //// 1. Initialize predicted positions
-            //foreach (var point in allSpringPoints)
-            //{
-            //    point.predictedPosition = point.position;
-            //    point.force = Vector3.zero; // Clear forces
-            //}
-
-            //// 2. Apply gravity and other forces directly (skip jobs for rigid mode)
-            //if (applyGravity)
-            //{
-            //    foreach (var point in allSpringPoints)
-            //    {
-            //        if (!point.isFixed)
-            //            point.force += gravity * point.mass;
-            //    }
-            //}
-
-            //// 3. Apply spring forces as rigid constraints (not as forces)
-            //// (We don't use ScheduleSpringOrRigidJobs in rigid mode)
-
-            //// 4. Integrate forces to get predicted positions
-            //foreach (var point in allSpringPoints)
-            //{
-            //    if (!point.isFixed)
-            //    {
-            //        Vector3 acceleration = point.force / point.mass;
-            //        point.velocity += acceleration * deltaTime;
-            //        point.predictedPosition += point.velocity * deltaTime;
-            //    }
-            //}
-
-            //// 5. Solve constraints (multiple iterations)
-            //for (int i = 0; i < 5; i++)  // Try 3-10 iterations
-            //{
-            //    foreach (var connection in allSpringConnections)
-            //    {
-            //        connection.EnforceRigidConstraint();
-            //    }
-            //}
-
-            //// 6. Update velocities and positions
-            //foreach (var point in allSpringPoints)
-            //{
-            //    if (!point.isFixed)
-            //    {
-            //        point.velocity = (point.predictedPosition - point.position) / deltaTime;
-            //        point.position = point.predictedPosition;
-            //    }
-            //}
+                // 3. Complete all jobs and apply results
+                rigidJobManager.CompleteAllJobsAndApply();
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Error in rigid body simulation: {e.Message}");
+            }
         }
         else
         {
             // ----- SOFT BODY MODE -----
-            // 1. Schedule gravity job
-            springJobManager.ScheduleGravityJobs(gravity, applyGravity);
+            try
+            {
+                // 1. Schedule gravity job
+                springJobManager.ScheduleGravityJobs(gravity, applyGravity);
 
-            // 2. Schedule spring jobs
-            springJobManager.ScheduleSpringJobs(deltaTime);
+                // 2. Schedule spring jobs
+                springJobManager.ScheduleSpringJobs(deltaTime);
 
-            // 3. Complete all jobs and apply results
-            springJobManager.CompleteAllJobsAndApply();
-
-            // This next section was moved to Jobs
-
-            //// Update springs
-            //foreach (var connection in allSpringConnections)
-            //{
-            //    connection.CalculateAndApplyForces();
-            //}
-            //// Update points normally
-            //foreach (var point in allSpringPoints)
-            //{
-            //    point.UpdatePoint(deltaTime);
-            //}
+                // 3. Complete all jobs and apply results
+                springJobManager.CompleteAllJobsAndApply();
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Error in soft body simulation: {e.Message}");
+            }
         }
 
-        // ----- COMMON OPERATIONS -----
-        // Handle collisions
+        // ----- COLLISION HANDLING -----
+
+        // Ground collision
         if (applyGroundCollision)
         {
-            collisionJobManager.ScheduleGroundCollisionJobs(
-                groundLevel, groundBounce, groundFriction
-            );
-
-            collisionJobManager.CompleteAllJobsAndApply();
+            try
+            {
+                collisionJobManager.ScheduleGroundCollisionJobs(
+                    groundLevel, groundBounce, groundFriction
+                );
+                collisionJobManager.CompleteAllJobsAndApply();
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Error in ground collision: {e.Message}");
+            }
         }
 
+        // Inter-object collisions
         if (collisionManager != null)
         {
-            collisionManager.ResolveInterObjectCollisions();
+            try
+            {
+                collisionManager.ResolveInterObjectCollisions();
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Error in inter-object collisions: {e.Message}");
+            }
         }
-        else
+        else if (enableMeshSubdivision)
         {
-            // NEW DEBUG LOG: This will alert you if the manager isn't assigned.
-            // if (enableMeshSubdivision) Debug.LogWarning($"{gameObject.name}: CollisionManager is not assigned in the inspector!", this);
+            // Only warn if mesh subdivision is enabled and we need collision manager
+            if (Time.frameCount % 300 == 0) // Warn every 5 seconds at 60fps
+            {
+                Debug.LogWarning($"{gameObject.name}: CollisionManager is not assigned but mesh subdivision is enabled!");
+            }
         }
 
+        // ----- SURFACE POINT UPDATES -----
+
+        // Update surface points periodically for performance
         if (Time.frameCount % 3 == 0) // Every 3 frames
         {
-            UpdateSurfacePointsInMesh();
+            try
+            {
+                UpdateSurfacePointsInMesh();
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Error updating surface points: {e.Message}");
+            }
         }
 
-        // Handle Mesh Update
-        //UpdateMeshFromPoints();
-        //meshJobManager.DispatchMeshUpdate(meshVertices, transform.worldToLocalMatrix, targetMesh, transform);
-        meshJobManager.ScheduleMeshVerticesUpdateJobs(meshVertices, meshTriangles, transform.localToWorldMatrix, transform.worldToLocalMatrix);
-        meshJobManager.CompleteAllJobsAndApply(meshVertices, meshTriangles, targetMesh, surfacePoints);
-    }
+        // ----- MESH DEFORMATION UPDATES -----
 
+        // Trigger mesh deformation update if enabled
+        if (meshDeformationEnabled && meshDeformer != null && meshDeformer.isInitialized)
+        {
+            try
+            {
+                // Force mesh deformation update periodically
+                if (Time.frameCount % 2 == 0) // Every 2 frames for responsive deformation
+                {
+                    meshDeformer.ForceDeformationUpdate();
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Error in mesh deformation update: {e.Message}");
+            }
+        }
+
+        // ----- MESH UPDATES -----
+
+        // Handle Mesh Update with comprehensive error handling
+        try
+        {
+            if (meshJobManager != null && meshVertices != null && meshTriangles != null && targetMesh != null)
+            {
+                // Validate mesh data before processing
+                if (meshVertices.Length == 0 || meshTriangles.Length == 0)
+                {
+                    Debug.LogWarning("Skipping mesh update: empty mesh data");
+                    return;
+                }
+
+                if (meshTriangles.Length % 3 != 0)
+                {
+                    Debug.LogError($"Invalid triangle array length: {meshTriangles.Length} (should be multiple of 3)");
+                    ValidateAndSyncMesh(); // Try to repair
+                    return;
+                }
+
+                // Validate triangle indices
+                bool hasInvalidIndices = false;
+                for (int i = 0; i < meshTriangles.Length; i++)
+                {
+                    if (meshTriangles[i] < 0 || meshTriangles[i] >= meshVertices.Length)
+                    {
+                        Debug.LogError($"Invalid triangle index: {meshTriangles[i]} at position {i} (vertex count: {meshVertices.Length})");
+                        hasInvalidIndices = true;
+                        break;
+                    }
+                }
+
+                if (hasInvalidIndices)
+                {
+                    ValidateAndSyncMesh(); // Try to repair
+                    return;
+                }
+
+                // Schedule mesh update jobs
+                meshJobManager.ScheduleMeshVerticesUpdateJobs(
+                    meshVertices, meshTriangles,
+                    transform.localToWorldMatrix, transform.worldToLocalMatrix);
+
+                // Complete and apply mesh updates
+                meshJobManager.CompleteAllJobsAndApply(
+                    meshVertices, meshTriangles, targetMesh, surfacePoints);
+            }
+            else
+            {
+                // Log missing components for debugging
+                if (meshJobManager == null)
+                    Debug.LogWarning("MeshJobManager is null");
+                if (meshVertices == null)
+                    Debug.LogWarning("MeshVertices is null");
+                if (meshTriangles == null)
+                    Debug.LogWarning("MeshTriangles is null");
+                if (targetMesh == null)
+                    Debug.LogWarning("TargetMesh is null");
+            }
+        }
+        catch (System.ArgumentOutOfRangeException e)
+        {
+            Debug.LogError($"Argument out of range in mesh update: {e.Message}");
+            Debug.LogError($"Stack trace: {e.StackTrace}");
+
+            // Attempt recovery
+            Debug.Log("Attempting mesh data recovery...");
+            ValidateAndSyncMesh();
+
+            // If mesh deformer exists, try to validate it too
+            if (meshDeformer != null)
+            {
+                meshDeformer.ValidateAndRepairMesh();
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Unexpected error in mesh update: {e.Message}");
+            Debug.LogError($"Stack trace: {e.StackTrace}");
+
+            // Attempt basic recovery
+            ValidateAndSyncMesh();
+        }
+
+        // ----- POSITION TRACKING -----
+
+        // Update transform position tracking for next frame
+        Vector3 currentPos = transform.position;
+        if (Vector3.Distance(currentPos, lastPos) > 0.001f)
+        {
+            lastPos = currentPos;
+
+            // Optional: Update spring point bounds if object moved significantly
+            if (Time.frameCount % 30 == 0) // Every 30 frames
+            {
+                try
+                {
+                    UpdateBoundingVolume();
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"Error updating bounding volume: {e.Message}");
+                }
+            }
+        }
+
+        // ----- DEBUGGING AND VALIDATION -----
+
+        // Periodic validation check in debug builds
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (Time.frameCount % 600 == 0) // Every 10 seconds at 60fps
+        {
+            try
+            {
+                ValidateMeshState();
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Error in periodic validation: {e.Message}");
+            }
+        }
+#endif
+    }
     void LateUpdate()
     {
         visualizeRenderer.DrawInstancedPoints(visualizeSpringPoints, allSpringPoints);
@@ -1321,92 +1585,178 @@ public class OctreeSpringFiller : MonoBehaviour
     }
     //
 
+    // Modified AddSpringPointAtPosition with better mesh handling
     public void AddSpringPointAtPosition(Vector3 worldPosition)
     {
-        Vector3 worldCenter = transform.TransformPoint(meshBounds.center);
-        Vector3 worldSize = Vector3.Scale(meshBounds.size, transform.lossyScale);
-        Bounds worldBounds = new Bounds(worldCenter, worldSize);
-
-        var newPoint = CreateSpringPoint(worldPosition, worldBounds, false);
-        allSpringPoints = tempPoints.AsArray();
-
-        int newPointIndex = tempPoints.Length - 1;
-        CreateSpringConnectionsForPoint(newPointIndex, newPoint);
-        allSpringConnections = tempConnections.AsArray();
-
-        // Update positions and bounds on start
-        for (int i = 0; i < allSpringPoints.Length; i++)
+        try
         {
-            SpringPointData point = allSpringPoints[i]; // get copy
-            point.mass = totalMass / allSpringPoints.Length;
-            allSpringPoints[i] = point; // write back modified copy
+            Vector3 worldCenter = transform.TransformPoint(meshBounds.center);
+            Vector3 worldSize = Vector3.Scale(meshBounds.size, transform.lossyScale);
+            Bounds worldBounds = new Bounds(worldCenter, worldSize);
+
+            var newPoint = CreateSpringPoint(worldPosition, worldBounds, false);
+            allSpringPoints = tempPoints.AsArray();
+
+            int newPointIndex = tempPoints.Length - 1;
+            CreateSpringConnectionsForPoint(newPointIndex, newPoint);
+            allSpringConnections = tempConnections.AsArray();
+
+            // Update mass distribution
+            float newMass = totalMass / allSpringPoints.Length;
+            for (int i = 0; i < allSpringPoints.Length; i++)
+            {
+                SpringPointData point = allSpringPoints[i];
+                point.mass = newMass;
+                allSpringPoints[i] = point;
+            }
+
+            // Update mesh data safely
+            UpdateMeshDataWithNewPoint(worldPosition);
+
+            // Reinitialize job managers with updated data
+            ValidateAndSyncMesh();
+            ReinitializeJobManagers();
         }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Error adding spring point: {e.Message}");
+        }
+    }
 
-        UpdateMeshDataWithNewPoint(worldPosition);
+    private void ReinitializeJobManagers()
+    {
+        try
+        {
+            // Dispose and recreate surface point containers
+            if (surfaceSpringPoints2.IsCreated) surfaceSpringPoints2.Clear();
+            if (surfacePointsLocalSpace.IsCreated) surfacePointsLocalSpace.Clear();
 
-        surfaceSpringPoints2 = new NativeList<SpringPointData>(allSpringPoints.Length, Allocator.Persistent);
-        surfacePointsLocalSpace = new NativeList<float3>(allSpringPoints.Length, Allocator.Persistent);
+            surfaceSpringPoints2.Capacity = allSpringPoints.Length;
+            surfacePointsLocalSpace.Capacity = allSpringPoints.Length;
 
-        meshJobManager.Initialize(meshVertices, meshTriangles, allSpringPoints, surfaceSpringPoints2, surfacePointsLocalSpace, surfaceDetectionThreshold);
+            // Reinitialize mesh job manager
+            if (meshJobManager != null)
+            {
+                meshJobManager.Initialize(meshVertices, meshTriangles, allSpringPoints,
+                    surfaceSpringPoints2, surfacePointsLocalSpace, surfaceDetectionThreshold);
+            }
 
-        rigidJobManager.InitializeArrays(allSpringPoints, allSpringConnections);
+            // Reinitialize other job managers
+            if (rigidJobManager != null)
+                rigidJobManager.InitializeArrays(allSpringPoints, allSpringConnections);
 
-        springJobManager.InitializeArrays(allSpringPoints, allSpringConnections);
+            if (springJobManager != null)
+                springJobManager.InitializeArrays(allSpringPoints, allSpringConnections);
 
-        collisionJobManager.InitializeArrays(allSpringPoints);
+            if (collisionJobManager != null)
+                collisionJobManager.InitializeArrays(allSpringPoints);
 
-        meshJobManager.IdentifySurfacePoints(
-            meshVertices,
-            meshTriangles,
-            transform.worldToLocalMatrix
-        );
+            // Identify surface points
+            if (meshJobManager != null)
+            {
+                meshJobManager.IdentifySurfacePoints(
+                    meshVertices, meshTriangles, transform.worldToLocalMatrix);
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Error reinitializing job managers: {e.Message}");
+        }
     }
 
     private void UpdateMeshDataWithNewPoint(Vector3 newWorldPosition)
     {
-        Vector3 newLocalPosition = transform.InverseTransformPoint(newWorldPosition);
-
-        Vector3[] newVertices = new Vector3[meshVertices.Length + 1];
-        int[] newTriangles = new int[meshTriangles.Length + 3];
-
-        System.Array.Copy(meshVertices, newVertices, meshVertices.Length);
-        System.Array.Copy(meshTriangles, newTriangles, meshTriangles.Length);
-
-        newVertices[meshVertices.Length] = newLocalPosition;
-
-        int closest1 = 0;
-        int closest2 = 1;
-        float minDist1 = float.MaxValue;
-        float minDist2 = float.MaxValue;
-
-        for (int i = 0; i < meshVertices.Length; i++)
+        try
         {
-            float dist = Vector3.Distance(newLocalPosition, meshVertices[i]);
-            if (dist < minDist1)
+            Vector3 newLocalPosition = transform.InverseTransformPoint(newWorldPosition);
+
+            // Create new arrays with increased size
+            Vector3[] newVertices = new Vector3[meshVertices.Length + 1];
+            int[] newTriangles = new int[meshTriangles.Length + 3];
+
+            // Copy existing data
+            System.Array.Copy(meshVertices, newVertices, meshVertices.Length);
+            System.Array.Copy(meshTriangles, newTriangles, meshTriangles.Length);
+
+            // Add new vertex
+            newVertices[meshVertices.Length] = newLocalPosition;
+
+            // Find two closest existing vertices for triangle creation
+            int closest1 = 0;
+            int closest2 = 1;
+            float minDist1 = float.MaxValue;
+            float minDist2 = float.MaxValue;
+
+            for (int i = 0; i < meshVertices.Length; i++)
             {
-                minDist2 = minDist1;
-                closest2 = closest1;
-                minDist1 = dist;
-                closest1 = i;
+                float dist = Vector3.Distance(newLocalPosition, meshVertices[i]);
+                if (dist < minDist1)
+                {
+                    minDist2 = minDist1;
+                    closest2 = closest1;
+                    minDist1 = dist;
+                    closest1 = i;
+                }
+                else if (dist < minDist2)
+                {
+                    minDist2 = dist;
+                    closest2 = i;
+                }
             }
-            else if (dist < minDist2)
-            {
-                minDist2 = dist;
-                closest2 = i;
-            }
+
+            // Add new triangle
+            newTriangles[meshTriangles.Length] = closest1;
+            newTriangles[meshTriangles.Length + 1] = closest2;
+            newTriangles[meshTriangles.Length + 2] = meshVertices.Length; // new vertex index
+
+            // Update cached arrays
+            meshVertices = newVertices;
+            meshTriangles = newTriangles;
+
+            // Update mesh
+            targetMesh.vertices = newVertices;
+            targetMesh.triangles = newTriangles;
+            targetMesh.RecalculateNormals();
+            targetMesh.RecalculateBounds();
+
+            // Update tracking
+            lastMeshVertexCount = newVertices.Length;
+            lastMeshTriangleCount = newTriangles.Length;
+
+            Debug.Log($"Added new mesh vertex: {newVertices.Length} vertices, {newTriangles.Length / 3} triangles");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Error updating mesh with new point: {e.Message}");
+        }
+    }
+
+    // Add validation method for debugging
+    public void ValidateMeshState()
+    {
+        Debug.Log("=== MESH STATE VALIDATION ===");
+        Debug.Log($"Target Mesh: {(targetMesh != null ? "Valid" : "NULL")}");
+
+        if (targetMesh != null)
+        {
+            Debug.Log($"Mesh Vertices: {targetMesh.vertexCount}");
+            Debug.Log($"Mesh Triangles: {targetMesh.triangles.Length / 3}");
         }
 
-        newTriangles[meshTriangles.Length] = closest1;
-        newTriangles[meshTriangles.Length + 1] = closest2;
-        newTriangles[meshTriangles.Length + 2] = meshVertices.Length;
+        Debug.Log($"Cached Vertices: {(meshVertices != null ? meshVertices.Length.ToString() : "NULL")}");
+        Debug.Log($"Cached Triangles: {(meshTriangles != null ? (meshTriangles.Length / 3).ToString() : "NULL")}");
+        Debug.Log($"Spring Points: {(allSpringPoints.IsCreated ? allSpringPoints.Length.ToString() : "Not Created")}");
+        Debug.Log($"Surface Points: {surfaceSpringPoints.Count}");
+        Debug.Log("=============================");
+    }
 
-        meshVertices = newVertices;
-        meshTriangles = newTriangles;
-
-        targetMesh.vertices = newVertices;
-        targetMesh.triangles = newTriangles;
-        targetMesh.RecalculateNormals();
-        targetMesh.RecalculateBounds();
+    // Call this in OnValidate for editor debugging
+    private void OnValidate()
+    {
+        if (Application.isPlaying)
+        {
+            ValidateMeshState();
+        }
     }
 
     public void UpdateBoundingVolume()
@@ -1427,51 +1777,211 @@ public class OctreeSpringFiller : MonoBehaviour
 
     private void UpdateSurfacePointsInMesh()
     {
-        if (!autoUpdateMeshFromSurface || surfacePointToVertexIndex.Count == 0) return;
+        if (!autoUpdateMeshFromSurface) return;
+
+        if (!allSpringPoints.IsCreated || allSpringPoints.Length == 0)
+        {
+            return;
+        }
+
+        if (targetMesh == null)
+        {
+            Debug.LogWarning("Target mesh is null in UpdateSurfacePointsInMesh");
+            return;
+        }
 
         bool meshChanged = false;
         meshVertices = targetMesh.vertices;
 
-        foreach (var kvp in surfacePointToVertexIndex)
+        // Method 1: Use direct spring point to mesh vertex mapping
+        if (TryUpdateMeshFromSpringPoints(ref meshChanged))
         {
-            int pointIndex = kvp.Key;
-            int vertexIndex = kvp.Value;
-
-            if (pointIndex < allSpringPoints.Length && vertexIndex < meshVertices.Length)
-            {
-                SpringPointData surfacePoint = allSpringPoints[pointIndex];
-                Vector3 newLocalPos = transform.InverseTransformPoint(surfacePoint.position);
-                Vector3 oldLocalPos = meshVertices[vertexIndex];
-                if (Vector3.Distance(newLocalPos, oldLocalPos) > 0.001f)
-                {
-                    meshVertices[vertexIndex] = newLocalPos;
-                    meshChanged = true;
-                }
-            }
+            // Successfully updated using direct mapping
         }
+        else
+        {
+            // Fallback: Build mapping on the fly and update
+            BuildRealTimeVertexMapping();
+            TryUpdateMeshFromSpringPoints(ref meshChanged);
+        }
+
         if (meshChanged)
         {
-            targetMesh.vertices = meshVertices;
-            targetMesh.RecalculateNormals();
-            targetMesh.RecalculateBounds();
-
-
-            // Update SpringPointData from mesh vertex changes
-            for (int i = 0; i < surfaceSpringPoints.Count; i++)
+            try
             {
-                int springPointIndex = surfacePointToVertexIndex.Keys.ElementAt(i);
-                int vertexIndex = surfacePointToVertexIndex.Values.ElementAt(i);
+                targetMesh.vertices = meshVertices;
+                targetMesh.RecalculateNormals();
+                targetMesh.RecalculateBounds();
 
-                if (springPointIndex < surfaceSpringPoints.Count && vertexIndex < meshVertices.Length)
+                Debug.Log($"Mesh updated from spring points: {meshVertices.Length} vertices");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Error applying mesh changes: {e.Message}");
+            }
+        }
+    }
+
+    // Build vertex mapping in real-time when needed
+    private void BuildRealTimeVertexMapping()
+    {
+        surfacePointToVertexIndex.Clear();
+
+        if (!allSpringPoints.IsCreated || meshVertices == null)
+        {
+            return;
+        }
+
+        // For each mesh vertex, find the closest spring point
+        for (int vertexIndex = 0; vertexIndex < meshVertices.Length; vertexIndex++)
+        {
+            Vector3 vertexWorldPos = transform.TransformPoint(meshVertices[vertexIndex]);
+
+            int closestSpringIndex = -1;
+            float minDistance = float.MaxValue;
+
+            // Find closest spring point to this vertex
+            for (int springIndex = 0; springIndex < allSpringPoints.Length; springIndex++)
+            {
+                SpringPointData springPoint = allSpringPoints[springIndex];
+                float distance = Vector3.Distance(vertexWorldPos, springPoint.position);
+
+                if (distance < minDistance)
                 {
-                    Vector3 worldPosition = transform.TransformPoint(meshVertices[vertexIndex]);
-                    SpringPointData sp = surfaceSpringPoints[springPointIndex];
-                    sp.position = worldPosition;
-                    surfaceSpringPoints[springPointIndex] = sp;
+                    minDistance = distance;
+                    closestSpringIndex = springIndex;
                 }
             }
 
+            // Only map if we found a reasonably close spring point
+            if (closestSpringIndex >= 0 && minDistance < influenceRadius)
+            {
+                // Map spring point index to vertex index
+                if (!surfacePointToVertexIndex.ContainsKey(closestSpringIndex))
+                {
+                    surfacePointToVertexIndex[closestSpringIndex] = vertexIndex;
+                }
+            }
         }
+
+        Debug.Log($"Built real-time vertex mapping: {surfacePointToVertexIndex.Count} mappings");
+    }
+
+    // Enhanced method to initialize surface point mapping during startup
+    private void BuildInitialSurfacePointMapping()
+    {
+        surfacePointToVertexIndex.Clear();
+
+        if (!allSpringPoints.IsCreated || meshVertices == null)
+        {
+            Debug.LogWarning("Cannot build surface point mapping: missing data");
+            return;
+        }
+
+        // Method 1: Map surface spring points to vertices
+        if (surfaceSpringPoints != null && surfaceSpringPoints.Count > 0)
+        {
+            for (int i = 0; i < surfaceSpringPoints.Count; i++)
+            {
+                SpringPointData surfacePoint = surfaceSpringPoints[i];
+
+                // Find this surface point in the main spring points array
+                int mainArrayIndex = FindSpringPointInMainArray(surfacePoint);
+                if (mainArrayIndex >= 0)
+                {
+                    // Find closest vertex to this surface point
+                    int closestVertexIndex = FindClosestVertexToPoint(surfacePoint.position);
+                    if (closestVertexIndex >= 0)
+                    {
+                        surfacePointToVertexIndex[mainArrayIndex] = closestVertexIndex;
+                    }
+                }
+            }
+        }
+        else
+        {
+            // Method 2: Fallback - use all spring points and find surface ones
+            BuildRealTimeVertexMapping();
+        }
+
+        Debug.Log($"Built initial surface point mapping: {surfacePointToVertexIndex.Count} surface points mapped to vertices");
+    }
+
+    // Helper method to find a surface point in the main spring points array
+    private int FindSpringPointInMainArray(SpringPointData targetPoint)
+    {
+        for (int i = 0; i < allSpringPoints.Length; i++)
+        {
+            SpringPointData point = allSpringPoints[i];
+
+            // Match by position (since structs can't be compared by reference)
+            if (Vector3.Distance(point.position, targetPoint.position) < 0.001f)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    // Helper method to find closest vertex to a world position
+    private int FindClosestVertexToPoint(Vector3 worldPosition)
+    {
+        if (meshVertices == null || meshVertices.Length == 0)
+            return -1;
+
+        int closestIndex = -1;
+        float minDistance = float.MaxValue;
+        Vector3 localPosition = transform.InverseTransformPoint(worldPosition);
+
+        for (int i = 0; i < meshVertices.Length; i++)
+        {
+            float distance = Vector3.Distance(localPosition, meshVertices[i]);
+            if (distance < minDistance)
+            {
+                minDistance = distance;
+                closestIndex = i;
+            }
+        }
+
+        return minDistance < influenceRadius ? closestIndex : -1;
+    }
+
+    // Method to update mesh using spring point positions
+    private bool TryUpdateMeshFromSpringPoints(ref bool meshChanged)
+    {
+        if (surfacePointToVertexIndex.Count == 0)
+        {
+            return false; // No mapping available
+        }
+
+        foreach (var kvp in surfacePointToVertexIndex)
+        {
+            int springPointIndex = kvp.Key;
+            int vertexIndex = kvp.Value;
+
+            // Validate indices
+            if (springPointIndex < 0 || springPointIndex >= allSpringPoints.Length ||
+                vertexIndex < 0 || vertexIndex >= meshVertices.Length)
+            {
+                continue;
+            }
+
+            // Get spring point data (this is a copy, but we only need to read from it)
+            SpringPointData springPoint = allSpringPoints[springPointIndex];
+
+            // Convert spring point world position to local mesh space
+            Vector3 newLocalPos = transform.InverseTransformPoint(springPoint.position);
+            Vector3 oldLocalPos = meshVertices[vertexIndex];
+
+            // Check if vertex needs updating (threshold to avoid unnecessary updates)
+            if (Vector3.Distance(newLocalPos, oldLocalPos) > 0.001f)
+            {
+                meshVertices[vertexIndex] = newLocalPos;
+                meshChanged = true;
+            }
+        }
+
+        return true;
     }
 
     // NEW Gizmos for debugging surface points

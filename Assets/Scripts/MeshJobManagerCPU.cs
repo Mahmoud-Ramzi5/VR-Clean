@@ -1,13 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Threading;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
-
 
 public class MeshJobManagerCPU : MonoBehaviour
 {
@@ -24,6 +21,10 @@ public class MeshJobManagerCPU : MonoBehaviour
     private NativeArray<float3> positions;
     private JobHandle jobHandle;
 
+    // Track original sizes for validation
+    private int originalVertexCount;
+    private int originalTriangleCount;
+
     /// <summary>
     /// Initializes the collision system with spring points.
     /// NOTE: This class will NOT take ownership or dispose of the springPoints array.
@@ -36,14 +37,21 @@ public class MeshJobManagerCPU : MonoBehaviour
         this.surfacePointsLocalSpace = surfacePointsLocalSpace;
         this.surfaceDetectionThreshold = surfaceDetectionThreshold;
 
-        // Initialize surface point containers
-        //surfaceSpringPoints = new NativeList<SpringPointData>(Allocator.Persistent);
-        //surfacePointsLocalSpace = new NativeList<float3>(Allocator.Persistent);
+        // Store original counts
+        originalVertexCount = meshVertices.Length;
+        originalTriangleCount = meshTriangles.Length;
 
-        VertexPointMap = new NativeParallelHashMap<int, int>(meshVertices.Length * 2, Allocator.Persistent);
-        meshVerticesNative = new NativeArray<float3>(meshVertices.Length * 2, Allocator.Persistent);
-        meshTrianglesNative = new NativeArray<int>(meshTriangles.Length * 2, Allocator.Persistent);
+        Debug.Log($"MeshJobManagerCPU Initialize: {originalVertexCount} vertices, {originalTriangleCount} triangle indices, {springPoints.Length} spring points");
 
+        // Initialize with extra capacity for subdivision
+        int maxVertices = meshVertices.Length * 4; // Allow for subdivision growth
+        int maxTriangles = meshTriangles.Length * 4;
+
+        VertexPointMap = new NativeParallelHashMap<int, int>(maxVertices, Allocator.Persistent);
+        meshVerticesNative = new NativeArray<float3>(maxVertices, Allocator.Persistent);
+        meshTrianglesNative = new NativeArray<int>(maxTriangles, Allocator.Persistent);
+
+        // Copy initial data
         for (int i = 0; i < meshVertices.Length; i++)
         {
             meshVerticesNative[i] = meshVertices[i];
@@ -52,7 +60,82 @@ public class MeshJobManagerCPU : MonoBehaviour
         {
             meshTrianglesNative[i] = meshTriangles[i];
         }
+
+        // Clear unused portions
+        for (int i = meshVertices.Length; i < maxVertices; i++)
+        {
+            meshVerticesNative[i] = float3.zero;
+        }
+        for (int i = meshTriangles.Length; i < maxTriangles; i++)
+        {
+            meshTrianglesNative[i] = 0;
+        }
     }
+
+    public void UpdateMeshData(Vector3[] newVertices, int[] newTriangles)
+    {
+        if (newVertices == null || newTriangles == null)
+        {
+            Debug.LogError("UpdateMeshData called with null arrays");
+            return;
+        }
+
+        // Validate triangle array
+        if (newTriangles.Length % 3 != 0)
+        {
+            Debug.LogError($"Invalid triangle array length: {newTriangles.Length} (should be multiple of 3)");
+            return;
+        }
+
+        // Check if we need to resize arrays
+        if (newVertices.Length > meshVerticesNative.Length)
+        {
+            Debug.Log($"Resizing vertex array from {meshVerticesNative.Length} to {newVertices.Length * 2}");
+
+            // Dispose old arrays
+            if (meshVerticesNative.IsCreated) meshVerticesNative.Dispose();
+            if (VertexPointMap.IsCreated) VertexPointMap.Dispose();
+
+            // Create larger arrays
+            meshVerticesNative = new NativeArray<float3>(newVertices.Length * 2, Allocator.Persistent);
+            VertexPointMap = new NativeParallelHashMap<int, int>(newVertices.Length * 2, Allocator.Persistent);
+        }
+
+        if (newTriangles.Length > meshTrianglesNative.Length)
+        {
+            Debug.Log($"Resizing triangle array from {meshTrianglesNative.Length} to {newTriangles.Length * 2}");
+
+            if (meshTrianglesNative.IsCreated) meshTrianglesNative.Dispose();
+            meshTrianglesNative = new NativeArray<int>(newTriangles.Length * 2, Allocator.Persistent);
+        }
+
+        // Validate triangle indices
+        for (int i = 0; i < newTriangles.Length; i++)
+        {
+            if (newTriangles[i] < 0 || newTriangles[i] >= newVertices.Length)
+            {
+                Debug.LogError($"Invalid triangle index at position {i}: {newTriangles[i]} (vertex count: {newVertices.Length})");
+                return;
+            }
+        }
+
+        // Update data
+        for (int i = 0; i < newVertices.Length; i++)
+        {
+            meshVerticesNative[i] = newVertices[i];
+        }
+        for (int i = 0; i < newTriangles.Length; i++)
+        {
+            meshTrianglesNative[i] = newTriangles[i];
+        }
+
+        // Update tracking variables
+        originalVertexCount = newVertices.Length;
+        originalTriangleCount = newTriangles.Length;
+
+        Debug.Log($"MeshJobManagerCPU updated: {originalVertexCount} vertices, {originalTriangleCount} triangle indices");
+    }
+
     // Burst-compiled job
     [BurstCompile]
     struct GetPositionsJob : IJobParallelFor
@@ -70,11 +153,11 @@ public class MeshJobManagerCPU : MonoBehaviour
     struct IdentifySurfacePointsJob : IJobParallelFor
     {
         [ReadOnly] public NativeArray<SpringPointData> allSpringPoints;
-        [ReadOnly] public NativeArray<float3> meshVertices;
-
-        [ReadOnly] public NativeArray<int> meshTriangles;
+        [ReadOnly] public NativeSlice<float3> meshVertices; // Use slice for safety
+        [ReadOnly] public NativeSlice<int> meshTriangles;   // Use slice for safety
+        [ReadOnly] public int triangleCount;
         [ReadOnly] public float surfaceDetectionThreshold;
-        [ReadOnly] public float angleThreshold; // New: Added angle threshold (e.g., 45 degrees)
+        [ReadOnly] public float angleThreshold;
         [ReadOnly] public float4x4 worldToLocalMatrix;
 
         [WriteOnly] public NativeList<SpringPointData>.ParallelWriter surfacePoints;
@@ -96,7 +179,7 @@ public class MeshJobManagerCPU : MonoBehaviour
             float3 pointToTri = math.normalize(triCenter - localPoint);
 
             // Compare angles (dot product)
-            float angle = math.degrees(math.acos(math.dot(triNormal, pointToTri)));
+            float angle = math.degrees(math.acos(math.clamp(math.dot(triNormal, pointToTri), -1f, 1f)));
 
             // If angle is large, it's likely a surface point
             if (angle > angleThreshold)
@@ -111,11 +194,21 @@ public class MeshJobManagerCPU : MonoBehaviour
             int nearestTriangle = -1;
             float minDistance = float.MaxValue;
 
-            for (int i = 0; i < meshTriangles.Length / 3; i++)
+            for (int i = 0; i < triangleCount; i++)
             {
-                float3 v0 = meshVertices[meshTriangles[i * 3]];
-                float3 v1 = meshVertices[meshTriangles[i * 3 + 1]];
-                float3 v2 = meshVertices[meshTriangles[i * 3 + 2]];
+                int baseIdx = i * 3;
+                if (baseIdx + 2 >= meshTriangles.Length) continue;
+
+                int v0Idx = meshTriangles[baseIdx];
+                int v1Idx = meshTriangles[baseIdx + 1];
+                int v2Idx = meshTriangles[baseIdx + 2];
+
+                if (v0Idx >= meshVertices.Length || v1Idx >= meshVertices.Length || v2Idx >= meshVertices.Length)
+                    continue;
+
+                float3 v0 = meshVertices[v0Idx];
+                float3 v1 = meshVertices[v1Idx];
+                float3 v2 = meshVertices[v2Idx];
                 float3 center = (v0 + v1 + v2) / 3f;
 
                 float distance = math.distance(point, center);
@@ -131,9 +224,19 @@ public class MeshJobManagerCPU : MonoBehaviour
 
         private float3 GetTriangleNormal(int triangleIndex)
         {
-            float3 v0 = meshVertices[meshTriangles[triangleIndex * 3]];
-            float3 v1 = meshVertices[meshTriangles[triangleIndex * 3 + 1]];
-            float3 v2 = meshVertices[meshTriangles[triangleIndex * 3 + 2]];
+            int baseIdx = triangleIndex * 3;
+            if (baseIdx + 2 >= meshTriangles.Length) return float3.zero;
+
+            int v0Idx = meshTriangles[baseIdx];
+            int v1Idx = meshTriangles[baseIdx + 1];
+            int v2Idx = meshTriangles[baseIdx + 2];
+
+            if (v0Idx >= meshVertices.Length || v1Idx >= meshVertices.Length || v2Idx >= meshVertices.Length)
+                return float3.zero;
+
+            float3 v0 = meshVertices[v0Idx];
+            float3 v1 = meshVertices[v1Idx];
+            float3 v2 = meshVertices[v2Idx];
 
             float3 edge1 = v1 - v0;
             float3 edge2 = v2 - v0;
@@ -143,44 +246,23 @@ public class MeshJobManagerCPU : MonoBehaviour
 
         private float3 GetTriangleCenter(int triangleIndex)
         {
-            float3 v0 = meshVertices[meshTriangles[triangleIndex * 3]];
-            float3 v1 = meshVertices[meshTriangles[triangleIndex * 3 + 1]];
-            float3 v2 = meshVertices[meshTriangles[triangleIndex * 3 + 2]];
+            int baseIdx = triangleIndex * 3;
+            if (baseIdx + 2 >= meshTriangles.Length) return float3.zero;
+
+            int v0Idx = meshTriangles[baseIdx];
+            int v1Idx = meshTriangles[baseIdx + 1];
+            int v2Idx = meshTriangles[baseIdx + 2];
+
+            if (v0Idx >= meshVertices.Length || v1Idx >= meshVertices.Length || v2Idx >= meshVertices.Length)
+                return float3.zero;
+
+            float3 v0 = meshVertices[v0Idx];
+            float3 v1 = meshVertices[v1Idx];
+            float3 v2 = meshVertices[v2Idx];
 
             return (v0 + v1 + v2) / 3f;
         }
     }
-
-
-    //[BurstCompile]
-    //struct GenerateLocalSurfacePointsJob : IJobParallelFor
-    //{
-    //    [ReadOnly] public NativeList<SpringPointData> surfacePoints;
-    //    [ReadOnly] public float4x4 worldToLocalMatrix;
-
-    //    [WriteOnly] public NativeList<float3>.ParallelWriter localPositions;
-
-    //    public void Execute(int index)
-    //    {
-    //        float3 worldInitial = surfacePoints[index].initialPosition;
-    //        float3 local = math.transform(worldToLocalMatrix, worldInitial);
-    //        localPositions.AddNoResize(local); // Requires enough capacity
-    //    }
-    //}
-
-    //[BurstCompile]
-    //public struct TransformToLocalSurfacePointsJob : IJobParallelFor
-    //{
-    //    [ReadOnly] public NativeList<SpringPointData> surfacePoints;
-    //    [ReadOnly] public float4x4 worldToLocal;
-
-    //    [WriteOnly] public NativeArray<float3> localPositions;
-
-    //    public void Execute(int index)
-    //    {
-    //        localPositions[index] = math.transform(worldToLocal, surfacePoints[index].position);
-    //    }
-    //}
 
     [BurstCompile]
     struct FindVertexClosestPointJob : IJobParallelFor
@@ -188,11 +270,14 @@ public class MeshJobManagerCPU : MonoBehaviour
         public NativeParallelHashMap<int, int>.ParallelWriter VertexPointMap;
 
         [ReadOnly] public NativeArray<SpringPointData> allSpringPoints;
-        [ReadOnly] public NativeArray<float3> meshVertices;
+        [ReadOnly] public NativeSlice<float3> meshVertices;
+        [ReadOnly] public int vertexCount;
         [ReadOnly] public float4x4 localToWorldMatrix;
 
         public void Execute(int index)
         {
+            if (index >= vertexCount || index >= meshVertices.Length) return;
+
             float3 worldVertex = math.transform(localToWorldMatrix, meshVertices[index]);
             int closestPointIndex = FindClosestPointIndex(worldVertex);
             VertexPointMap.TryAdd(index, closestPointIndex);
@@ -221,15 +306,18 @@ public class MeshJobManagerCPU : MonoBehaviour
     struct UpdateMeshVerticesJob : IJobParallelFor
     {
         [WriteOnly] public NativeList<SpringPointData>.ParallelWriter surfacePoints;
-        [WriteOnly] public NativeArray<float3> meshVertices;
+        public NativeSlice<float3> meshVertices;
 
         [ReadOnly] public NativeParallelHashMap<int, int> VertexPointMap;
         [ReadOnly] public NativeArray<SpringPointData> springPoints;
+        [ReadOnly] public int vertexCount;
         [ReadOnly] public float4x4 localToWorldMatrix;
         [ReadOnly] public float4x4 worldToLocalMatrix;
 
         public void Execute(int index)
         {
+            if (index >= vertexCount || index >= meshVertices.Length) return;
+
             if (VertexPointMap.TryGetValue(index, out int pointIndex))
             {
                 if (pointIndex >= 0 && pointIndex < springPoints.Length)
@@ -247,8 +335,67 @@ public class MeshJobManagerCPU : MonoBehaviour
         }
     }
 
+    // NEW: Improved job for updating mesh from spring points
+    [BurstCompile]
+    struct UpdateMeshVerticesFromSpringPointsJob : IJobParallelFor
+    {
+        // Output: Updated mesh vertices
+        public NativeSlice<float3> meshVertices;
+
+        // Input: Spring point data
+        [ReadOnly] public NativeArray<SpringPointData> springPoints;
+        [ReadOnly] public int vertexCount;
+        [ReadOnly] public float4x4 worldToLocalMatrix;
+        [ReadOnly] public float influenceRadius;
+
+        public void Execute(int vertexIndex)
+        {
+            if (vertexIndex >= vertexCount || vertexIndex >= meshVertices.Length) return;
+
+            // Get current vertex position in world space
+            float3 currentLocalPos = meshVertices[vertexIndex];
+            float3 currentWorldPos = math.transform(math.inverse(worldToLocalMatrix), currentLocalPos);
+
+            // Find closest spring point
+            int closestSpringIndex = -1;
+            float minDistanceSqr = float.MaxValue;
+
+            for (int i = 0; i < springPoints.Length; i++)
+            {
+                float distSqr = math.distancesq(currentWorldPos, springPoints[i].position);
+                if (distSqr < minDistanceSqr)
+                {
+                    minDistanceSqr = distSqr;
+                    closestSpringIndex = i;
+                }
+            }
+
+            // Update vertex position if close spring point found
+            if (closestSpringIndex >= 0 && math.sqrt(minDistanceSqr) < influenceRadius)
+            {
+                SpringPointData closestSpring = springPoints[closestSpringIndex];
+                float3 newLocalPos = math.transform(worldToLocalMatrix, closestSpring.position);
+
+                // Only update if the change is significant
+                if (math.distance(currentLocalPos, newLocalPos) > 0.001f)
+                {
+                    meshVertices[vertexIndex] = newLocalPos;
+                }
+            }
+        }
+    }
+
     public void IdentifySurfacePoints(Vector3[] meshVerts, int[] meshTris, Matrix4x4 worldToLocal)
     {
+        if (meshVerts == null || meshTris == null)
+        {
+            Debug.LogError("IdentifySurfacePoints called with null arrays");
+            return;
+        }
+
+        // Update mesh data first
+        UpdateMeshData(meshVerts, meshTris);
+
         surfaceSpringPoints.Clear();
         surfacePointsLocalSpace.Clear();
 
@@ -256,31 +403,48 @@ public class MeshJobManagerCPU : MonoBehaviour
         surfaceSpringPoints.Capacity = springPoints.Length;
         surfacePointsLocalSpace.Capacity = springPoints.Length;
 
-        for (int i = 0; i < meshVerts.Length; i++) meshVerticesNative[i] = (float3)meshVerts[i];
-        for (int i = 0; i < meshTris.Length; i++) meshTrianglesNative[i] = meshTris[i];
+        int triangleCount = meshTris.Length / 3;
+        Debug.Log($"IdentifySurfacePoints: Processing {triangleCount} triangles with {springPoints.Length} spring points");
+
+        var meshVerticesSlice = new NativeSlice<float3>(meshVerticesNative, 0, meshVerts.Length);
+        var meshTrianglesSlice = new NativeSlice<int>(meshTrianglesNative, 0, meshTris.Length);
 
         new IdentifySurfacePointsJob
         {
             allSpringPoints = springPoints,
-            meshVertices = meshVerticesNative,
-            meshTriangles = meshTrianglesNative,
+            meshVertices = meshVerticesSlice,
+            meshTriangles = meshTrianglesSlice,
+            triangleCount = triangleCount,
             surfaceDetectionThreshold = surfaceDetectionThreshold,
-            angleThreshold = 45f, // Configurable angle threshold (e.g., 45 degrees)
+            angleThreshold = 45f,
             worldToLocalMatrix = worldToLocal,
             surfacePoints = surfaceSpringPoints.AsParallelWriter()
         }.Schedule(springPoints.Length, 64).Complete();
+
+        Debug.Log($"IdentifySurfacePoints: Found {surfaceSpringPoints.Length} surface points");
     }
 
     public void ScheduleMeshVerticesUpdateJobs(Vector3[] meshVerts, int[] meshTris, Matrix4x4 localToWorld, Matrix4x4 worldToLocal)
     {
+        if (meshVerts == null || meshTris == null)
+        {
+            Debug.LogError("ScheduleMeshVerticesUpdateJobs called with null arrays");
+            return;
+        }
+
+        // Update mesh data first
+        UpdateMeshData(meshVerts, meshTris);
+
         VertexPointMap.Clear();
         surfaceSpringPoints.Clear();
 
         // Set capacity based on expected maximum size
-        surfaceSpringPoints.Capacity = math.max(springPoints.Length, meshVerticesNative.Length);
+        surfaceSpringPoints.Capacity = math.max(springPoints.Length, meshVerts.Length);
 
         // Get only positions from SpringPointData structs
-        positions = new(springPoints.Length, Allocator.TempJob);
+        if (positions.IsCreated) positions.Dispose();
+        positions = new NativeArray<float3>(springPoints.Length, Allocator.TempJob);
+
         new GetPositionsJob
         {
             springPoints = springPoints,
@@ -293,83 +457,119 @@ public class MeshJobManagerCPU : MonoBehaviour
         {
             averagePos += position;
         }
-        averagePos /= positions.Length;
+        if (positions.Length > 0)
+        {
+            averagePos /= positions.Length;
+            transform.position = averagePos;
+        }
 
-        transform.position = averagePos;
-
-        for (int i = 0; i < meshVerts.Length; i++) meshVerticesNative[i] = (float3)meshVerts[i];
-        for (int i = 0; i < meshTris.Length; i++) meshTrianglesNative[i] = meshTris[i];
+        var meshVerticesSlice = new NativeSlice<float3>(meshVerticesNative, 0, meshVerts.Length);
 
         var findJob = new FindVertexClosestPointJob
         {
             VertexPointMap = VertexPointMap.AsParallelWriter(),
-
             allSpringPoints = springPoints,
-            meshVertices = meshVerticesNative,
+            meshVertices = meshVerticesSlice,
+            vertexCount = meshVerts.Length,
             localToWorldMatrix = localToWorld,
         };
 
         var updateJob = new UpdateMeshVerticesJob
         {
             surfacePoints = surfaceSpringPoints.AsParallelWriter(),
-            meshVertices = meshVerticesNative,
-
+            meshVertices = meshVerticesSlice,
             springPoints = springPoints,
             VertexPointMap = VertexPointMap,
+            vertexCount = meshVerts.Length,
             localToWorldMatrix = localToWorld,
             worldToLocalMatrix = worldToLocal,
         };
 
-        jobHandle = findJob.Schedule(meshVerticesNative.Length, 64);
-        jobHandle = updateJob.Schedule(meshVerticesNative.Length, 64, jobHandle);
+        jobHandle = findJob.Schedule(meshVerts.Length, 64);
+        jobHandle = updateJob.Schedule(meshVerts.Length, 64, jobHandle);
+    }
+
+    // NEW: Improved method for updating mesh from spring points
+    public void UpdateMeshFromSpringPoints(Vector3[] meshVerts, Matrix4x4 worldToLocal, float influenceRadius)
+    {
+        if (meshVerts == null || !springPoints.IsCreated)
+        {
+            Debug.LogError("UpdateMeshFromSpringPoints called with invalid data");
+            return;
+        }
+
+        // Ensure our native array is up to date
+        for (int i = 0; i < math.min(meshVerts.Length, meshVerticesNative.Length); i++)
+        {
+            meshVerticesNative[i] = meshVerts[i];
+        }
+
+        var meshVerticesSlice = new NativeSlice<float3>(meshVerticesNative, 0, meshVerts.Length);
+
+        var updateJob = new UpdateMeshVerticesFromSpringPointsJob
+        {
+            meshVertices = meshVerticesSlice,
+            springPoints = springPoints,
+            vertexCount = meshVerts.Length,
+            worldToLocalMatrix = worldToLocal,
+            influenceRadius = influenceRadius
+        };
+
+        jobHandle = updateJob.Schedule(meshVerts.Length, 32);
     }
 
     public void CompleteAllJobsAndApply(Vector3[] meshVertices, int[] meshTriangles, Mesh targetMesh, List<SpringPointData> surfacePoints)
     {
+        if (meshVertices == null || meshTriangles == null || targetMesh == null || surfacePoints == null)
+        {
+            Debug.LogError("CompleteAllJobsAndApply called with null parameters");
+            return;
+        }
+
         jobHandle.Complete();
 
-        // update points
+        // Update surface points list
         surfacePoints.Clear();
         for (int i = 0; i < surfaceSpringPoints.Length; i++)
             surfacePoints.Add(surfaceSpringPoints[i]);
 
-        // Copy NativeArray to regular array
-        Vector3[] newVertices = new Vector3[meshVerticesNative.Length];
-        for (int i = 0; i < meshVerticesNative.Length; i++)
+        // Validate and copy updated mesh vertices
+        int vertexCount = math.min(originalVertexCount, meshVerticesNative.Length);
+
+        Vector3[] newVertices = new Vector3[vertexCount];
+        bool hasChanges = false;
+
+        for (int i = 0; i < vertexCount; i++)
         {
-            newVertices[i] = (Vector3)meshVerticesNative[i];
+            Vector3 newPos = (Vector3)meshVerticesNative[i];
+            if (i < meshVertices.Length && Vector3.Distance(newPos, meshVertices[i]) > 0.001f)
+            {
+                hasChanges = true;
+            }
+            newVertices[i] = newPos;
         }
 
-        // Ensure triangles array is valid for new vertex count
-        if (meshTrianglesNative.Length > 0)
+        // Only update mesh if there were actual changes
+        if (hasChanges)
         {
-            // Validate triangle indices
-            int maxIndex = newVertices.Length - 1;
-            for (int i = 0; i < meshTrianglesNative.Length; i++)
+            try
             {
-                if (meshTrianglesNative[i] > maxIndex)
-                {
-                    meshTrianglesNative[i] = maxIndex;
-                }
+                targetMesh.vertices = newVertices;
+                targetMesh.RecalculateNormals();
+                targetMesh.RecalculateBounds();
+
+                Debug.Log($"Applied mesh update with changes: {newVertices.Length} vertices");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"Error applying mesh update: {e.Message}");
             }
         }
 
-        int[] newTriangles = new int[meshTrianglesNative.Length];
-        for (int i = 0; i < meshTrianglesNative.Length; i++)
-        {
-            newTriangles[i] = (int)meshTrianglesNative[i];
-        }
+        // Update the input array reference
+        System.Array.Copy(newVertices, meshVertices, math.min(newVertices.Length, meshVertices.Length));
 
-        targetMesh.vertices = newVertices;
-        targetMesh.triangles = newTriangles;
-
-        targetMesh.RecalculateNormals();
-        targetMesh.RecalculateBounds();
-
-        // Update cached references
-        meshVertices = newVertices;
-        meshTriangles = newTriangles;
-
+        // Clean up temp resources
         if (positions.IsCreated)
             positions.Dispose();
     }
@@ -377,14 +577,12 @@ public class MeshJobManagerCPU : MonoBehaviour
     private void OnDestroy()
     {
         // Complete any pending jobs
-        jobHandle.Complete();
-
-        //if (springPoints.IsCreated) springPoints.Dispose
-        //if (surfaceSpringPoints.IsCreated) surfaceSpringPoints.Clear();
-        //if (surfacePointsLocalSpace.IsCreated) surfacePointsLocalSpace.Clear();
+        if (jobHandle.IsCompleted == false)
+            jobHandle.Complete();
 
         if (VertexPointMap.IsCreated) VertexPointMap.Dispose();
         if (meshVerticesNative.IsCreated) meshVerticesNative.Dispose();
         if (meshTrianglesNative.IsCreated) meshTrianglesNative.Dispose();
+        if (positions.IsCreated) positions.Dispose();
     }
 }
