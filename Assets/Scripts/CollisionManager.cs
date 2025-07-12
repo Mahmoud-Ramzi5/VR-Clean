@@ -171,7 +171,7 @@ public class CollisionManager : MonoBehaviour
         Vector3 obj2Center = GetObjectCenter(obj2);
 
         // Move from obj1 center along the collision normal by half the penetration depth
-        Vector3 contactPos = obj1Center + info.Normal * (info.Depth * 0.5f);
+        Vector3 contactPos = obj1Center + (Vector3)info.Normal * (info.Depth * 0.5f);
 
         return contactPos;
     }
