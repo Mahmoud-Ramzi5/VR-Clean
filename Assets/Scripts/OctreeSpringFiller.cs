@@ -1218,6 +1218,10 @@ public class OctreeSpringFiller : MonoBehaviour
 
         UpdateMeshDataWithNewPoint(worldPosition);
 
+        // Dispose previous instances before reassigning
+        if (surfaceSpringPoints2.IsCreated) surfaceSpringPoints2.Dispose();
+        if (surfacePointsLocalSpace.IsCreated) surfacePointsLocalSpace.Dispose();
+
         surfaceSpringPoints2 = new NativeList<SpringPointData>(allSpringPoints.Length, Allocator.Persistent);
         surfacePointsLocalSpace = new NativeList<float3>(allSpringPoints.Length, Allocator.Persistent);
 

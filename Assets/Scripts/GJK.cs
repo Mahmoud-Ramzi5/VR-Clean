@@ -8,7 +8,7 @@ using Unity.Mathematics;
 public struct CollisionInfo
 {
     public bool DidCollide;
-    public Vector3 Normal;
+    public float3 Normal;
     public float Depth;
 }
 
@@ -28,16 +28,15 @@ public static class GJK
     public static bool DetectCollision(OctreeSpringFiller bodyA, OctreeSpringFiller bodyB, out CollisionInfo info)
     {
         info = new CollisionInfo();
-        List<Vector3> simplex = new List<Vector3>();
-        Vector3 direction = bodyA.transform.position - bodyB.transform.position;
-        if (direction == Vector3.zero)
+        List<float3> simplex = new List<float3>();
+        float3 direction = (float3)(bodyA.transform.position - bodyB.transform.position);
+        if (math.all(direction == float3.zero))
         {
-            direction = Vector3.right;
+            direction = new float3(1, 0, 0); // right
         }
-        direction = direction.normalized;
 
         // Initial support point
-        Vector3 support = Support(bodyA, bodyB, direction);
+        float3 support = Support(bodyA, bodyB, direction);
         simplex.Add(support);
         direction = -support;
 
@@ -45,11 +44,11 @@ public static class GJK
         for (int i = 0; i < MaxGJKIterations; i++)
         {
             // DEBUG: Visualize the current search direction from the origin of the Minkowski Difference.
-            Debug.DrawRay(Vector3.zero, direction.normalized * 2, Color.cyan, 0.1f);
+            Debug.DrawRay(float3.zero, math.normalize(direction) * 2, Color.cyan, 0.1f);
 
             support = Support(bodyA, bodyB, direction);
 
-            if (Vector3.Dot(support, direction) < 0)
+            if (math.dot(support, direction) < 0f)
             {
                 // No collision
                 info.DidCollide = false;
@@ -77,10 +76,10 @@ public static class GJK
     /// <summary>
     /// The Support function for the Minkowski Difference of two soft bodies.
     /// </summary>
-    private static Vector3 Support(OctreeSpringFiller bodyA, OctreeSpringFiller bodyB, Vector3 direction)
+    private static float3 Support(OctreeSpringFiller bodyA, OctreeSpringFiller bodyB, float3 direction)
     {
-        Vector3 p1 = FindFurthestPoint(bodyA, direction);
-        Vector3 p2 = FindFurthestPoint(bodyB, -direction);
+        float3 p1 = FindFurthestPoint(bodyA, direction);
+        float3 p2 = FindFurthestPoint(bodyB, -direction);
 
         // DEBUG: Draw a line between the two support points in world space.
         Debug.DrawLine(p1, p2, Color.magenta, 0.1f);
@@ -92,9 +91,9 @@ public static class GJK
     /// Finds the point on a soft body's surface furthest in a given world-space direction.
     /// This is the corrected version that uses the current deformed shape.
     /// </summary>
-    private static Vector3 FindFurthestPoint(OctreeSpringFiller body, Vector3 worldDirection)
+    private static float3 FindFurthestPoint(OctreeSpringFiller body, float3 worldDirection)
     {
-        Vector3 furthestPoint = Vector3.zero;
+        float3 furthestPoint = float3.zero;
         float maxDot = float.NegativeInfinity;
 
         if (body.surfacePoints.Count == 0)
@@ -105,12 +104,12 @@ public static class GJK
 
         // Initialize with the first point to ensure we have a valid starting point
         furthestPoint = body.surfacePoints[0].position;
-        maxDot = Vector3.Dot(furthestPoint, worldDirection);
+        maxDot = math.dot(furthestPoint, worldDirection);
 
         for (int i = 0; i < body.surfacePoints.Count; i++)
         {
             SpringPointData sp = body.surfacePoints[i];
-            float dot = Vector3.Dot(sp.position, worldDirection);
+            float dot = math.dot(sp.position, worldDirection);
             if (dot > maxDot)
             {
                 maxDot = dot;
@@ -119,8 +118,8 @@ public static class GJK
         }
 
         // DEBUG: Visualize the search direction on the body and the resulting furthest point.
-        Vector3 origin = body.transform.position;
-        Debug.DrawRay(origin, worldDirection.normalized * 2, Color.green, 0.1f);
+        float3 origin = (float3)body.transform.position;
+        Debug.DrawRay(origin, math.normalize(worldDirection) * 2, Color.green, 0.1f);
         Debug.DrawLine(origin, furthestPoint, Color.yellow, 0.1f);
 
         return furthestPoint;
@@ -130,7 +129,7 @@ public static class GJK
     /// Processes the current simplex to see if it contains the origin.
     /// If not, it updates the simplex and the search direction.
     /// </summary>
-    private static bool HandleSimplex(ref List<Vector3> simplex, ref Vector3 direction)
+    private static bool HandleSimplex(ref List<float3> simplex, ref float3 direction)
     {
         if (simplex.Count == 2) return Line(ref simplex, ref direction);
         if (simplex.Count == 3) return Triangle(ref simplex, ref direction);
@@ -138,43 +137,43 @@ public static class GJK
         return false;
     }
 
-    private static bool Line(ref List<Vector3> simplex, ref Vector3 direction)
+    private static bool Line(ref List<float3> simplex, ref float3 direction)
     {
-        Vector3 a = simplex[1];
-        Vector3 b = simplex[0];
-        Vector3 ab = b - a;
-        Vector3 ao = -a;
+        float3 a = simplex[1];
+        float3 b = simplex[0];
+        float3 ab = b - a;
+        float3 ao = -a;
 
-        if (Vector3.Dot(ab, ao) > 0)
+        if (math.dot(ab, ao) > 0)
         {
-            direction = Vector3.Cross(Vector3.Cross(ab, ao), ab);
+            direction = math.cross(math.cross(ab, ao), ab);
         }
         else
         {
-            simplex = new List<Vector3> { a };
+            simplex = new List<float3> { a };
             direction = ao;
         }
         return false;
     }
 
-    private static bool Triangle(ref List<Vector3> simplex, ref Vector3 direction)
+    private static bool Triangle(ref List<float3> simplex, ref float3 direction)
     {
-        Vector3 a = simplex[2];
-        Vector3 b = simplex[1];
-        Vector3 c = simplex[0];
+        float3 a = simplex[2];
+        float3 b = simplex[1];
+        float3 c = simplex[0];
 
-        Vector3 ab = b - a;
-        Vector3 ac = c - a;
-        Vector3 ao = -a;
+        float3 ab = b - a;
+        float3 ac = c - a;
+        float3 ao = -a;
 
-        Vector3 abc = Vector3.Cross(ab, ac);
+        float3 abc = math.cross(ab, ac);
 
-        if (Vector3.Dot(Vector3.Cross(abc, ac), ao) > 0)
+        if (math.dot(math.cross(abc, ac), ao) > 0)
         {
-            if (Vector3.Dot(ac, ao) > 0)
+            if (math.dot(ac, ao) > 0)
             {
-                simplex = new List<Vector3> { c, a };
-                direction = Vector3.Cross(Vector3.Cross(ac, ao), ac);
+                simplex = new List<float3> { c, a };
+                direction = math.cross(math.cross(ac, ao), ac);
             }
             else
             {
@@ -183,13 +182,13 @@ public static class GJK
         }
         else
         {
-            if (Vector3.Dot(Vector3.Cross(ab, abc), ao) > 0)
+            if (math.dot(math.cross(ab, abc), ao) > 0)
             {
                 return Line(ref simplex, ref direction);
             }
             else
             {
-                if (Vector3.Dot(abc, ao) > 0)
+                if (math.dot(abc, ao) > 0)
                 {
                     direction = abc;
                 }
@@ -197,42 +196,42 @@ public static class GJK
                 {
                     direction = -abc;
                     // Swap winding order for EPA
-                    simplex = new List<Vector3> { b, c, a };
+                    simplex = new List<float3> { b, c, a };
                 }
             }
         }
         return false;
     }
 
-    private static bool Tetrahedron(ref List<Vector3> simplex, ref Vector3 direction)
+    private static bool Tetrahedron(ref List<float3> simplex, ref float3 direction)
     {
-        Vector3 a = simplex[3];
-        Vector3 b = simplex[2];
-        Vector3 c = simplex[1];
-        Vector3 d = simplex[0];
+        float3 a = simplex[3];
+        float3 b = simplex[2];
+        float3 c = simplex[1];
+        float3 d = simplex[0];
 
-        Vector3 ao = -a;
-        Vector3 ab = b - a;
-        Vector3 ac = c - a;
-        Vector3 ad = d - a;
+        float3 ao = -a;
+        float3 ab = b - a;
+        float3 ac = c - a;
+        float3 ad = d - a;
 
-        Vector3 abc = Vector3.Cross(ab, ac);
-        Vector3 acd = Vector3.Cross(ac, ad);
-        Vector3 adb = Vector3.Cross(ad, ab);
+        float3 abc = math.cross(ab, ac);
+        float3 acd = math.cross(ac, ad);
+        float3 adb = math.cross(ad, ab);
 
-        if (Vector3.Dot(abc, ao) > 0)
+        if (math.dot(abc, ao) > 0)
         {
-            simplex = new List<Vector3> { c, b, a };
+            simplex = new List<float3> { c, b, a };
             return Triangle(ref simplex, ref direction);
         }
-        if (Vector3.Dot(acd, ao) > 0)
+        if (math.dot(acd, ao) > 0)
         {
-            simplex = new List<Vector3> { d, c, a };
+            simplex = new List<float3> { d, c, a };
             return Triangle(ref simplex, ref direction);
         }
-        if (Vector3.Dot(adb, ao) > 0)
+        if (math.dot(adb, ao) > 0)
         {
-            simplex = new List<Vector3> { b, d, a };
+            simplex = new List<float3> { b, d, a };
             return Triangle(ref simplex, ref direction);
         }
         return true; // Origin is enclosed
@@ -241,9 +240,9 @@ public static class GJK
     /// <summary>
     /// Expanding Polytope Algorithm. Calculates the penetration depth and normal.
     /// </summary>
-    private static void EPA(List<Vector3> simplex, OctreeSpringFiller bodyA, OctreeSpringFiller bodyB, out Vector3 normal, out float depth)
+    private static void EPA(List<float3> simplex, OctreeSpringFiller bodyA, OctreeSpringFiller bodyB, out float3 normal, out float depth)
     {
-        List<Vector3> polytope = new List<Vector3>(simplex);
+        List<float3> polytope = new List<float3>(simplex);
         List<int> faces = new List<int>
         {
             0, 1, 2,
@@ -257,17 +256,18 @@ public static class GJK
             // Find face closest to origin
             int minFaceIndex = 0;
             float minDistance = float.MaxValue;
-            Vector3 minNormal = Vector3.zero;
+            float3 minNormal = float3.zero;
 
             for (int j = 0; j < faces.Count / 3; j++)
             {
-                Vector3 a = polytope[faces[j * 3]];
-                Vector3 b = polytope[faces[j * 3 + 1]];
-                Vector3 c = polytope[faces[j * 3 + 2]];
+                float3 a = polytope[faces[j * 3]];
+                float3 b = polytope[faces[j * 3 + 1]];
+                float3 c = polytope[faces[j * 3 + 2]];
 
-                Vector3 n = Vector3.Cross(b - a, c - a);
-                n.Normalize();
-                float dist = Vector3.Dot(n, a);
+                float3 n = math.cross(b - a, c - a);
+                n = math.normalize(n);
+
+                float dist = math.dot(n, a);
 
                 if (dist < minDistance)
                 {
@@ -277,10 +277,10 @@ public static class GJK
                 }
             }
 
-            Vector3 support = Support(bodyA, bodyB, minNormal);
-            float sDist = Vector3.Dot(minNormal, support);
+            float3 support = Support(bodyA, bodyB, minNormal);
+            float sDist = math.dot(minNormal, support);
 
-            if (Mathf.Abs(sDist - minDistance) < Epsilon)
+            if (math.abs(sDist - minDistance) < Epsilon)
             {
                 // Convergence
                 normal = minNormal;
@@ -290,7 +290,7 @@ public static class GJK
 
             // Expand polytope
             List<int> newFaces = new List<int>();
-            List<Vector2Int> edges = new List<Vector2Int>();
+            List<int2> edges = new List<int2>();
             int newPointIndex = polytope.Count;
             polytope.Add(support);
 
@@ -300,11 +300,11 @@ public static class GJK
                 int i2 = faces[j * 3 + 1];
                 int i3 = faces[j * 3 + 2];
 
-                Vector3 a = polytope[i1];
-                Vector3 b = polytope[i2];
-                Vector3 c = polytope[i3];
+                float3 a = polytope[i1];
+                float3 b = polytope[i2];
+                float3 c = polytope[i3];
 
-                if (Vector3.Dot(Vector3.Cross(b - a, c - a), support - a) < 0)
+                if (math.dot(math.cross(b - a, c - a), support - a) < 0)
                 {
                     // Face is visible from the new point, add its edges to the list
                     AddEdge(edges, i1, i2);
@@ -330,32 +330,33 @@ public static class GJK
         FindClosestFace(polytope, faces, out normal, out depth);
     }
 
-    private static void AddEdge(List<Vector2Int> edges, int a, int b)
+    private static void AddEdge(List<int2> edges, int a, int b)
     {
-        var reverse = new Vector2Int(b, a);
+        var reverse = new int2(b, a);
         if (edges.Contains(reverse))
         {
             edges.Remove(reverse);
         }
         else
         {
-            edges.Add(new Vector2Int(a, b));
+            edges.Add(new int2(a, b));
         }
     }
 
-    private static void FindClosestFace(List<Vector3> polytope, List<int> faces, out Vector3 normal, out float depth)
+    private static void FindClosestFace(List<float3> polytope, List<int> faces, out float3 normal, out float depth)
     {
         float minDistance = float.MaxValue;
-        normal = Vector3.up;
+        normal = new float3(0, 1, 0); // up
 
         for (int i = 0; i < faces.Count / 3; i++)
         {
-            Vector3 a = polytope[faces[i * 3]];
-            Vector3 b = polytope[faces[i * 3 + 1]];
-            Vector3 c = polytope[faces[i * 3 + 2]];
+            float3 a = polytope[faces[i * 3]];
+            float3 b = polytope[faces[i * 3 + 1]];
+            float3 c = polytope[faces[i * 3 + 2]];
 
-            Vector3 n = Vector3.Cross(b - a, c - a).normalized;
-            float dist = Vector3.Dot(n, a);
+            float3 n = math.cross(b - a, c - a);
+            n = math.normalize(n);
+            float dist = math.dot(n, a);
 
             if (dist < minDistance)
             {
