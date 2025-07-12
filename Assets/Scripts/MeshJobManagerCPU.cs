@@ -21,8 +21,13 @@ public class MeshJobManagerCPU : MonoBehaviour
     private NativeArray<int> meshTrianglesNative;
     private float surfaceDetectionThreshold;
 
+    private NativeArray<float3> positions;
     private JobHandle jobHandle;
 
+    /// <summary>
+    /// Initializes the collision system with spring points.
+    /// NOTE: This class will NOT take ownership or dispose of the springPoints array.
+    /// </summary>
     public void Initialize(Vector3[] meshVertices, int[] meshTriangles, NativeArray<SpringPointData> springPoints,
         NativeList<SpringPointData> surfaceSpringPoints, NativeList<float3> surfacePointsLocalSpace, float surfaceDetectionThreshold)
     {
@@ -274,9 +279,8 @@ public class MeshJobManagerCPU : MonoBehaviour
         // Set capacity based on expected maximum size
         surfaceSpringPoints.Capacity = math.max(springPoints.Length, meshVerticesNative.Length);
 
-        NativeArray<float3> positions = new(springPoints.Length, Allocator.Persistent);
-
-        // Get SpringPoint positions 
+        // Get only positions from SpringPointData structs
+        positions = new(springPoints.Length, Allocator.TempJob);
         new GetPositionsJob
         {
             springPoints = springPoints,
@@ -365,13 +369,19 @@ public class MeshJobManagerCPU : MonoBehaviour
         // Update cached references
         meshVertices = newVertices;
         meshTriangles = newTriangles;
+
+        if (positions.IsCreated)
+            positions.Dispose();
     }
 
     private void OnDestroy()
     {
-        if (springPoints.IsCreated) springPoints.Dispose();
-        if (surfaceSpringPoints.IsCreated) surfaceSpringPoints.Dispose();
-        if (surfacePointsLocalSpace.IsCreated) surfacePointsLocalSpace.Dispose();
+        // Complete any pending jobs
+        jobHandle.Complete();
+
+        //if (springPoints.IsCreated) springPoints.Dispose
+        //if (surfaceSpringPoints.IsCreated) surfaceSpringPoints.Clear();
+        //if (surfacePointsLocalSpace.IsCreated) surfacePointsLocalSpace.Clear();
 
         if (VertexPointMap.IsCreated) VertexPointMap.Dispose();
         if (meshVerticesNative.IsCreated) meshVerticesNative.Dispose();

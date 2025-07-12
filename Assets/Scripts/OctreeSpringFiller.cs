@@ -1104,8 +1104,6 @@ public class OctreeSpringFiller : MonoBehaviour
 
     private void OnDestroy()
     {
-        tempPoints.Clear();
-        tempConnections.Clear();
         allPointPositions.Clear();
 
         if (meshJobManager) Destroy(meshJobManager);
@@ -1119,10 +1117,16 @@ public class OctreeSpringFiller : MonoBehaviour
         if (allSpringPoints.IsCreated) allSpringPoints.Dispose();
         if (allSpringConnections.IsCreated) allSpringConnections.Dispose();
 
-        visualizeRenderer.Dispose();
+        if (surfaceSpringPoints2.IsCreated) surfaceSpringPoints2.Dispose();
+        if (surfacePointsLocalSpace.IsCreated) surfacePointsLocalSpace.Dispose();
+
+        if (visualizeRenderer != null)
+        {
+            visualizeRenderer.Dispose();
+            visualizeRenderer = null;
+        }
 
         Resources.UnloadUnusedAssets();
-        System.GC.Collect();
     }
     //
 

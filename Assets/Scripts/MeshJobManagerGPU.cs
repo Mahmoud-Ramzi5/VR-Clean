@@ -46,6 +46,10 @@ public class MeshJobManagerGPU : MonoBehaviour
     private int originalVertexCount;
     private JobHandle jobHandle;
 
+    /// <summary>
+    /// Initializes the collision system with spring points.
+    /// NOTE: This class will NOT take ownership or dispose of the springPoints array.
+    /// </summary>
     public void Initialize(Vector3[] meshVertices, int[] meshTriangles, NativeArray<SpringPointData> springPoints,
         NativeList<SpringPointData> surfaceSpringPoints, NativeList<float3> surfacePointsLocalSpace, float surfaceDetectionThreshold)
     {
@@ -267,7 +271,7 @@ public class MeshJobManagerGPU : MonoBehaviour
 
     public void DispatchMeshUpdate(Vector3[] meshVerts, Matrix4x4 worldToLocal, Mesh targetMesh)
     {
-        NativeArray<float3> positions = new(springPoints.Length, Allocator.Persistent);
+        NativeArray<float3> positions = new(springPoints.Length, Allocator.TempJob);
 
         new GetPositionsJob
         {
@@ -323,19 +327,25 @@ public class MeshJobManagerGPU : MonoBehaviour
         //targetMesh.vertices = meshVerts;
         //targetMesh.RecalculateBounds();
         //targetMesh.RecalculateNormals();
+
+        if (positions.IsCreated)
+            positions.Dispose();
     }
 
     private void OnDestroy()
     {
-        vertexBuffers[0].Dispose();
-        vertexBuffers[1].Dispose();
+        // Complete any pending jobs
+        jobHandle.Complete();
 
-        PointPosBuffer.Dispose();
-        weightMapBuffer.Dispose();
+        if (vertexBuffers[0] != null) vertexBuffers[0].Release();
+        if (vertexBuffers[1] != null) vertexBuffers[1].Release();
 
-        if (springPoints.IsCreated) springPoints.Dispose();
-        if (surfaceSpringPoints.IsCreated) surfaceSpringPoints.Dispose();
-        if (surfacePointsLocalSpace.IsCreated) surfacePointsLocalSpace.Dispose();
+        if (PointPosBuffer != null) PointPosBuffer.Release();
+        if (weightMapBuffer != null) weightMapBuffer.Release();
+
+        //if (springPoints.IsCreated) springPoints.Dispose();
+        //if (surfaceSpringPoints.IsCreated) surfaceSpringPoints.Clear();
+        //if (surfacePointsLocalSpace.IsCreated) surfacePointsLocalSpace.Clear();
 
         if (meshVerticesNative.IsCreated) meshVerticesNative.Dispose();
         if (meshTrianglesNative.IsCreated) meshTrianglesNative.Dispose();

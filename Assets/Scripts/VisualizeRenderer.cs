@@ -205,6 +205,7 @@ public class VisualizeRenderer
 
     public void Dispose()
     {
+        // Clean up materials
         if (pointMaterial != null)
         {
             Object.Destroy(pointMaterial);
@@ -217,9 +218,18 @@ public class VisualizeRenderer
             connectionMaterial = null;
         }
 
+        // Clean up mesh
+        if (pointMesh != null)
+        {
+            Object.Destroy(pointMesh);
+            pointMesh = null;
+        }
+
+        // Clean up compute buffer
         if (connectionBuffer != null)
         {
             connectionBuffer.Release();
+            connectionBuffer = null;
         }
     }
 }

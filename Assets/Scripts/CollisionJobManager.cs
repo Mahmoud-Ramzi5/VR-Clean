@@ -16,6 +16,10 @@ public class CollisionJobManager : MonoBehaviour
 
     private JobHandle collisionJobHandle;
 
+    /// <summary>
+    /// Initializes the collision system with spring points.
+    /// NOTE: This class will NOT take ownership or dispose of the springPoints array.
+    /// </summary>
     public void InitializeArrays(NativeArray<SpringPointData> springPoints)
     {
         this.springPoints = springPoints;
@@ -78,7 +82,7 @@ public class CollisionJobManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (springPoints.IsCreated) springPoints.Dispose();
+        //if (springPoints.IsCreated) springPoints.Dispose();
         //if (springConnections.IsCreated) springConnections.Dispose();
     }
 }
