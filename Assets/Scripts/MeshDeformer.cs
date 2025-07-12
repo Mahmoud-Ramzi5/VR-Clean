@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using UnityEngine;
 
 public class MeshDeformer : MonoBehaviour
@@ -28,6 +27,7 @@ public class MeshDeformer : MonoBehaviour
     }
     private List<TriangleData> triangleDataList;
     public bool isInitialized = false;
+
     void Start()
     {
         if (!meshFilter) meshFilter = GetComponent<MeshFilter>();
@@ -38,7 +38,6 @@ public class MeshDeformer : MonoBehaviour
         BuildInfluenceMapping();
         isInitialized = true;
     }
-
 
     void InitializeDeformationMesh()
     {
@@ -60,8 +59,6 @@ public class MeshDeformer : MonoBehaviour
                 canSubdivide = true
             });
         }
-
-
     }
 
     void Update()
@@ -160,7 +157,6 @@ public class MeshDeformer : MonoBehaviour
 
         SubdivideSelectedTriangles(new List<int> { triangleIndex });
         BuildInfluenceMapping();
-
     }
 
     public void HandleCollisionPoints(List<Vector3> collisionPoints)
@@ -170,7 +166,6 @@ public class MeshDeformer : MonoBehaviour
             Vector3 localPoint = transform.InverseTransformPoint(point);
             FindAndSubdivideAffectedTriangles(localPoint);
         }
-
 
         NotifyMeshChanged();
     }
@@ -219,10 +214,11 @@ public class MeshDeformer : MonoBehaviour
         return distance < influenceRadius;
     }
 
-    private struct Edge
+    private struct Edge : IEquatable<Edge>
     {
-        public int v1, v2;
-        public Vector3 pos1, pos2;
+        public readonly int v1, v2;
+        public readonly Vector3 pos1, pos2;
+        private readonly int hashCode;
 
         public Edge(int a, int b, Vector3[] vertices)
         {
@@ -230,31 +226,17 @@ public class MeshDeformer : MonoBehaviour
             v2 = Mathf.Max(a, b);
             pos1 = vertices[v1];
             pos2 = vertices[v2];
+            hashCode = pos1.GetHashCode() ^ pos2.GetHashCode();
         }
 
-        public override bool Equals(object obj)
+        public bool Equals(Edge other)
         {
-            if (!(obj is Edge)) return false;
-            Edge other = (Edge)obj;
-            return (pos1 == other.pos1 && pos2 == other.pos2) ||
-                   (pos1 == other.pos2 && pos2 == other.pos1);
+            return (pos1.Equals(other.pos1) && pos2.Equals(other.pos2)) ||
+                   (pos1.Equals(other.pos2) && pos2.Equals(other.pos1));
         }
 
-        public override int GetHashCode()
-        {
-            return pos1.GetHashCode() ^ pos2.GetHashCode();
-        }
-    }
-
-    
-
-    private void AddEdgeToMap(Edge edge, int triangleIdx, Dictionary<Edge, List<int>> edgeToTriangles)
-    {
-        if (!edgeToTriangles.ContainsKey(edge))
-        {
-            edgeToTriangles[edge] = new List<int>();
-        }
-        edgeToTriangles[edge].Add(triangleIdx);
+        public override bool Equals(object obj) => obj is Edge e && Equals(e);
+        public override int GetHashCode() => hashCode;
     }
 
     private int GetMidpoint(int a, int b, Vector3[] verts, List<Vector3> newVerts, Dictionary<Edge, int> midpoints, bool create = true)
@@ -275,6 +257,7 @@ public class MeshDeformer : MonoBehaviour
 
         return newIndex;
     }
+
     void BuildInfluenceMapping()
     {
         vertexInfluences = new List<WeightedInfluence>[baseVertices.Length];
@@ -324,22 +307,16 @@ public class MeshDeformer : MonoBehaviour
                 baseVertices[i];
         }
 
-
         NotifyMeshChanged();
     }
+
     public void NotifyMeshChanged()
     {
         if (springFiller != null)
         {
-
+            // Mesh change notification logic here
         }
     }
-
-
-
-    
-
-    
 
     void OnDrawGizmosSelected()
     {
@@ -358,124 +335,61 @@ public class MeshDeformer : MonoBehaviour
 
     public void SubdivideMeshWithPoints(List<SpringPointData> newPoints)
     {
-        if (newPoints == null || newPoints.Count == 0)
-        {
-            Debug.LogWarning("No new points supplied for subdivision.");
-            return;
-        }
+        if (newPoints == null || newPoints.Count == 0) return;
 
-        // Convert current vertices to world space for distance checks
         Vector3[] worldVertices = new Vector3[currentVertices.Length];
         for (int i = 0; i < currentVertices.Length; i++)
         {
             worldVertices[i] = transform.TransformPoint(currentVertices[i]);
         }
 
-        // Create a list to track triangles that need subdivision
-        try {
-            List<int> trianglesToSubdivide = new List<int>();
-            // First pass: Identify triangles with more than 3 spring points
-            for (int i = 0; i < currentTriangles.Length - 3; i += 3)
+        List<int> trianglesToSubdivide = new List<int>();
+
+        for (int i = 0; i < currentTriangles.Length; i += 3)
+        {
+            int triangleIndex = i / 3;
+            if (triangleIndex >= triangleDataList.Count) continue;
+
+            TriangleData data = triangleDataList[triangleIndex];
+            if (!data.canSubdivide || data.subdivisionLevel >= maxSubdivisionLevel) continue;
+
+            Vector3 v0 = worldVertices[currentTriangles[i]];
+            Vector3 v1 = worldVertices[currentTriangles[i + 1]];
+            Vector3 v2 = worldVertices[currentTriangles[i + 2]];
+            Vector3 centroid = (v0 + v1 + v2) / 3f;
+
+            int springPointCount = 0;
+            foreach (SpringPointData pointData in newPoints)
             {
-                int triangleIndex = i / 3;
-                if (triangleIndex < 0 || triangleIndex >= triangleDataList.Count) 
-                    continue;
-
-                TriangleData data = triangleDataList[triangleIndex];
-                if (!data.canSubdivide || data.subdivisionLevel >= maxSubdivisionLevel)
-                    continue;
-
-                int idx0 = currentTriangles[i];
-                int idx1 = currentTriangles[i + 1];
-                int idx2 = currentTriangles[i + 2];
-
-                Debug.Log("wtffwtf55");
-                Vector3 v0 = worldVertices[idx0];
-                Vector3 v1 = worldVertices[idx1];
-                Vector3 v2 = worldVertices[idx2];
-                Vector3 centroid = (v0 + v1 + v2) / 3f;
-
-                // Count spring points near this triangle
-                int springPointCount = 0;
-                foreach (SpringPointData pointData in newPoints)
+                if (Vector3.Distance(pointData.position, centroid) < influenceRadius)
                 {
-                    Vector3 point = pointData.position;
-                    if (Vector3.Distance(point, centroid) < influenceRadius)
-                    {
-                        springPointCount++;
-                    }
-                }
-
-                if (springPointCount > 3)
-                {
-                    trianglesToSubdivide.Add(triangleIndex);
+                    springPointCount++;
+                    if (springPointCount > 3) break;
                 }
             }
 
-            Debug.Log("wtffwtf782");
-            // Recursively subdivide problem tffriangles
-            while (trianglesToSubdivide.Count > 0)
+            if (springPointCount > 3)
             {
-                // Create a copy of triangles to process in this iteration
-                List<int> currentBatch = new List<int>(trianglesToSubdivide);
-                trianglesToSubdivide.Clear();
-
-                Debug.Log("wtffwtf759");
-                // Subdivide all marked triangles
-                SubdivideSelectedTriangles(currentBatch, false);
-
-                // Update world vertices after subdivision
-                Debug.Log("wtffwtf69");
-                worldVertices = new Vector3[currentVertices.Length];
-                for (int i = 0; i < currentVertices.Length; i++)
-                {
-                    worldVertices[i] = transform.TransformPoint(currentVertices[i]);
-                }
-                Debug.Log("wtffwtf156");
-
-
-                // Check newly created triangles
-                for (int i = triangleDataList.Count - currentBatch.Count * 4; i < triangleDataList.Count; i++)
-                {
-                    Debug.Log("wtffwtf12");
-                    TriangleData data = triangleDataList[i];
-                    if (!data.canSubdivide || data.subdivisionLevel >= maxSubdivisionLevel)
-                        continue;
-
-                    int triStart = i * 3;
-                    if (triStart + 2 >= currentTriangles.Length) continue;
-
-                    Debug.Log("wtffwtf1234");
-                    int idx0 = currentTriangles[triStart];
-                    int idx1 = currentTriangles[triStart + 1];
-                    int idx2 = currentTriangles[triStart + 2];
-
-                    Vector3 v0 = worldVertices[idx0];
-                    Vector3 v1 = worldVertices[idx1];
-                    Vector3 v2 = worldVertices[idx2];
-                    Vector3 centroid = (v0 + v1 + v2) / 3f;
-
-                    // Count spring points near this new triangle
-                    int springPointCount = 0;
-                    foreach (SpringPointData pointData in newPoints)
-                    {
-                        Vector3 point = pointData.position;
-                        if (Vector3.Distance(point, centroid) < influenceRadius)
-                        {
-                            springPointCount++;
-                        }
-                    }
-
-                    if (springPointCount > 3)
-                    {
-                        trianglesToSubdivide.Add(i);
-                    }
-                }
+                trianglesToSubdivide.Add(triangleIndex);
             }
         }
-        catch (Exception ex) {
-            Debug.Log(ex.Message);
+
+        if (trianglesToSubdivide.Count > 0)
+        {
+            SubdivideAllTriangles(false);
+            SubdivideMeshWithPoints(newPoints);
         }
+    }
+
+    public void SubdivideAllTriangles(bool create = true)
+    {
+        List<int> allTriangleIndices = new List<int>();
+        for (int i = 0; i < currentTriangles.Length / 3; i++)
+        {
+            allTriangleIndices.Add(i);
+        }
+
+        SubdivideSelectedTriangles(allTriangleIndices, create);
     }
 
     private void SubdivideSelectedTriangles(List<int> triangleIndices, bool create = true)
@@ -484,9 +398,8 @@ public class MeshDeformer : MonoBehaviour
         int[] oldTriangles = workingMesh.triangles;
         List<Vector3> newVertices = new List<Vector3>(oldVertices);
 
-        // Build vertex-to-triangles mapping
+        // Build vertex-to-triangles mapping (required for original stitching behavior)
         Dictionary<int, List<int>> vertexToTriangles = new Dictionary<int, List<int>>();
-        Debug.Log("wtffwtf95");
         for (int i = 0; i < oldTriangles.Length; i++)
         {
             int vertexIndex = oldTriangles[i];
@@ -497,11 +410,9 @@ public class MeshDeformer : MonoBehaviour
             vertexToTriangles[vertexIndex].Add(i / 3);
         }
 
-        // Build edge-to-triangles mapping with position-aware edges
+        // Build edge-to-triangles mapping with position-aware edges (critical for stitching)
         Dictionary<Edge, List<int>> edgeToTriangles = new Dictionary<Edge, List<int>>();
-
-        Debug.Log("wtffwtf49");
-        for (int i = 0; i < oldTriangles.Length - 3; i += 3)
+        for (int i = 0; i < oldTriangles.Length; i += 3)
         {
             int triangleIdx = i / 3;
             int i0 = oldTriangles[i];
@@ -513,7 +424,7 @@ public class MeshDeformer : MonoBehaviour
             AddEdgeToMap(new Edge(i2, i0, oldVertices), triangleIdx, edgeToTriangles);
         }
 
-        // Find all triangles to subdivide using BFS
+        // Find all triangles to subdivide using original BFS approach
         HashSet<int> trianglesToSubdivide = new HashSet<int>();
         Queue<int> trianglesToProcess = new Queue<int>(triangleIndices);
 
@@ -528,7 +439,6 @@ public class MeshDeformer : MonoBehaviour
 
             trianglesToSubdivide.Add(currentTri);
 
-            Debug.Log("wtffwtf758");
             // Get all vertices of this triangle
             int baseIdx = currentTri * 3;
             int v0 = oldTriangles[baseIdx];
@@ -553,7 +463,6 @@ public class MeshDeformer : MonoBehaviour
 
         // Create midpoints for all edges of triangles to be subdivided
         Dictionary<Edge, int> edgeMidpoints = new Dictionary<Edge, int>();
-        Debug.Log("wtffwtf645");
         foreach (int triIdx in trianglesToSubdivide)
         {
             int i0 = oldTriangles[triIdx * 3];
@@ -565,12 +474,11 @@ public class MeshDeformer : MonoBehaviour
             GetMidpoint(i2, i0, oldVertices, newVertices, edgeMidpoints, create);
         }
 
-        // Rebuild all triangles
+        // Rebuild all triangles using original splitting logic
         List<int> newTriangles = new List<int>();
         List<TriangleData> newTriangleData = new List<TriangleData>();
 
-        Debug.Log("wtffwtf987");
-        for (int i = 0; i < oldTriangles.Length - 3; i += 3)
+        for (int i = 0; i < oldTriangles.Length; i += 3)
         {
             int originalTriangleIndex = i / 3;
             TriangleData originalData = triangleDataList[originalTriangleIndex];
@@ -671,6 +579,8 @@ public class MeshDeformer : MonoBehaviour
                     break;
             }
         }
+
+        // Update mesh data
         workingMesh.Clear();
         workingMesh.vertices = newVertices.ToArray();
         workingMesh.triangles = newTriangles.ToArray();
@@ -678,8 +588,17 @@ public class MeshDeformer : MonoBehaviour
         workingMesh.RecalculateBounds();
 
         triangleDataList = newTriangleData;
-        currentVertices = workingMesh.vertices;
-        currentTriangles = workingMesh.triangles;
+        baseVertices = workingMesh.vertices;
+        currentVertices = baseVertices.Clone() as Vector3[];
+    }
+
+    private void AddEdgeToMap(Edge edge, int triangleIdx, Dictionary<Edge, List<int>> edgeToTriangles)
+    {
+        if (!edgeToTriangles.ContainsKey(edge))
+        {
+            edgeToTriangles[edge] = new List<int>();
+        }
+        edgeToTriangles[edge].Add(triangleIdx);
     }
 
     private struct WeightedInfluence
@@ -687,6 +606,4 @@ public class MeshDeformer : MonoBehaviour
         public SpringPointData springPoint;
         public float weight;
     }
-
-
 }
