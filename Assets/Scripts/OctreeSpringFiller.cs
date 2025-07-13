@@ -16,6 +16,7 @@ public class OctreeSpringFiller : MonoBehaviour
     public bool isFilled = true;
     public bool isRigid = true; 
     public bool isFixCorners = false;
+    public bool skipPhysicsFromMaterial = false;
 
     [Header("Spring Settings")]
     [Header("Spring Settings / Layer 1")]
@@ -187,29 +188,34 @@ public class OctreeSpringFiller : MonoBehaviour
         meshTriangles = targetMesh.triangles;
 
         // Initialize from MaterialManager if exists
-        var materialManager = GetComponent<MaterialManager>();
-        if (materialManager != null)
+        if (!skipPhysicsFromMaterial)
         {
-            var preset = materialManager.GetMaterialProperties();
-            if (preset != null)
+            var materialManager = GetComponent<MaterialManager>();
+            if (materialManager != null)
             {
-                // Apply preset properties
-                springConstantL1 = preset.springConstantL1;
-                damperConstantL1 = preset.damperConstantL1;
-                connectionRadiusL1 = preset.connectionRadiusL1;
-                maxRestLengthL1 = preset.maxRestLengthL1;
-                springConstantL2 = preset.springConstantL2;
-                damperConstantL2 = preset.damperConstantL2;
-                connectionRadiusL2 = preset.connectionRadiusL2;
-                maxRestLengthL2 = preset.maxRestLengthL2;
-                springConstantL3 = preset.springConstantL3;
-                damperConstantL3 = preset.damperConstantL3;
-                connectionRadiusL3 = preset.connectionRadiusL3;
-                maxRestLengthL3 = preset.maxRestLengthL3;
-                isRigid = preset.isRigid;
-                totalMass = preset.totalMass;
-                bounciness = preset.bounciness;
-                friction = preset.friction;
+                var preset = materialManager.GetMaterialProperties();
+                if (preset != null)
+                {
+                    springConstantL1 = preset.springConstantL1;
+                    damperConstantL1 = preset.damperConstantL1;
+                    connectionRadiusL1 = preset.connectionRadiusL1;
+                    maxRestLengthL1 = preset.maxRestLengthL1;
+
+                    springConstantL2 = preset.springConstantL2;
+                    damperConstantL2 = preset.damperConstantL2;
+                    connectionRadiusL2 = preset.connectionRadiusL2;
+                    maxRestLengthL2 = preset.maxRestLengthL2;
+
+                    springConstantL3 = preset.springConstantL3;
+                    damperConstantL3 = preset.damperConstantL3;
+                    connectionRadiusL3 = preset.connectionRadiusL3;
+                    maxRestLengthL3 = preset.maxRestLengthL3;
+
+                    isRigid = preset.isRigid;
+                    totalMass = preset.totalMass;
+                    bounciness = preset.bounciness;
+                    friction = preset.friction;
+                }
             }
         }
 

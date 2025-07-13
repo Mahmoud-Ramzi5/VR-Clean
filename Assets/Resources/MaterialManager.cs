@@ -19,6 +19,7 @@ public enum MaterialType
 [ExecuteAlways] // Allows OnValidate to run in edit mode
 public class MaterialManager : MonoBehaviour
 {
+    public bool skipApplyPhysicsOnStart = false;
     public MaterialType materialType;
     public MaterialDatabase materialDatabase;
     private GameObject currentObject;
@@ -26,12 +27,19 @@ public class MaterialManager : MonoBehaviour
     private void Start()
     {
         currentObject = gameObject;
-        ApplyMaterial(currentObject, materialType);
+
+        if (!skipApplyPhysicsOnStart)
+        {
+            ApplyMaterial(currentObject, materialType);
+        }
     }
 
     private void OnValidate()
     {
-        ApplyMaterial(currentObject, materialType);
+        if (!skipApplyPhysicsOnStart)
+        {
+            ApplyMaterial(gameObject, materialType);
+        }
     }
 
     public void ApplyMaterial(GameObject parent, MaterialType type)

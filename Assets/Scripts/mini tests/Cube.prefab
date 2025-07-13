@@ -42,7 +42,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3796389031773342928}
-  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!23 &8238553343060580934
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -66,7 +66,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a5813af496f1b4f4a99cbe8a296c0257, type: 2}
+  - {fileID: 2100000, guid: 5f3277584c204ec47bc0f2e7d13582da, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -103,26 +103,27 @@ MonoBehaviour:
   minNodeSize: 0.5
   PointSpacing: 0.5
   isFilled: 1
-  isRigid: 1
+  isRigid: 0
   isFixCorners: 0
-  springConstantL1: 850
-  damperConstantL1: 0.85
+  skipPhysicsFromMaterial: 0
+  springConstantL1: 180
+  damperConstantL1: 0.55
   connectionRadiusL1: 1
-  maxRestLengthL1: 3
-  springConstantL2: 700
-  damperConstantL2: 0.8
+  maxRestLengthL1: 7
+  springConstantL2: 130
+  damperConstantL2: 0.45
   connectionRadiusL2: 2
-  maxRestLengthL2: 4
-  springConstantL3: 500
-  damperConstantL3: 0.75
+  maxRestLengthL2: 8
+  springConstantL3: 90
+  damperConstantL3: 0.35
   connectionRadiusL3: 3
-  maxRestLengthL3: 5
-  totalMass: 300
-  bounciness: 0.3
-  friction: 0.4
+  maxRestLengthL3: 9
+  totalMass: 100
+  bounciness: 0.6
+  friction: 0.3
   velocity: {x: 0, y: 0, z: 0}
   applyGravity: 1
-  gravity: {x: 0, y: -9.81, z: 0}
+  gravity: {x: 0, y: -9.83, z: 0}
   boundingVolume:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
@@ -144,7 +145,7 @@ MonoBehaviour:
     dampingFactor: 0.1
   layerPreset: 0
   visualizeSpringPoints: 0
-  visualizeSpringConnections: 0
+  visualizeSpringConnections: 1
   collisionJobManager: {fileID: 0}
   springJobManager: {fileID: 0}
   enableMeshSubdivision: 1
@@ -163,5 +164,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec3f314a6c7bd84daec4379820a2cf2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  materialType: 3
+  skipApplyPhysicsOnStart: 0
+  materialType: 5
   materialDatabase: {fileID: 11400000, guid: 3a5fe3bd8ae9ba947b42c666475a8b38, type: 2}

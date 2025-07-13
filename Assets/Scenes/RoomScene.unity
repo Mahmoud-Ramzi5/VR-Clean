@@ -653,6 +653,7 @@ MonoBehaviour:
   isFilled: 1
   isRigid: 1
   isFixCorners: 1
+  skipPhysicsFromMaterial: 0
   springConstantL1: 750
   damperConstantL1: 0.9
   connectionRadiusL1: 1
@@ -711,6 +712,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec3f314a6c7bd84daec4379820a2cf2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  skipApplyPhysicsOnStart: 0
   materialType: 8
   materialDatabase: {fileID: 11400000, guid: 3a5fe3bd8ae9ba947b42c666475a8b38, type: 2}
 --- !u!114 &110279141
@@ -787,6 +789,7 @@ MonoBehaviour:
   isFilled: 1
   isRigid: 1
   isFixCorners: 1
+  skipPhysicsFromMaterial: 0
   springConstantL1: 750
   damperConstantL1: 0.9
   connectionRadiusL1: 1
@@ -845,6 +848,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec3f314a6c7bd84daec4379820a2cf2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  skipApplyPhysicsOnStart: 0
   materialType: 8
   materialDatabase: {fileID: 11400000, guid: 3a5fe3bd8ae9ba947b42c666475a8b38, type: 2}
 --- !u!1 &148757535
@@ -2113,6 +2117,7 @@ MonoBehaviour:
   isFilled: 1
   isRigid: 1
   isFixCorners: 1
+  skipPhysicsFromMaterial: 0
   springConstantL1: 750
   damperConstantL1: 0.9
   connectionRadiusL1: 1
@@ -2171,6 +2176,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec3f314a6c7bd84daec4379820a2cf2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  skipApplyPhysicsOnStart: 0
   materialType: 8
   materialDatabase: {fileID: 11400000, guid: 3a5fe3bd8ae9ba947b42c666475a8b38, type: 2}
 --- !u!1 &321212441
@@ -3314,6 +3320,7 @@ MonoBehaviour:
   isFilled: 1
   isRigid: 1
   isFixCorners: 1
+  skipPhysicsFromMaterial: 0
   springConstantL1: 750
   damperConstantL1: 0.9
   connectionRadiusL1: 1
@@ -3372,6 +3379,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec3f314a6c7bd84daec4379820a2cf2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  skipApplyPhysicsOnStart: 0
   materialType: 8
   materialDatabase: {fileID: 11400000, guid: 3a5fe3bd8ae9ba947b42c666475a8b38, type: 2}
 --- !u!1 &550204106
@@ -4560,9 +4568,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b107a068129550c4ba3a645b5d1c2b21, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _prefab: {fileID: 3796389031773342928, guid: e0c5bf19920378944b9115709fd95836, type: 3}
+  _templateInstance: {fileID: 3796389031773342928, guid: e0c5bf19920378944b9115709fd95836, type: 3}
   _spawnPosition: {x: -7, y: 6, z: 1}
-  _spawnScale: {x: 1, y: 1, z: 1}
+  _spawnScale: {x: 2, y: 2, z: 2}
   _spawnRotation: {x: 0, y: 0, z: 0, w: 1}
   _resetPhysics: 1
   _spawnKey: 32
@@ -8586,9 +8594,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b107a068129550c4ba3a645b5d1c2b21, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _prefab: {fileID: 3796389031773342928, guid: e0c5bf19920378944b9115709fd95836, type: 3}
+  _templateInstance: {fileID: 3796389031773342928, guid: e0c5bf19920378944b9115709fd95836, type: 3}
   _spawnPosition: {x: 7, y: 6, z: 1}
-  _spawnScale: {x: 1, y: 1, z: 1}
+  _spawnScale: {x: 2, y: 2, z: 2}
   _spawnRotation: {x: 0, y: 0, z: 0, w: 1}
   _resetPhysics: 1
   _spawnKey: 32
@@ -8615,6 +8623,7 @@ MonoBehaviour:
   isFilled: 1
   isRigid: 1
   isFixCorners: 1
+  skipPhysicsFromMaterial: 0
   springConstantL1: 750
   damperConstantL1: 0.9
   connectionRadiusL1: 1
@@ -8673,6 +8682,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec3f314a6c7bd84daec4379820a2cf2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  skipApplyPhysicsOnStart: 0
   materialType: 8
   materialDatabase: {fileID: 11400000, guid: 3a5fe3bd8ae9ba947b42c666475a8b38, type: 2}
 --- !u!1 &1656860025

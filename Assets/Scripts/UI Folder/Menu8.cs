@@ -47,6 +47,7 @@ public class Menu8 : MenuDataBinderBase
             materialManager.ApplyMaterial(game_object, selectedpreset);
             materialManager.materialType = selectedpreset.Type;
             Debug.Log("Applied preset: " + selectedpreset.name);
+            FindObjectOfType<PrefabSpawner>().SetTemplateInstance(target.gameObject);
             menu3.Initializethings(target);
             menu4.Initializethings(target);
             menu5.Initializethings(target);
