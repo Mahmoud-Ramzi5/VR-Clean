@@ -97,7 +97,7 @@ public class SpringJobManager : MonoBehaviour
     struct AccumulateForcesJob : IJobParallelFor
     {
         [ReadOnly] public NativeParallelMultiHashMap<int, float3> forceMap;
-        
+
         public NativeArray<SpringPointData> springPoints;
 
         public void Execute(int index)
@@ -156,6 +156,7 @@ public class SpringJobManager : MonoBehaviour
                 }
 
                 point.velocity = velocity;
+                point.acc = acceleration;
             }
 
             // --- Position Update ---

@@ -631,90 +631,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 66829655}
   m_CullTransparentMesh: 1
---- !u!1 &70112490 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 7137695343743457622, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-  m_PrefabInstance: {fileID: 3672073785968432931}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &70112492
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 70112490}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eb8f2297a8688e746805467c15f3e018, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  minNodeSize: 2
-  PointSpacing: 2
-  isFilled: 1
-  isRigid: 1
-  isFixCorners: 1
-  skipPhysicsFromMaterial: 0
-  springConstantL1: 750
-  damperConstantL1: 0.9
-  connectionRadiusL1: 1
-  maxRestLengthL1: 4
-  springConstantL2: 600
-  damperConstantL2: 0.85
-  connectionRadiusL2: 2
-  maxRestLengthL2: 6
-  springConstantL3: 450
-  damperConstantL3: 0.8
-  connectionRadiusL3: 3
-  maxRestLengthL3: 8
-  totalMass: 280
-  bounciness: 0.1
-  friction: 0.7
-  velocity: {x: 0, y: 0, z: 0}
-  applyGravity: 1
-  gravity: {x: 0, y: -9.81, z: 0}
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
-  groundLevel: 0
-  groundBounce: 0.5
-  groundFriction: 0.8
-  applyGroundCollision: 1
-  collisionManager: {fileID: 0}
-  meshDeformer: {fileID: 0}
-  collisionLayer:
-    layerName: Default
-    layerIndex: 0
-    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
-    density: 1000
-    restitution: 0.6
-    friction: 0.4
-    youngsModulus: 1000000
-    poissonRatio: 0.3
-    dampingFactor: 0.1
-  layerPreset: 0
-  visualizeSpringPoints: 0
-  visualizeSpringConnections: 0
-  collisionJobManager: {fileID: 0}
-  springJobManager: {fileID: 0}
-  enableMeshSubdivision: 1
-  autoUpdateMeshFromSurface: 1
-  surfaceDetectionThreshold: 0.2
-  applyVelocity: 0
---- !u!114 &70112495
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 70112490}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1ec3f314a6c7bd84daec4379820a2cf2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  skipApplyPhysicsOnStart: 0
-  materialType: 8
-  materialDatabase: {fileID: 11400000, guid: 3a5fe3bd8ae9ba947b42c666475a8b38, type: 2}
 --- !u!114 &110279141
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -767,90 +683,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 28}
   m_Pivot: {x: 0.5, y: 1}
---- !u!1 &141441489 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 5065445760766755934, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-  m_PrefabInstance: {fileID: 3672073785968432931}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &141441491
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 141441489}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eb8f2297a8688e746805467c15f3e018, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  minNodeSize: 2
-  PointSpacing: 2
-  isFilled: 1
-  isRigid: 1
-  isFixCorners: 1
-  skipPhysicsFromMaterial: 0
-  springConstantL1: 750
-  damperConstantL1: 0.9
-  connectionRadiusL1: 1
-  maxRestLengthL1: 4
-  springConstantL2: 600
-  damperConstantL2: 0.85
-  connectionRadiusL2: 2
-  maxRestLengthL2: 6
-  springConstantL3: 450
-  damperConstantL3: 0.8
-  connectionRadiusL3: 3
-  maxRestLengthL3: 8
-  totalMass: 280
-  bounciness: 0.1
-  friction: 0.7
-  velocity: {x: 0, y: 0, z: 0}
-  applyGravity: 1
-  gravity: {x: 0, y: -9.81, z: 0}
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
-  groundLevel: 0
-  groundBounce: 0.5
-  groundFriction: 0.8
-  applyGroundCollision: 1
-  collisionManager: {fileID: 0}
-  meshDeformer: {fileID: 0}
-  collisionLayer:
-    layerName: Default
-    layerIndex: 0
-    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
-    density: 1000
-    restitution: 0.6
-    friction: 0.4
-    youngsModulus: 1000000
-    poissonRatio: 0.3
-    dampingFactor: 0.1
-  layerPreset: 0
-  visualizeSpringPoints: 0
-  visualizeSpringConnections: 0
-  collisionJobManager: {fileID: 0}
-  springJobManager: {fileID: 0}
-  enableMeshSubdivision: 1
-  autoUpdateMeshFromSurface: 1
-  surfaceDetectionThreshold: 0.2
-  applyVelocity: 0
---- !u!114 &141441494
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 141441489}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1ec3f314a6c7bd84daec4379820a2cf2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  skipApplyPhysicsOnStart: 0
-  materialType: 8
-  materialDatabase: {fileID: 11400000, guid: 3a5fe3bd8ae9ba947b42c666475a8b38, type: 2}
 --- !u!1 &148757535
 GameObject:
   m_ObjectHideFlags: 0
@@ -1818,11 +1650,11 @@ MonoBehaviour:
   rubber: {fileID: 11400000, guid: acd68a2c6bddc8148b64e739aabd415d, type: 2}
   stone: {fileID: 11400000, guid: 90750dc234ec75a46b30d5281c47f184, type: 2}
   simulationScripts:
-  - {fileID: 141441491}
-  - {fileID: 1645095936}
-  - {fileID: 313130425}
-  - {fileID: 547138082}
-  - {fileID: 70112492}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
 --- !u!1 &276061967
 GameObject:
   m_ObjectHideFlags: 0
@@ -2095,90 +1927,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 279136583}
   m_CullTransparentMesh: 1
---- !u!1 &313130423 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8575820214452171253, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-  m_PrefabInstance: {fileID: 3672073785968432931}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &313130425
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 313130423}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eb8f2297a8688e746805467c15f3e018, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  minNodeSize: 2
-  PointSpacing: 2
-  isFilled: 1
-  isRigid: 1
-  isFixCorners: 1
-  skipPhysicsFromMaterial: 0
-  springConstantL1: 750
-  damperConstantL1: 0.9
-  connectionRadiusL1: 1
-  maxRestLengthL1: 4
-  springConstantL2: 600
-  damperConstantL2: 0.85
-  connectionRadiusL2: 2
-  maxRestLengthL2: 6
-  springConstantL3: 450
-  damperConstantL3: 0.8
-  connectionRadiusL3: 3
-  maxRestLengthL3: 8
-  totalMass: 280
-  bounciness: 0.1
-  friction: 0.7
-  velocity: {x: 0, y: 0, z: 0}
-  applyGravity: 0
-  gravity: {x: 0, y: -9.81, z: 0}
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
-  groundLevel: 0
-  groundBounce: 0.5
-  groundFriction: 0.8
-  applyGroundCollision: 1
-  collisionManager: {fileID: 0}
-  meshDeformer: {fileID: 0}
-  collisionLayer:
-    layerName: Default
-    layerIndex: 0
-    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
-    density: 1000
-    restitution: 0.6
-    friction: 0.4
-    youngsModulus: 1000000
-    poissonRatio: 0.3
-    dampingFactor: 0.1
-  layerPreset: 0
-  visualizeSpringPoints: 0
-  visualizeSpringConnections: 0
-  collisionJobManager: {fileID: 0}
-  springJobManager: {fileID: 0}
-  enableMeshSubdivision: 1
-  autoUpdateMeshFromSurface: 1
-  surfaceDetectionThreshold: 0.2
-  applyVelocity: 0
---- !u!114 &313130428
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 313130423}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1ec3f314a6c7bd84daec4379820a2cf2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  skipApplyPhysicsOnStart: 0
-  materialType: 8
-  materialDatabase: {fileID: 11400000, guid: 3a5fe3bd8ae9ba947b42c666475a8b38, type: 2}
 --- !u!1 &321212441
 GameObject:
   m_ObjectHideFlags: 0
@@ -3298,90 +3046,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 536447247}
   m_CullTransparentMesh: 1
---- !u!1 &547138080 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2646216794053658233, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-  m_PrefabInstance: {fileID: 3672073785968432931}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &547138082
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 547138080}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eb8f2297a8688e746805467c15f3e018, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  minNodeSize: 2
-  PointSpacing: 2
-  isFilled: 1
-  isRigid: 1
-  isFixCorners: 1
-  skipPhysicsFromMaterial: 0
-  springConstantL1: 750
-  damperConstantL1: 0.9
-  connectionRadiusL1: 1
-  maxRestLengthL1: 4
-  springConstantL2: 600
-  damperConstantL2: 0.85
-  connectionRadiusL2: 2
-  maxRestLengthL2: 6
-  springConstantL3: 450
-  damperConstantL3: 0.8
-  connectionRadiusL3: 3
-  maxRestLengthL3: 8
-  totalMass: 280
-  bounciness: 0.1
-  friction: 0.7
-  velocity: {x: 0, y: 0, z: 0}
-  applyGravity: 1
-  gravity: {x: 0, y: -9.81, z: 0}
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
-  groundLevel: 0
-  groundBounce: 0.5
-  groundFriction: 0.8
-  applyGroundCollision: 1
-  collisionManager: {fileID: 0}
-  meshDeformer: {fileID: 0}
-  collisionLayer:
-    layerName: Default
-    layerIndex: 0
-    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
-    density: 1000
-    restitution: 0.6
-    friction: 0.4
-    youngsModulus: 1000000
-    poissonRatio: 0.3
-    dampingFactor: 0.1
-  layerPreset: 0
-  visualizeSpringPoints: 0
-  visualizeSpringConnections: 0
-  collisionJobManager: {fileID: 0}
-  springJobManager: {fileID: 0}
-  enableMeshSubdivision: 1
-  autoUpdateMeshFromSurface: 1
-  surfaceDetectionThreshold: 0.2
-  applyVelocity: 0
---- !u!114 &547138085
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 547138080}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1ec3f314a6c7bd84daec4379820a2cf2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  skipApplyPhysicsOnStart: 0
-  materialType: 8
-  materialDatabase: {fileID: 11400000, guid: 3a5fe3bd8ae9ba947b42c666475a8b38, type: 2}
 --- !u!1 &550204106
 GameObject:
   m_ObjectHideFlags: 0
@@ -8601,90 +8265,6 @@ MonoBehaviour:
   _resetPhysics: 1
   _spawnKey: 32
   _spawnOnStart: 0
---- !u!1 &1645095934 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 3953189584710687739, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-  m_PrefabInstance: {fileID: 3672073785968432931}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1645095936
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1645095934}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eb8f2297a8688e746805467c15f3e018, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  minNodeSize: 2
-  PointSpacing: 2
-  isFilled: 1
-  isRigid: 1
-  isFixCorners: 1
-  skipPhysicsFromMaterial: 0
-  springConstantL1: 750
-  damperConstantL1: 0.9
-  connectionRadiusL1: 1
-  maxRestLengthL1: 4
-  springConstantL2: 600
-  damperConstantL2: 0.85
-  connectionRadiusL2: 2
-  maxRestLengthL2: 6
-  springConstantL3: 450
-  damperConstantL3: 0.8
-  connectionRadiusL3: 3
-  maxRestLengthL3: 8
-  totalMass: 280
-  bounciness: 0.1
-  friction: 0.7
-  velocity: {x: 0, y: 0, z: 0}
-  applyGravity: 1
-  gravity: {x: 0, y: -9.81, z: 0}
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
-  groundLevel: 0
-  groundBounce: 0.5
-  groundFriction: 0.8
-  applyGroundCollision: 1
-  collisionManager: {fileID: 0}
-  meshDeformer: {fileID: 0}
-  collisionLayer:
-    layerName: Default
-    layerIndex: 0
-    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
-    density: 1000
-    restitution: 0.6
-    friction: 0.4
-    youngsModulus: 1000000
-    poissonRatio: 0.3
-    dampingFactor: 0.1
-  layerPreset: 0
-  visualizeSpringPoints: 0
-  visualizeSpringConnections: 0
-  collisionJobManager: {fileID: 0}
-  springJobManager: {fileID: 0}
-  enableMeshSubdivision: 1
-  autoUpdateMeshFromSurface: 1
-  surfaceDetectionThreshold: 0.2
-  applyVelocity: 0
---- !u!114 &1645095939
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1645095934}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1ec3f314a6c7bd84daec4379820a2cf2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  skipApplyPhysicsOnStart: 0
-  materialType: 8
-  materialDatabase: {fileID: 11400000, guid: 3a5fe3bd8ae9ba947b42c666475a8b38, type: 2}
 --- !u!1 &1656860025
 GameObject:
   m_ObjectHideFlags: 0
@@ -9351,6 +8931,68 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1798287685}
   m_CullTransparentMesh: 1
+--- !u!1 &1881957898
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1881957900}
+  - component: {fileID: 1881957899}
+  m_Layer: 0
+  m_Name: Collision Manager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1881957899
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1881957898}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 884242f632e93ae448ee40063e06223e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enableInterObjectCollision: 1
+  enableContactPointResponse: 1
+  baseContactRadius: 1
+  contactInfluenceFalloff: 2
+  maxContactsPerCollision: 8
+  radiusDepthScale: 0.5
+  contactStiffness: 5000
+  contactDampingRatio: 1
+  viscousFrictionFactor: 0.5
+  defaultCoefficientOfRestitution: 0.6
+  defaultCoefficientOfFriction: 0.4
+  penetrationCorrectionFactor: 0.8
+  penetrationSlop: 0.01
+  totalCollisionsThisFrame: 0
+  showCollisionGizmos: 0
+  showContactPoints: 1
+  showInfluenceRadius: 1
+  logCollisionDetails: 0
+--- !u!4 &1881957900
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1881957898}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -5.0026255, y: -8.387131, z: 19.551262}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1902168988
 GameObject:
   m_ObjectHideFlags: 0
@@ -17109,242 +16751,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!1001 &3672073785968432931
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 316496784130344891, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2070746591586855685, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2171564060747747471, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: minNodeSize.y
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 2171564060747747471, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: PointSpacing.y
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 2171564060747747471, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: maxRestLengthL1
-      value: 10
-      objectReference: {fileID: 0}
-    - target: {fileID: 2171564060747747471, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: maxRestLengthL2
-      value: 15
-      objectReference: {fileID: 0}
-    - target: {fileID: 2171564060747747471, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: maxRestLengthL3
-      value: 20
-      objectReference: {fileID: 0}
-    - target: {fileID: 2266035689452233661, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3335414934298179634, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: minNodeSize.z
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 3335414934298179634, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: PointSpacing.z
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 3335414934298179634, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: maxRestLengthL1
-      value: 10
-      objectReference: {fileID: 0}
-    - target: {fileID: 3335414934298179634, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: maxRestLengthL2
-      value: 15
-      objectReference: {fileID: 0}
-    - target: {fileID: 3335414934298179634, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: maxRestLengthL3
-      value: 20
-      objectReference: {fileID: 0}
-    - target: {fileID: 3392229448254666546, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: minNodeSize.y
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 3392229448254666546, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: PointSpacing.y
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 3392229448254666546, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: maxRestLengthL1
-      value: 10
-      objectReference: {fileID: 0}
-    - target: {fileID: 3392229448254666546, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: maxRestLengthL2
-      value: 15
-      objectReference: {fileID: 0}
-    - target: {fileID: 3392229448254666546, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: maxRestLengthL3
-      value: 20
-      objectReference: {fileID: 0}
-    - target: {fileID: 3539144239531949980, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: m_Name
-      value: RoomClear
-      objectReference: {fileID: 0}
-    - target: {fileID: 3539144239531949980, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4069075114937582027, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: minNodeSize.x
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 4069075114937582027, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: PointSpacing.x
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 4069075114937582027, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: maxRestLengthL1
-      value: 10
-      objectReference: {fileID: 0}
-    - target: {fileID: 4069075114937582027, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: maxRestLengthL2
-      value: 15
-      objectReference: {fileID: 0}
-    - target: {fileID: 4069075114937582027, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: maxRestLengthL3
-      value: 20
-      objectReference: {fileID: 0}
-    - target: {fileID: 4784886917913572595, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: minNodeSize.x
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 4784886917913572595, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: PointSpacing.x
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 4784886917913572595, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: maxRestLengthL1
-      value: 10
-      objectReference: {fileID: 0}
-    - target: {fileID: 4784886917913572595, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: maxRestLengthL2
-      value: 15
-      objectReference: {fileID: 0}
-    - target: {fileID: 4784886917913572595, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: maxRestLengthL3
-      value: 20
-      objectReference: {fileID: 0}
-    - target: {fileID: 5051713729625431929, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: ee1571ad1d7b6584e85f1262da46eadf, type: 2}
-    - target: {fileID: 5493705143380308346, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: ee1571ad1d7b6584e85f1262da46eadf, type: 2}
-    - target: {fileID: 6548080019372733794, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6548080019372733794, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6548080019372733794, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6548080019372733794, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6548080019372733794, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6548080019372733794, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6548080019372733794, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6548080019372733794, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6548080019372733794, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6548080019372733794, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6622574026393475221, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6852231607123954000, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: ee1571ad1d7b6584e85f1262da46eadf, type: 2}
-    - target: {fileID: 6885350628049356845, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: ee1571ad1d7b6584e85f1262da46eadf, type: 2}
-    - target: {fileID: 8696701653633225347, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: 'm_Materials.Array.data[0]'
-      value: 
-      objectReference: {fileID: 2100000, guid: ee1571ad1d7b6584e85f1262da46eadf, type: 2}
-    - target: {fileID: 9141318126522869435, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 1
-      objectReference: {fileID: 0}
-    m_RemovedComponents:
-    - {fileID: 3335414934298179634, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-    - {fileID: 2171564060747747471, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-    - {fileID: 3392229448254666546, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-    - {fileID: 4784886917913572595, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-    - {fileID: 4069075114937582027, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 5065445760766755934, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 141441491}
-    - targetCorrespondingSourceObject: {fileID: 5065445760766755934, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 141441494}
-    - targetCorrespondingSourceObject: {fileID: 3953189584710687739, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1645095936}
-    - targetCorrespondingSourceObject: {fileID: 3953189584710687739, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1645095939}
-    - targetCorrespondingSourceObject: {fileID: 8575820214452171253, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 313130425}
-    - targetCorrespondingSourceObject: {fileID: 8575820214452171253, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 313130428}
-    - targetCorrespondingSourceObject: {fileID: 2646216794053658233, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 547138082}
-    - targetCorrespondingSourceObject: {fileID: 2646216794053658233, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 547138085}
-    - targetCorrespondingSourceObject: {fileID: 7137695343743457622, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 70112492}
-    - targetCorrespondingSourceObject: {fileID: 7137695343743457622, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 70112495}
-  m_SourcePrefab: {fileID: 100100000, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
 --- !u!224 &3678740848423660879
 RectTransform:
   m_ObjectHideFlags: 0
@@ -27618,8 +27024,8 @@ SceneRoots:
   - {fileID: 963194228}
   - {fileID: 705507995}
   - {fileID: 788114609}
-  - {fileID: 3672073785968432931}
   - {fileID: 815476312275432156}
   - {fileID: 705596902}
   - {fileID: 1634203714}
   - {fileID: 777328473}
+  - {fileID: 1881957900}

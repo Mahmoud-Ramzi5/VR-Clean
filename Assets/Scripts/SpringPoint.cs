@@ -5,6 +5,7 @@ public struct SpringPointData
     public float3 position;
     public float3 velocity;
     public float3 force;
+    public float3 acc;
 
     public float mass;
     public int isFixed;       // 0 = false, 1 = true
@@ -42,6 +43,7 @@ public struct SpringPointData
         this.position = position;
         this.velocity = velocity;
         this.force = float3.zero;
+        this.acc = float3.zero;
 
         this.mass = mass;
         this.isFixed = isFixed;
