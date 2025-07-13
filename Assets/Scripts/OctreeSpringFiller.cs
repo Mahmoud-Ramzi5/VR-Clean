@@ -588,9 +588,13 @@ public class OctreeSpringFiller : MonoBehaviour
         //meshJobManager.ScheduleMeshVerticesUpdateJobs(meshVertices, meshTriangles, transform.localToWorldMatrix, transform.worldToLocalMatrix);
         //meshJobManager.CompleteAllJobsAndApply(meshVertices, meshTriangles, targetMesh, surfacePoints);
     }
-
     void LateUpdate()
     {
+        if (visualizeRenderer == null || !allSpringPoints.IsCreated || !allSpringConnections.IsCreated)
+        {
+            return;  // Skip rendering if not initialized
+        }
+
         visualizeRenderer.DrawInstancedPoints(visualizeSpringPoints, allSpringPoints);
 
         visualizeRenderer.UploadConnectionsToGPU(allSpringPoints, allSpringConnections);
@@ -758,7 +762,7 @@ public class OctreeSpringFiller : MonoBehaviour
         }
     }
 
-    bool IsPointNearSurface(Vector3 worldPos, float distanceThreshold = 1f)
+    bool IsPointNearSurface(Vector3 worldPos, float distanceThreshold = 0.1f)
     {
         // Simple: check distance to nearest mesh vertex
         float minDist = float.MaxValue;
