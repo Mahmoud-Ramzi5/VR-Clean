@@ -12,7 +12,7 @@ public class MeshDeformer : MonoBehaviour
     public bool logSubdividedTriangles = true;
 
     private Mesh originalMesh;
-    private Mesh workingMesh;
+    public Mesh workingMesh;
     private List<WeightedInfluence>[] vertexInfluences;
     private Vector3[] baseVertices;
     private Vector3[] currentVertices;

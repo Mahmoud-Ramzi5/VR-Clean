@@ -436,6 +436,7 @@ public class OctreeSpringFiller : MonoBehaviour
 
         Debug.Log("MeshDeformer is ready, proceeding with subdivision...");
         meshDeformer.SubdivideMeshWithPoints(surfaceSpringPoints);
+        subdivisionComplete = true;
     }
     //private void Update()
     //{
@@ -579,16 +580,18 @@ public class OctreeSpringFiller : MonoBehaviour
             //meshJobManager.UpdateSurfacePointsInMesh(meshVertices, meshTriangles,
             //    transform.localToWorldMatrix, transform.worldToLocalMatrix,
             //    targetMesh, autoUpdateMeshFromSurface);
-            UpdateSurfacePointsInMesh();
+            //UpdateSurfacePointsInMesh();
         }
 
         // Handle Mesh Update
-        UpdateMeshFromPoints();
+        //UpdateMeshFromPoints();
         //meshJobManager.DispatchMeshUpdate(meshVertices, transform.worldToLocalMatrix, targetMesh, transform);
-        //meshJobManager.ScheduleMeshVerticesUpdateJobs(meshVertices, meshTriangles, transform.localToWorldMatrix, transform.worldToLocalMatrix);
-        //meshJobManager.CompleteAllJobsAndApply(meshVertices, meshTriangles, targetMesh, surfacePoints);
+        if (subdivisionComplete) { 
+        meshJobManager.ScheduleMeshVerticesUpdateJobs(getVertices(), meshDeformer.workingMesh.triangles, transform.localToWorldMatrix, transform.worldToLocalMatrix);
+        meshJobManager.CompleteAllJobsAndApply(getVertices(), meshDeformer.workingMesh.triangles, meshDeformer.workingMesh, surfaceSpringPoints);
     }
-
+    }
+    [HideInInspector] public bool subdivisionComplete = false;
     void LateUpdate()
     {
         visualizeRenderer.DrawInstancedPoints(visualizeSpringPoints, allSpringPoints);
@@ -1417,6 +1420,76 @@ public class OctreeSpringFiller : MonoBehaviour
         meshTriangles = currentTriangles;
     }
 
+    Vector3[] getVertices()
+    {
+        if (allSpringPoints == null || allSpringPoints.Length == 0) return null;
+
+        surfacePoints.Clear();
+
+        // Get current mesh data directly from the mesh
+        Vector3[] currentVertices = targetMesh.vertices;
+        int[] currentTriangles = targetMesh.triangles;
+
+        // --- 1. Find average position of all spring points (in world space) ---
+        Vector3 averagePos = Vector3.zero;
+        foreach (var point in allSpringPoints)
+        {
+            averagePos += (Vector3)point.position;
+        }
+        averagePos /= allSpringPoints.Length;
+
+        // --- 2. Move the transform to the center of the point cloud ---
+        
+
+        // --- 3. For each original mesh vertex, find the closest spring point ---
+        // Initialize the dictionary if it's empty or if vertex count changed
+        if (vertexToClosestPointMap.Count == 0 || vertexToClosestPointMap.Count != currentVertices.Length)
+        {
+            vertexToClosestPointMap.Clear();
+            for (int i = 0; i < currentVertices.Length; i++)
+            {
+                Vector3 worldVertex = transform.TransformPoint(currentVertices[i]);
+                int closestPointIndex = FindClosestPointIndex(worldVertex);
+                vertexToClosestPointMap[i] = closestPointIndex;
+            }
+        }
+
+        Vector3[] newVertices = new Vector3[currentVertices.Length];
+        for (int i = 0; i < currentVertices.Length; i++)
+        {
+            if (vertexToClosestPointMap.TryGetValue(i, out int pointIndex) &&
+                pointIndex >= 0 && pointIndex < allSpringPoints.Length)
+            {
+                SpringPointData closestPoint = allSpringPoints[pointIndex];
+                surfacePoints.Add(closestPoint);
+
+                // Defensive check
+                if (closestPoint.mass > 0 || closestPoint.isFixed == 0)
+                {
+                    newVertices[i] = transform.InverseTransformPoint(closestPoint.position);
+                }
+                else
+                {
+                    // Fallback to keeping the original vertex
+                    newVertices[i] = currentVertices[i];
+                }
+            }
+            else
+            {
+                // Fallback if cache is invalid
+                Vector3 worldVertex = transform.TransformPoint(currentVertices[i]);
+                SpringPointData closestPoint = FindClosestPoint(worldVertex);
+                surfacePoints.Add(closestPoint);
+                newVertices[i] = transform.InverseTransformPoint(closestPoint.position);
+            }
+        }
+
+        // --- 4. Update mesh vertices and recalculate bounds ---
+        return newVertices; 
+
+        
+    }
+
     // Helper method to find the index of the closest point
     private int FindClosestPointIndex(Vector3 worldPos)
     {
@@ -1435,6 +1508,8 @@ public class OctreeSpringFiller : MonoBehaviour
 
         return closestIndex;
     }
+
+
 
     // Clear the cache when points change (call this when adding/removing points)
     public void ClearVertexPointCache()
