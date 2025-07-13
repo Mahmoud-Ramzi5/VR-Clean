@@ -67,7 +67,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 2389935a1e2cd6f458893a6b833a36dd, type: 2}
+  - {fileID: 2100000, guid: a5813af496f1b4f4a99cbe8a296c0257, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -104,24 +104,24 @@ MonoBehaviour:
   minNodeSize: 0.5
   PointSpacing: 0.5
   isFilled: 1
-  isRigid: 0
+  isRigid: 1
   isFixCorners: 0
   skipPhysicsFromMaterial: 0
-  springConstantL1: 60
-  damperConstantL1: 0.2
+  springConstantL1: 850
+  damperConstantL1: 0.85
   connectionRadiusL1: 1
   maxRestLengthL1: 3
-  springConstantL2: 45
-  damperConstantL2: 0.15
+  springConstantL2: 700
+  damperConstantL2: 0.8
   connectionRadiusL2: 2
   maxRestLengthL2: 4
-  springConstantL3: 30
-  damperConstantL3: 0.1
+  springConstantL3: 550
+  damperConstantL3: 0.75
   connectionRadiusL3: 3
   maxRestLengthL3: 5
-  totalMass: 95
-  bounciness: 0.9
-  friction: 0.8
+  totalMass: 300
+  bounciness: 0.3
+  friction: 0.4
   velocity: {x: 0, y: 0, z: 0}
   applyGravity: 1
   gravity: {x: 0, y: -9.83, z: 0}
@@ -134,21 +134,8 @@ MonoBehaviour:
   applyGroundCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
-  collisionLayer:
-    layerName: Default
-    layerIndex: 0
-    collidesWith: 0101010101010101010101010101010101010101010101010101010101010101
-    density: 1000
-    restitution: 0.6
-    friction: 0.4
-    youngsModulus: 1000000
-    poissonRatio: 0.3
-    dampingFactor: 0.1
-  layerPreset: 0
   visualizeSpringPoints: 0
   visualizeSpringConnections: 1
-  collisionJobManager: {fileID: 0}
-  springJobManager: {fileID: 0}
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
   surfaceDetectionThreshold: 0.2
@@ -166,7 +153,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   skipApplyPhysicsOnStart: 0
-  materialType: 4
+  materialType: 3
   materialDatabase: {fileID: 11400000, guid: 3a5fe3bd8ae9ba947b42c666475a8b38, type: 2}
 --- !u!114 &7767920483859642973
 MonoBehaviour:

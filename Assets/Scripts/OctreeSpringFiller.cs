@@ -284,6 +284,24 @@ public class OctreeSpringFiller : MonoBehaviour
         }
     }
 
+    public void OverrideSpringData(NativeArray<SpringPointData> sharedPoints, NativeArray<SpringConnectionData> sharedConnections)
+    {
+        allSpringPoints = new NativeArray<SpringPointData>(sharedPoints, Allocator.Persistent);
+        allSpringConnections = new NativeArray<SpringConnectionData>(sharedConnections, Allocator.Persistent);
+
+        // Reinitialize jobs and surface detection
+        springJobManager = gameObject.AddComponent<SpringJobManager>();
+        springJobManager.InitializeArrays(allSpringPoints, allSpringConnections);
+
+        rigidJobManager = gameObject.AddComponent<RigidJobManager>();
+        rigidJobManager.InitializeArrays(allSpringPoints, allSpringConnections);
+
+        collisionJobManager = gameObject.AddComponent<CollisionJobManager>();
+        collisionJobManager.InitializeArrays(allSpringPoints);
+
+        // Skip FillObjectWithSpringPoints(), because data is already set
+    }
+
     private IEnumerator WaitForMeshDeformerInitialization()
     {
         while (!meshDeformer.isInitialized)

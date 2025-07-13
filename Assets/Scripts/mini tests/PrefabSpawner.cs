@@ -83,6 +83,10 @@ public class PrefabSpawner : MonoBehaviour
 
         GameObject spawnedObject = Instantiate(_templateInstance, position, rotation);
         spawnedObject.transform.localScale = scale;
+
+        // Destroy the spawned object after 30 seconds
+        Destroy(spawnedObject, 30f);
+
         var sourceFiller = _templateInstance.GetComponent<OctreeSpringFiller>();
         var spawnedFiller = spawnedObject.GetComponent<OctreeSpringFiller>();
 
@@ -90,14 +94,13 @@ public class PrefabSpawner : MonoBehaviour
         {
             CopyPhysics(sourceFiller, spawnedFiller);
         }
-        // Disable re-application of preset values
+
         var matMgr = spawnedObject.GetComponent<MaterialManager>();
         if (matMgr != null)
         {
             matMgr.skipApplyPhysicsOnStart = true;
         }
 
-        // Avoid copying shared spring data if it's not necessary
         var filler = spawnedObject.GetComponent<OctreeSpringFiller>();
         if (filler != null)
         {
