@@ -576,14 +576,17 @@ public class OctreeSpringFiller : MonoBehaviour
 
         if (Time.frameCount % 3 == 0) // Every 3 frames
         {
+            //meshJobManager.UpdateSurfacePointsInMesh(meshVertices, meshTriangles,
+            //    transform.localToWorldMatrix, transform.worldToLocalMatrix,
+            //    targetMesh, autoUpdateMeshFromSurface);
             UpdateSurfacePointsInMesh();
         }
 
         // Handle Mesh Update
-        //UpdateMeshFromPoints();
+        UpdateMeshFromPoints();
         //meshJobManager.DispatchMeshUpdate(meshVertices, transform.worldToLocalMatrix, targetMesh, transform);
-        meshJobManager.ScheduleMeshVerticesUpdateJobs(meshVertices, meshTriangles, transform.localToWorldMatrix, transform.worldToLocalMatrix);
-        meshJobManager.CompleteAllJobsAndApply(meshVertices, meshTriangles, targetMesh, surfacePoints);
+        //meshJobManager.ScheduleMeshVerticesUpdateJobs(meshVertices, meshTriangles, transform.localToWorldMatrix, transform.worldToLocalMatrix);
+        //meshJobManager.CompleteAllJobsAndApply(meshVertices, meshTriangles, targetMesh, surfacePoints);
     }
 
     void LateUpdate()
@@ -1304,6 +1307,144 @@ public class OctreeSpringFiller : MonoBehaviour
         }
 
         boundingVolume = new Bounds((min + max) * 0.5f, max - min);
+    }
+
+    // Add this dictionary as a class member to cache closest points
+    private Dictionary<int, int> vertexToClosestPointMap = new Dictionary<int, int>();
+
+    void UpdateMeshFromPoints()
+    {
+        if (allSpringPoints == null || allSpringPoints.Length == 0) return;
+
+        surfacePoints.Clear();
+
+        // Get current mesh data directly from the mesh
+        Vector3[] currentVertices = targetMesh.vertices;
+        int[] currentTriangles = targetMesh.triangles;
+
+        // --- 1. Find average position of all spring points (in world space) ---
+        Vector3 averagePos = Vector3.zero;
+        foreach (var point in allSpringPoints)
+        {
+            averagePos += (Vector3)point.position;
+        }
+        averagePos /= allSpringPoints.Length;
+
+        // --- 2. Move the transform to the center of the point cloud ---
+        transform.position = averagePos;
+
+        // --- 3. For each original mesh vertex, find the closest spring point ---
+        // Initialize the dictionary if it's empty or if vertex count changed
+        if (vertexToClosestPointMap.Count == 0 || vertexToClosestPointMap.Count != currentVertices.Length)
+        {
+            vertexToClosestPointMap.Clear();
+            for (int i = 0; i < currentVertices.Length; i++)
+            {
+                Vector3 worldVertex = transform.TransformPoint(currentVertices[i]);
+                int closestPointIndex = FindClosestPointIndex(worldVertex);
+                vertexToClosestPointMap[i] = closestPointIndex;
+            }
+        }
+
+        Vector3[] newVertices = new Vector3[currentVertices.Length];
+        for (int i = 0; i < currentVertices.Length; i++)
+        {
+            if (vertexToClosestPointMap.TryGetValue(i, out int pointIndex) &&
+                pointIndex >= 0 && pointIndex < allSpringPoints.Length)
+            {
+                SpringPointData closestPoint = allSpringPoints[pointIndex];
+                surfacePoints.Add(closestPoint);
+
+                // Defensive check
+                if (closestPoint.mass > 0 || closestPoint.isFixed == 0)
+                {
+                    newVertices[i] = transform.InverseTransformPoint(closestPoint.position);
+                }
+                else
+                {
+                    // Fallback to keeping the original vertex
+                    newVertices[i] = currentVertices[i];
+                }
+            }
+            else
+            {
+                // Fallback if cache is invalid
+                Vector3 worldVertex = transform.TransformPoint(currentVertices[i]);
+                SpringPointData closestPoint = FindClosestPoint(worldVertex);
+                surfacePoints.Add(closestPoint);
+                newVertices[i] = transform.InverseTransformPoint(closestPoint.position);
+            }
+        }
+
+        // --- 4. Update mesh vertices and recalculate bounds ---
+        targetMesh.vertices = newVertices;
+
+        // Ensure triangles array is valid for new vertex count
+        if (currentTriangles.Length > 0)
+        {
+            // Validate triangle indices
+            int maxIndex = newVertices.Length - 1;
+            for (int i = 0; i < currentTriangles.Length; i++)
+            {
+                if (currentTriangles[i] > maxIndex)
+                {
+                    currentTriangles[i] = maxIndex;
+                }
+            }
+            targetMesh.triangles = currentTriangles;
+        }
+
+        targetMesh.RecalculateNormals();
+        targetMesh.RecalculateBounds();
+
+        // Update cached references
+        meshVertices = newVertices;
+        meshTriangles = currentTriangles;
+    }
+
+    // Helper method to find the index of the closest point
+    private int FindClosestPointIndex(Vector3 worldPos)
+    {
+        int closestIndex = 0;
+        float minDist = float.MaxValue;
+
+        for (int i = 0; i < allSpringPoints.Length; i++)
+        {
+            float dist = Vector3.Distance(worldPos, allSpringPoints[i].position);
+            if (dist < minDist)
+            {
+                minDist = dist;
+                closestIndex = i;
+            }
+        }
+
+        return closestIndex;
+    }
+
+    // Clear the cache when points change (call this when adding/removing points)
+    public void ClearVertexPointCache()
+    {
+        vertexToClosestPointMap.Clear();
+    }
+
+
+    SpringPointData FindClosestPoint(Vector3 worldPos)
+    {
+        SpringPointData closest = default;
+        float minDist = float.MaxValue;
+
+        foreach (var point in allSpringPoints)
+        {
+            float dist = Vector3.Distance(worldPos, point.position);
+            if (dist < minDist)
+            {
+                minDist = dist;
+                closest = point;
+            }
+
+        }
+
+        return closest;
     }
 
     private void UpdateSurfacePointsInMesh()

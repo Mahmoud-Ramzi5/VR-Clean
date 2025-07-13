@@ -78,11 +78,7 @@ public class CollisionManager : MonoBehaviour
 
                 if (!obj1.boundingVolume.Intersects(obj2.boundingVolume)) continue;
 
-
-                SoftBodyData obj1Data = new SoftBodyData(obj1.transform.position, obj1.surfacePoints2);
-                SoftBodyData obj2Data = new SoftBodyData(obj2.transform.position, obj2.surfacePoints2);
-                GJK.DetectCollision(ref obj1Data, ref obj2Data, out CollisionInfo info);
-                if (/*GJK.DetectCollision(obj1, obj2, out CollisionInfo info))*/info.DidCollide)
+                if (GJK.DetectCollision(obj1, obj2, out CollisionInfo info))
                 {
                     totalCollisionsThisFrame++;
                     lastFrameCollisions.Add(info);
