@@ -11,7 +11,8 @@ public class MaterialDatabase : ScriptableObject
     public MaterialPreset GetPreset(MaterialType type)
     {
         Debug.LogWarning($"{type}");
-
+        
         return presets.Find(p => p.Type == type);
     }
+
 }

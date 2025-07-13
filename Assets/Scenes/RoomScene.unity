@@ -652,21 +652,21 @@ MonoBehaviour:
   PointSpacing: 2
   isFilled: 1
   isRigid: 0
-  springConstantL1: 100
-  damperConstantL1: 0.6
+  springConstantL1: 60
+  damperConstantL1: 0.2
   connectionRadiusL1: 1
-  maxRestLengthL1: 2
-  springConstantL2: 60
-  damperConstantL2: 0.5
+  maxRestLengthL1: 10
+  springConstantL2: 45
+  damperConstantL2: 0.15
   connectionRadiusL2: 2
-  maxRestLengthL2: 2.5
-  springConstantL3: 40
-  damperConstantL3: 0.4
+  maxRestLengthL2: 15
+  springConstantL3: 30
+  damperConstantL3: 0.1
   connectionRadiusL3: 3
-  maxRestLengthL3: 3
-  totalMass: 100
-  bounciness: 0.6
-  friction: 0.3
+  maxRestLengthL3: 20
+  totalMass: 95
+  bounciness: 0.9
+  friction: 0.8
   velocity: {x: 0, y: 0, z: 0}
   applyGravity: 1
   gravity: {x: 0, y: -9.81, z: 0}
@@ -708,7 +708,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec3f314a6c7bd84daec4379820a2cf2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  materialType: 5
+  materialType: 10
   materialDatabase: {fileID: 11400000, guid: 3a5fe3bd8ae9ba947b42c666475a8b38, type: 2}
 --- !u!114 &110279141
 MonoBehaviour:
@@ -783,21 +783,21 @@ MonoBehaviour:
   PointSpacing: 2
   isFilled: 1
   isRigid: 0
-  springConstantL1: 100
-  damperConstantL1: 0.6
+  springConstantL1: 60
+  damperConstantL1: 0.2
   connectionRadiusL1: 1
-  maxRestLengthL1: 2
-  springConstantL2: 60
-  damperConstantL2: 0.5
+  maxRestLengthL1: 10
+  springConstantL2: 45
+  damperConstantL2: 0.15
   connectionRadiusL2: 2
-  maxRestLengthL2: 2.5
-  springConstantL3: 40
-  damperConstantL3: 0.4
+  maxRestLengthL2: 15
+  springConstantL3: 30
+  damperConstantL3: 0.1
   connectionRadiusL3: 3
-  maxRestLengthL3: 3
-  totalMass: 100
-  bounciness: 0.6
-  friction: 0.3
+  maxRestLengthL3: 20
+  totalMass: 95
+  bounciness: 0.9
+  friction: 0.8
   velocity: {x: 0, y: 0, z: 0}
   applyGravity: 1
   gravity: {x: 0, y: -9.81, z: 0}
@@ -839,7 +839,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec3f314a6c7bd84daec4379820a2cf2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  materialType: 5
+  materialType: 10
   materialDatabase: {fileID: 11400000, guid: 3a5fe3bd8ae9ba947b42c666475a8b38, type: 2}
 --- !u!1 &148757535
 GameObject:
@@ -1690,8 +1690,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -340, y: -125}
-  m_SizeDelta: {x: 100, y: 30}
+  m_AnchoredPosition: {x: -315, y: -130}
+  m_SizeDelta: {x: 150, y: 40}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &274173884
 MonoBehaviour:
@@ -1745,21 +1745,6 @@ MonoBehaviour:
   m_Options:
     m_Options:
     - m_Text: Room material
-      m_Image: {fileID: 0}
-      m_Color: {r: 1, g: 1, b: 1, a: 1}
-    - m_Text: Wood
-      m_Image: {fileID: 0}
-      m_Color: {r: 1, g: 1, b: 1, a: 1}
-    - m_Text: Plastic
-      m_Image: {fileID: 0}
-      m_Color: {r: 1, g: 1, b: 1, a: 1}
-    - m_Text: Metal
-      m_Image: {fileID: 0}
-      m_Color: {r: 1, g: 1, b: 1, a: 1}
-    - m_Text: Rubber
-      m_Image: {fileID: 0}
-      m_Color: {r: 1, g: 1, b: 1, a: 1}
-    - m_Text: Stone
       m_Image: {fileID: 0}
       m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_OnValueChanged:
@@ -2121,21 +2106,21 @@ MonoBehaviour:
   PointSpacing: 2
   isFilled: 1
   isRigid: 0
-  springConstantL1: 100
-  damperConstantL1: 0.6
+  springConstantL1: 60
+  damperConstantL1: 0.2
   connectionRadiusL1: 1
-  maxRestLengthL1: 2
-  springConstantL2: 60
-  damperConstantL2: 0.5
+  maxRestLengthL1: 10
+  springConstantL2: 45
+  damperConstantL2: 0.15
   connectionRadiusL2: 2
-  maxRestLengthL2: 2.5
-  springConstantL3: 40
-  damperConstantL3: 0.4
+  maxRestLengthL2: 15
+  springConstantL3: 30
+  damperConstantL3: 0.1
   connectionRadiusL3: 3
-  maxRestLengthL3: 3
-  totalMass: 100
-  bounciness: 0.6
-  friction: 0.3
+  maxRestLengthL3: 20
+  totalMass: 95
+  bounciness: 0.9
+  friction: 0.8
   velocity: {x: 0, y: 0, z: 0}
   applyGravity: 1
   gravity: {x: 0, y: -9.81, z: 0}
@@ -2177,7 +2162,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec3f314a6c7bd84daec4379820a2cf2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  materialType: 5
+  materialType: 10
   materialDatabase: {fileID: 11400000, guid: 3a5fe3bd8ae9ba947b42c666475a8b38, type: 2}
 --- !u!1 &321212441
 GameObject:
@@ -3319,21 +3304,21 @@ MonoBehaviour:
   PointSpacing: 2
   isFilled: 1
   isRigid: 0
-  springConstantL1: 100
-  damperConstantL1: 0.6
+  springConstantL1: 60
+  damperConstantL1: 0.2
   connectionRadiusL1: 1
-  maxRestLengthL1: 2
-  springConstantL2: 60
-  damperConstantL2: 0.5
+  maxRestLengthL1: 10
+  springConstantL2: 45
+  damperConstantL2: 0.15
   connectionRadiusL2: 2
-  maxRestLengthL2: 2.5
-  springConstantL3: 40
-  damperConstantL3: 0.4
+  maxRestLengthL2: 15
+  springConstantL3: 30
+  damperConstantL3: 0.1
   connectionRadiusL3: 3
-  maxRestLengthL3: 3
-  totalMass: 100
-  bounciness: 0.6
-  friction: 0.3
+  maxRestLengthL3: 20
+  totalMass: 95
+  bounciness: 0.9
+  friction: 0.8
   velocity: {x: 0, y: 0, z: 0}
   applyGravity: 1
   gravity: {x: 0, y: -9.81, z: 0}
@@ -3375,7 +3360,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec3f314a6c7bd84daec4379820a2cf2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  materialType: 5
+  materialType: 10
   materialDatabase: {fileID: 11400000, guid: 3a5fe3bd8ae9ba947b42c666475a8b38, type: 2}
 --- !u!1 &550204106
 GameObject:
@@ -5980,7 +5965,7 @@ MonoBehaviour:
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 1
-  m_HorizontalAlignment: 2
+  m_HorizontalAlignment: 1
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
@@ -8565,21 +8550,21 @@ MonoBehaviour:
   PointSpacing: 2
   isFilled: 1
   isRigid: 0
-  springConstantL1: 100
-  damperConstantL1: 0.6
+  springConstantL1: 60
+  damperConstantL1: 0.2
   connectionRadiusL1: 1
-  maxRestLengthL1: 2
-  springConstantL2: 60
-  damperConstantL2: 0.5
+  maxRestLengthL1: 10
+  springConstantL2: 45
+  damperConstantL2: 0.15
   connectionRadiusL2: 2
-  maxRestLengthL2: 2.5
-  springConstantL3: 40
-  damperConstantL3: 0.4
+  maxRestLengthL2: 15
+  springConstantL3: 30
+  damperConstantL3: 0.1
   connectionRadiusL3: 3
-  maxRestLengthL3: 3
-  totalMass: 100
-  bounciness: 0.6
-  friction: 0.3
+  maxRestLengthL3: 20
+  totalMass: 95
+  bounciness: 0.9
+  friction: 0.8
   velocity: {x: 0, y: 0, z: 0}
   applyGravity: 1
   gravity: {x: 0, y: -9.81, z: 0}
@@ -8621,7 +8606,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec3f314a6c7bd84daec4379820a2cf2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  materialType: 5
+  materialType: 10
   materialDatabase: {fileID: 11400000, guid: 3a5fe3bd8ae9ba947b42c666475a8b38, type: 2}
 --- !u!1 &1656860025
 GameObject:
@@ -16025,14 +16010,74 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1530957817676952907, guid: 773fedd949f2d4e4cb121f7a6432079a, type: 3}
+      propertyPath: isFilled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1530957817676952907, guid: 773fedd949f2d4e4cb121f7a6432079a, type: 3}
+      propertyPath: gravity.y
+      value: -9.81
+      objectReference: {fileID: 0}
+    - target: {fileID: 1530957817676952907, guid: 773fedd949f2d4e4cb121f7a6432079a, type: 3}
+      propertyPath: totalMass
+      value: 95
+      objectReference: {fileID: 0}
+    - target: {fileID: 1530957817676952907, guid: 773fedd949f2d4e4cb121f7a6432079a, type: 3}
+      propertyPath: velocity.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1530957817676952907, guid: 773fedd949f2d4e4cb121f7a6432079a, type: 3}
+      propertyPath: velocity.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1530957817676952907, guid: 773fedd949f2d4e4cb121f7a6432079a, type: 3}
+      propertyPath: velocity.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1530957817676952907, guid: 773fedd949f2d4e4cb121f7a6432079a, type: 3}
+      propertyPath: minNodeSize
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1530957817676952907, guid: 773fedd949f2d4e4cb121f7a6432079a, type: 3}
+      propertyPath: PointSpacing
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1530957817676952907, guid: 773fedd949f2d4e4cb121f7a6432079a, type: 3}
+      propertyPath: damperConstantL1
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1530957817676952907, guid: 773fedd949f2d4e4cb121f7a6432079a, type: 3}
+      propertyPath: damperConstantL2
+      value: 0.15
+      objectReference: {fileID: 0}
+    - target: {fileID: 1530957817676952907, guid: 773fedd949f2d4e4cb121f7a6432079a, type: 3}
+      propertyPath: damperConstantL3
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1530957817676952907, guid: 773fedd949f2d4e4cb121f7a6432079a, type: 3}
+      propertyPath: springConstantL1
+      value: 60
+      objectReference: {fileID: 0}
+    - target: {fileID: 1530957817676952907, guid: 773fedd949f2d4e4cb121f7a6432079a, type: 3}
+      propertyPath: springConstantL2
+      value: 45
+      objectReference: {fileID: 0}
+    - target: {fileID: 1530957817676952907, guid: 773fedd949f2d4e4cb121f7a6432079a, type: 3}
+      propertyPath: springConstantL3
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 1530957817676952907, guid: 773fedd949f2d4e4cb121f7a6432079a, type: 3}
+      propertyPath: visualizeSpringConnections
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1724135971041658968, guid: 773fedd949f2d4e4cb121f7a6432079a, type: 3}
       propertyPath: materialType
-      value: 4
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 2301908604674858965, guid: 773fedd949f2d4e4cb121f7a6432079a, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 2389935a1e2cd6f458893a6b833a36dd, type: 2}
+      objectReference: {fileID: 2100000, guid: ee1571ad1d7b6584e85f1262da46eadf, type: 2}
     - target: {fileID: 6707679173723044913, guid: 773fedd949f2d4e4cb121f7a6432079a, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -17198,7 +17243,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3539144239531949980, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4069075114937582027, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
       propertyPath: minNodeSize.x
@@ -17243,11 +17288,11 @@ PrefabInstance:
     - target: {fileID: 5051713729625431929, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 5f3277584c204ec47bc0f2e7d13582da, type: 2}
+      objectReference: {fileID: 2100000, guid: 2389935a1e2cd6f458893a6b833a36dd, type: 2}
     - target: {fileID: 5493705143380308346, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 5f3277584c204ec47bc0f2e7d13582da, type: 2}
+      objectReference: {fileID: 2100000, guid: 2389935a1e2cd6f458893a6b833a36dd, type: 2}
     - target: {fileID: 6548080019372733794, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -17295,15 +17340,15 @@ PrefabInstance:
     - target: {fileID: 6852231607123954000, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 5f3277584c204ec47bc0f2e7d13582da, type: 2}
+      objectReference: {fileID: 2100000, guid: 2389935a1e2cd6f458893a6b833a36dd, type: 2}
     - target: {fileID: 6885350628049356845, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 5f3277584c204ec47bc0f2e7d13582da, type: 2}
+      objectReference: {fileID: 2100000, guid: 2389935a1e2cd6f458893a6b833a36dd, type: 2}
     - target: {fileID: 8696701653633225347, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 5f3277584c204ec47bc0f2e7d13582da, type: 2}
+      objectReference: {fileID: 2100000, guid: 2389935a1e2cd6f458893a6b833a36dd, type: 2}
     - target: {fileID: 9141318126522869435, guid: 104d6e7e499b55b4f8e86d4b5f44a264, type: 3}
       propertyPath: m_LocalScale.x
       value: 1

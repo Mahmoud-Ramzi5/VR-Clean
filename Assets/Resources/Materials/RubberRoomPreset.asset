@@ -12,21 +12,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bfb2b112fe773af43b6b2920f92a6b10, type: 3}
   m_Name: RubberRoomPreset
   m_EditorClassIdentifier: 
-  type: 4
+  type: 10
   material: {fileID: 2100000, guid: 2389935a1e2cd6f458893a6b833a36dd, type: 2}
   isRigid: 0
-  totalMass: 100
+  totalMass: 95
   bounciness: 0.9
   friction: 0.8
-  springConstantL1: 100
-  damperConstantL1: 0.6
+  springConstantL1: 60
+  damperConstantL1: 0.2
   connectionRadiusL1: 1
   maxRestLengthL1: 10
-  springConstantL2: 60
-  damperConstantL2: 0.5
+  springConstantL2: 45
+  damperConstantL2: 0.15
   connectionRadiusL2: 2
   maxRestLengthL2: 15
-  springConstantL3: 40
-  damperConstantL3: 0.4
+  springConstantL3: 30
+  damperConstantL3: 0.1
   connectionRadiusL3: 3
   maxRestLengthL3: 20

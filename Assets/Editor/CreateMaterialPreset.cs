@@ -39,6 +39,36 @@ public class CreateMaterialPreset
         CreatePreset(MaterialType.Plastic, "PlasticPreset");
     }
 
+    [MenuItem("Assets/Create/Materials/Wood Room Preset")]
+    public static void CreateWoodRoom()
+    {
+        CreatePreset(MaterialType.WoodRoom, "WoodRoomPreset");
+    }
+
+    [MenuItem("Assets/Create/Materials/Metal Room Preset")]
+    public static void CreateMetalRoom()
+    {
+        CreatePreset(MaterialType.MetalRoom, "MetalRoomPreset");
+    }
+
+    [MenuItem("Assets/Create/Materials/Stone Room Preset")]
+    public static void CreateStoneRoom()
+    {
+        CreatePreset(MaterialType.StoneRoom, "StoneRoomPreset");
+    }
+
+    [MenuItem("Assets/Create/Materials/Rubber Room Preset")]
+    public static void CreateRubberRoom()
+    {
+        CreatePreset(MaterialType.RubberRoom, "RubberRoomPreset");
+    }
+
+    [MenuItem("Assets/Create/Materials/Plastic Room Preset")]
+    public static void CreatePlasticRoom()
+    {
+        CreatePreset(MaterialType.PlasticRoom, "PlasticRoomPreset");
+    }
+
     private static void CreatePreset(MaterialType type, string defaultName)
     {
         var preset = ScriptableObject.CreateInstance<MaterialPreset>();

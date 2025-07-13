@@ -8,7 +8,12 @@ public enum MaterialType
     Metal,
     Rubber,
     Plastic,
-    Custom
+    Custom,
+    WoodRoom,
+    StoneRoom,
+    MetalRoom,
+    RubberRoom,
+    PlasticRoom,
 }
 
 [ExecuteAlways] // Allows OnValidate to run in edit mode
@@ -32,6 +37,7 @@ public class MaterialManager : MonoBehaviour
     public void ApplyMaterial(GameObject parent, MaterialType type)
     {
         var preset = materialDatabase.GetPreset(type);
+        Debug.LogWarning($"type {type}");
         Debug.LogWarning($"Preset {preset}");
 
         if (preset != null && parent != null)

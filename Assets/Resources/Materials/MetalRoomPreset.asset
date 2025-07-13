@@ -12,21 +12,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bfb2b112fe773af43b6b2920f92a6b10, type: 3}
   m_Name: MetalRoomPreset
   m_EditorClassIdentifier: 
-  type: 3
+  type: 9
   material: {fileID: 2100000, guid: a5813af496f1b4f4a99cbe8a296c0257, type: 2}
-  isRigid: 0
-  totalMass: 100
+  isRigid: 1
+  totalMass: 300
   bounciness: 0.3
   friction: 0.4
-  springConstantL1: 600
-  damperConstantL1: 0.6
+  springConstantL1: 850
+  damperConstantL1: 0.85
   connectionRadiusL1: 1
   maxRestLengthL1: 10
-  springConstantL2: 500
-  damperConstantL2: 0.5
+  springConstantL2: 700
+  damperConstantL2: 0.8
   connectionRadiusL2: 2
   maxRestLengthL2: 15
-  springConstantL3: 400
-  damperConstantL3: 0.4
+  springConstantL3: 550
+  damperConstantL3: 0.75
   connectionRadiusL3: 3
   maxRestLengthL3: 20

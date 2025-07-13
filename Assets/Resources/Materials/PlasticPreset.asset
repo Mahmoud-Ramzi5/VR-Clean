@@ -18,15 +18,15 @@ MonoBehaviour:
   totalMass: 100
   bounciness: 0.6
   friction: 0.3
-  springConstantL1: 100
-  damperConstantL1: 0.6
+  springConstantL1: 180
+  damperConstantL1: 0.55
   connectionRadiusL1: 1
   maxRestLengthL1: 2
-  springConstantL2: 60
-  damperConstantL2: 0.5
+  springConstantL2: 130
+  damperConstantL2: 0.45
   connectionRadiusL2: 2
   maxRestLengthL2: 2.5
-  springConstantL3: 40
-  damperConstantL3: 0.4
+  springConstantL3: 90
+  damperConstantL3: 0.35
   connectionRadiusL3: 3
   maxRestLengthL3: 3

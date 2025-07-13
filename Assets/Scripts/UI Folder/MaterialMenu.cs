@@ -31,6 +31,27 @@ public class MaterialMenu : MonoBehaviour
         }
         materialDropdown.AddOptions(options);
         materialDropdown.onValueChanged.AddListener(ChangeMaterial);
+        // Apply font size to all options
+        ApplyDropdownFontSize();
+    }
+
+    void ApplyDropdownFontSize()
+    {
+        // Get the dropdown's template which contains the item list
+        var itemList = materialDropdown.template.GetComponentInChildren<TMP_Text>();
+
+        if (itemList != null)
+        {
+            // This affects the font size of items in the dropdown list
+            itemList.fontSize = 12;
+        }
+
+        // This affects the currently selected item display
+        var captionText = materialDropdown.captionText;
+        if (captionText != null)
+        {
+            captionText.fontSize = 12;
+        }
     }
 
     void ChangeMaterial(int index)

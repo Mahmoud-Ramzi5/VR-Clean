@@ -12,21 +12,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bfb2b112fe773af43b6b2920f92a6b10, type: 3}
   m_Name: StoneRoomPreset
   m_EditorClassIdentifier: 
-  type: 2
+  type: 8
   material: {fileID: 2100000, guid: ee1571ad1d7b6584e85f1262da46eadf, type: 2}
-  isRigid: 0
-  totalMass: 400
+  isRigid: 1
+  totalMass: 280
   bounciness: 0.1
   friction: 0.7
-  springConstantL1: 300
-  damperConstantL1: 0.6
+  springConstantL1: 750
+  damperConstantL1: 0.9
   connectionRadiusL1: 1
   maxRestLengthL1: 10
-  springConstantL2: 250
-  damperConstantL2: 0.5
+  springConstantL2: 600
+  damperConstantL2: 0.85
   connectionRadiusL2: 2
   maxRestLengthL2: 15
-  springConstantL3: 200
-  damperConstantL3: 0.4
+  springConstantL3: 450
+  damperConstantL3: 0.8
   connectionRadiusL3: 3
   maxRestLengthL3: 20

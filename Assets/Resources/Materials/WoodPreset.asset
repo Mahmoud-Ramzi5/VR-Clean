@@ -15,18 +15,18 @@ MonoBehaviour:
   type: 1
   material: {fileID: 2100000, guid: 92dfcc09cc10b0a429ec0a645bc91616, type: 2}
   isRigid: 1
-  totalMass: 400
+  totalMass: 120
   bounciness: 0.2
   friction: 0.5
-  springConstantL1: 300
-  damperConstantL1: 0.6
+  springConstantL1: 220
+  damperConstantL1: 0.7
   connectionRadiusL1: 1
   maxRestLengthL1: 2
-  springConstantL2: 100
-  damperConstantL2: 0.5
+  springConstantL2: 180
+  damperConstantL2: 0.6
   connectionRadiusL2: 2
   maxRestLengthL2: 2.5
-  springConstantL3: 40
-  damperConstantL3: 0.4
+  springConstantL3: 140
+  damperConstantL3: 0.5
   connectionRadiusL3: 3
   maxRestLengthL3: 3
