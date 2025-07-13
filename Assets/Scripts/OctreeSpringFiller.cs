@@ -303,6 +303,7 @@ public class OctreeSpringFiller : MonoBehaviour
 
         // Apply layer preset if selected
         ApplyLayerPreset();
+<<<<<<< Updated upstream
 
         if (isFixCorners)
         {
@@ -326,6 +327,9 @@ public class OctreeSpringFiller : MonoBehaviour
         collisionJobManager.InitializeArrays(allSpringPoints);
 
         // Skip FillObjectWithSpringPoints(), because data is already set
+=======
+        ApplyMaterialProperties();  // NEW: Apply after preset to set dampers
+>>>>>>> Stashed changes
     }
 
     private void InitializeCollisionLayer()
@@ -340,7 +344,12 @@ public class OctreeSpringFiller : MonoBehaviour
         switch (layerPreset)
         {
             case CollisionLayerPreset.Default:
-                // Already initialized with default values
+                collisionLayer.density = 1000f;
+                collisionLayer.restitution = 0.5f;
+                collisionLayer.friction = 0.5f;
+                collisionLayer.youngsModulus = 1e6f;
+                collisionLayer.poissonRatio = 0.4f;
+                collisionLayer.dampingFactor = 1.5f;  // NEW: Over-damped for no bounce
                 break;
 
             case CollisionLayerPreset.Rubber:
@@ -349,6 +358,7 @@ public class OctreeSpringFiller : MonoBehaviour
                 collisionLayer.friction = 0.8f;
                 collisionLayer.youngsModulus = 0.01e6f;
                 collisionLayer.poissonRatio = 0.49f;
+                collisionLayer.dampingFactor = 1.0f;  // NEW: Critical for slight bounce
                 break;
 
             case CollisionLayerPreset.Metal:
@@ -357,6 +367,7 @@ public class OctreeSpringFiller : MonoBehaviour
                 collisionLayer.friction = 0.6f;
                 collisionLayer.youngsModulus = 200e9f;
                 collisionLayer.poissonRatio = 0.27f;
+                collisionLayer.dampingFactor = 0.5f;  // NEW: Under-damped for vibration
                 break;
 
             case CollisionLayerPreset.Plastic:
@@ -365,6 +376,7 @@ public class OctreeSpringFiller : MonoBehaviour
                 collisionLayer.friction = 0.4f;
                 collisionLayer.youngsModulus = 3e9f;
                 collisionLayer.poissonRatio = 0.35f;
+                collisionLayer.dampingFactor = 1.5f;  // NEW: Over-damped for stability
                 break;
 
             case CollisionLayerPreset.Gel:
@@ -373,7 +385,7 @@ public class OctreeSpringFiller : MonoBehaviour
                 collisionLayer.friction = 0.2f;
                 collisionLayer.youngsModulus = 0.001e6f;
                 collisionLayer.poissonRatio = 0.45f;
-                collisionLayer.dampingFactor = 0.5f;
+                collisionLayer.dampingFactor = 1.5f;  // UPDATED: Over-damped (was 0.5f)
                 break;
         }
     }

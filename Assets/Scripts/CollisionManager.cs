@@ -17,12 +17,27 @@ public class CollisionManager : MonoBehaviour
 
 
     [Header("Collision Response")]
+<<<<<<< Updated upstream
+=======
+    [Range(0f, 1f)] public float baumgarteBeta = 0.1f;  // Bias factor for penetration stabilization (0.1-0.3 typical)
+    public float contactStiffness = 1000f;  // Stiffness for penalty repulsion (N/m)
+    [Range(0f, 2f)]
+    public float contactDampingRatio = 1.2f;  // Damping ratio (1.0 = critical damping)
+>>>>>>> Stashed changes
     [Range(0f, 1f)]
     public float coefficientOfRestitution = 0.6f;
     [Range(0f, 1f)]
+<<<<<<< Updated upstream
     public float coefficientOfFriction = 0.4f; // Note: Friction not implemented in this GJK response
     public float penetrationCorrectionFactor = 0.6f; // How strongly to push objects apart (0-1)
     public float penetrationSlop = 0.01f; // A small allowance for penetration to prevent jitter
+=======
+    public float defaultCoefficientOfRestitution = 0.1f;  // Default if points don't have values
+    [Range(0f, 1f)]
+    public float defaultCoefficientOfFriction = 0.4f;     // Default if points don't have values
+    public float penetrationCorrectionFactor = 0.8f; // How strongly to push objects apart (0-1)
+    public float penetrationSlop = 0.02f; // A small allowance for penetration to prevent jitter
+>>>>>>> Stashed changes
 
     // Collision statistics
     [Header("Debug Info")]
@@ -425,6 +440,7 @@ public class CollisionManager : MonoBehaviour
 
     private void ApplyContactPointResponse(OctreeSpringFiller obj1, OctreeSpringFiller obj2, ContactPoint contact)
     {
+<<<<<<< Updated upstream
         SpringPointData point1 = obj1.SurfacePoints[contact.point1Index];
         SpringPointData point2 = obj2.SurfacePoints[contact.point2Index];
 
@@ -450,14 +466,86 @@ public class CollisionManager : MonoBehaviour
 
         // Apply friction if enabled
         if (coefficientOfFriction > 0.001f)
+=======
+        // Calculate normal impulse (no direct application - distribution handles it)
+        float impulseMagnitude = CalculateContactImpulse(obj1, obj2, contact);
+        Vector3 impulse = contact.normal * impulseMagnitude;
+
+        // Distribute normal impulse to nearby points
+        ApplyImpulseToNearbyPoints(obj1, contact.worldPosition, impulse, contact.influenceRadius, contact.normal, contact.restitution);
+        ApplyImpulseToNearbyPoints(obj2, contact.worldPosition, -impulse, contact.influenceRadius, -contact.normal, contact.restitution);
+
+        // Friction impulse (if applicable)
+        if (contact.friction > 0.001f)
+>>>>>>> Stashed changes
         {
             Vector3 frictionImpulse = CalculateFrictionImpulse(obj1, obj2, contact, impulseMagnitude);
             ApplyImpulseToNearbyPoints(obj1, contact.worldPosition, frictionImpulse, contact.influenceRadius);
             ApplyImpulseToNearbyPoints(obj2, contact.worldPosition, -frictionImpulse, contact.influenceRadius);
         }
 
+<<<<<<< Updated upstream
         // Position correction to resolve penetration
         ApplyPositionCorrection(obj1, obj2, contact);
+=======
+        // Continuous forces for sustained contacts
+        ApplyContinuousContactForces(obj1, obj2, contact);
+
+        // Position correction (once, after forces)
+        ApplyPositionCorrection(obj1, obj2, contact);
+    }
+
+    private void ApplyContinuousContactForces(OctreeSpringFiller obj1, OctreeSpringFiller obj2, ContactPoint contact)
+    {
+        SpringPointData point1 = obj1.surfaceSpringPoints2[contact.point1Index];
+        SpringPointData point2 = obj2.surfaceSpringPoints2[contact.point2Index];
+
+        Vector3 relativeVelocity = point1.velocity - point2.velocity;
+        float velocityAlongNormal = Vector3.Dot(relativeVelocity, contact.normal);
+
+        float penetration = Mathf.Max(contact.penetrationDepth - penetrationSlop, 0f);
+        if (penetration <= 0f) return;
+
+        float effectiveInvMass1 = CalculateEffectiveInvMass(obj1, contact.worldPosition, contact.influenceRadius, contact.normal);
+        float effectiveInvMass2 = CalculateEffectiveInvMass(obj2, contact.worldPosition, contact.influenceRadius, -contact.normal);
+        float effectiveInvMass = effectiveInvMass1 + effectiveInvMass2;
+        if (effectiveInvMass <= 0f) return;
+        float effectiveMass = 1f / effectiveInvMass;
+
+        float e = contact.restitution;
+        float blendedStiffness = contactStiffness * (1f - e * 0.5f);
+
+        float repulsionMag = blendedStiffness * penetration;
+        float criticalDamping = 2f * Mathf.Sqrt(blendedStiffness * effectiveMass);
+
+        // Bidirectional damping (damp both closing and separating for oscillation control)
+        float dampingMag = contactDampingRatio * criticalDamping * Mathf.Abs(velocityAlongNormal) * Mathf.Sign(-velocityAlongNormal);  // Opposes motion
+        dampingMag *= penetration;  // Scale with depth for deeper damping in compressed states
+
+        float normalForceMag = repulsionMag + dampingMag;
+        normalForceMag = Mathf.Max(0f, normalForceMag);
+
+        Vector3 normalForceImpulse = contact.normal * normalForceMag * Time.fixedDeltaTime;
+
+        ApplyImpulseToNearbyPoints(obj1, contact.worldPosition, normalForceImpulse, contact.influenceRadius, contact.normal, e);
+        ApplyImpulseToNearbyPoints(obj2, contact.worldPosition, -normalForceImpulse, contact.influenceRadius, -contact.normal, e);
+
+        // Tangential viscous (unchanged, but helps sliding stability in stacks)
+        if (contact.friction > 0.001f)
+        {
+            Vector3 tangentialVelocity = relativeVelocity - velocityAlongNormal * contact.normal;
+            float tangentialMag = tangentialVelocity.magnitude;
+            if (tangentialMag > 0.001f)
+            {
+                Vector3 tangentDir = tangentialVelocity.normalized;
+                float viscousMag = contact.friction * viscousFrictionFactor * normalForceMag;
+                Vector3 viscousImpulse = -tangentDir * viscousMag * Time.fixedDeltaTime;
+
+                ApplyImpulseToNearbyPoints(obj1, contact.worldPosition, viscousImpulse, contact.influenceRadius, contact.normal, contact.friction);
+                ApplyImpulseToNearbyPoints(obj2, contact.worldPosition, -viscousImpulse, contact.influenceRadius, -contact.normal, contact.friction);
+            }
+        }
+>>>>>>> Stashed changes
     }
 
     private float CalculateContactImpulse(OctreeSpringFiller obj1, OctreeSpringFiller obj2, ContactPoint contact)
@@ -465,19 +553,41 @@ public class CollisionManager : MonoBehaviour
         SpringPointData point1 = obj1.SurfacePoints[contact.point1Index];
         SpringPointData point2 = obj2.SurfacePoints[contact.point2Index];
 
-        // Calculate relative velocity at contact point
         Vector3 relativeVelocity = point1.velocity - point2.velocity;
         float velocityAlongNormal = Vector3.Dot(relativeVelocity, contact.normal);
 
-        // Don't resolve if already separating
-        if (velocityAlongNormal > 0) return 0f;
+        float effectiveInvMass1 = CalculateEffectiveInvMass(obj1, contact.worldPosition, contact.influenceRadius, contact.normal);
+        float effectiveInvMass2 = CalculateEffectiveInvMass(obj2, contact.worldPosition, contact.influenceRadius, -contact.normal);
+        float denom = effectiveInvMass1 + effectiveInvMass2;
+        if (denom <= 0.0001f) return 0f;
 
+<<<<<<< Updated upstream
         float invMass1 = point1.mass > 0 ? 1.0f / point1.mass : 0.0f;
         float invMass2 = point2.mass > 0 ? 1.0f / point2.mass : 0.0f;
 
         // Calculate impulse magnitude
         float j = -(1 + coefficientOfRestitution) * velocityAlongNormal;
         j /= (invMass1 + invMass2);
+=======
+        float e = contact.restitution;
+
+        // Soften restitution for low-speed contacts (e.g., gravity settle)
+        float speed = Mathf.Abs(velocityAlongNormal);
+        float effectiveE = e * Mathf.Clamp01(speed / 1.0f);  // Full e only above 1 m/s; tune threshold
+
+        // Restitution term (only for closing)
+        float restitutionTerm = -(1 + effectiveE) * Mathf.Min(velocityAlongNormal, 0f);
+
+        // Baumgarte bias
+        float dt = Time.fixedDeltaTime;
+        float bias = baumgarteBeta * Mathf.Max(contact.penetrationDepth - penetrationSlop, 0f) / dt;
+
+        float j = (restitutionTerm + bias) / denom;
+
+        // Cap impulse for stability in stacks (prevent over-push from small v)
+        float maxJ = 2.0f * Mathf.Max(point1.mass, point2.mass) * speed;  // Momentum-based cap
+        j = Mathf.Clamp(j, 0f, maxJ);
+>>>>>>> Stashed changes
 
         return j;
     }
@@ -487,6 +597,7 @@ public class CollisionManager : MonoBehaviour
         SpringPointData point1 = obj1.SurfacePoints[contact.point1Index];
         SpringPointData point2 = obj2.SurfacePoints[contact.point2Index];
 
+<<<<<<< Updated upstream
         // Get tangential velocity
         Vector3 relativeVelocity = point1.velocity - point2.velocity;
         Vector3 tangentialVelocity = relativeVelocity - Vector3.Dot(relativeVelocity, contact.normal) * contact.normal;
@@ -504,10 +615,54 @@ public class CollisionManager : MonoBehaviour
     }
 
     private void ApplyImpulseToNearbyPoints(OctreeSpringFiller body, Vector3 contactPoint, Vector3 impulse, float influenceRadius)
+=======
+        Vector3 relativeVelocity = point1.velocity - point2.velocity;
+        float velAlongNormal = Vector3.Dot(relativeVelocity, contact.normal);
+        Vector3 tangentialVelocity = relativeVelocity - (velAlongNormal * contact.normal);
+        float vtMag = tangentialVelocity.magnitude;
+        if (vtMag < 0.001f) return Vector3.zero;
+
+        // Use effective inverse masses
+        float effectiveInvMass1 = CalculateEffectiveInvMass(obj1, contact.worldPosition, contact.influenceRadius, contact.normal);
+        float effectiveInvMass2 = CalculateEffectiveInvMass(obj2, contact.worldPosition, contact.influenceRadius, -contact.normal);
+        float denom = effectiveInvMass1 + effectiveInvMass2;
+        if (denom <= 0.0001f) return Vector3.zero;
+
+        float mu = contact.friction;
+        float staticFrictionCoef = mu * 1.2f;
+        float dynamicFrictionCoef = mu;
+
+        // Trial friction impulse vector to fully oppose tangential velocity
+        Vector3 trialFrictionImpulse = -tangentialVelocity / denom;
+
+        // Maximum static friction
+        float maxStaticFriction = staticFrictionCoef * normalImpulseMagnitude;
+
+        // Sticking check
+        float trialMag = trialFrictionImpulse.magnitude;
+        if (trialMag <= maxStaticFriction)
+        {
+            return trialFrictionImpulse;  // Static: stick
+        }
+        else
+        {
+            // Dynamic: slide
+            float maxDynamicFriction = dynamicFrictionCoef * normalImpulseMagnitude;
+            Vector3 slideDirection = tangentialVelocity.normalized;
+            return -slideDirection * maxDynamicFriction;
+        }
+    }
+
+    private void ApplyImpulseToNearbyPoints(OctreeSpringFiller body, Vector3 contactPoint, Vector3 impulse,
+                                        float influenceRadius, Vector3 contactNormal, float materialProperty)
+>>>>>>> Stashed changes
     {
+        // First pass: Compute sum of influences for normalization
+        float sumInfluence = 0f;
         for (int i = 0; i < body.allSpringPoints.Length; i++)
         {
             SpringPointData point = body.allSpringPoints[i];
+<<<<<<< Updated upstream
             float distance = Vector3.Distance(point.position, contactPoint);
 
             if (distance < influenceRadius && point.isFixed == 0)
@@ -516,17 +671,187 @@ public class CollisionManager : MonoBehaviour
                 float normalizedDistance = distance / influenceRadius;
                 float influence = CalculateInfluenceFalloff(normalizedDistance);
                 Vector3 velocityChange = impulse * influence / point.mass;
+=======
+            Vector3 toPoint = (Vector3)point.position - contactPoint;
+            float distance = toPoint.magnitude;
+
+            if (distance < influenceRadius && point.isFixed == 0)
+            {
+                float dot = Vector3.Dot(toPoint.normalized, contactNormal);
+                if (dot < -0.5f) continue;
+
+                float normalizedDistance = distance / influenceRadius;
+                float influence = Mathf.Exp(-(normalizedDistance * normalizedDistance) * contactInfluenceFalloff);
+
+                if (point.isMeshVertex == 0)
+                {
+                    influence *= 0.6f;
+                }
+
+                float materialScale = Mathf.Lerp(0.5f, 1.5f, materialProperty);
+                influence *= materialScale;
+
+                sumInfluence += influence;
+            }
+        }
+
+        if (sumInfluence <= 0f) return;  // No points affected
+
+        // Second pass: Apply normalized influence
+        for (int i = 0; i < body.allSpringPoints.Length; i++)
+        {
+            SpringPointData point = body.allSpringPoints[i];
+            Vector3 toPoint = (Vector3)point.position - contactPoint;
+            float distance = toPoint.magnitude;
+
+            if (distance < influenceRadius && point.isFixed == 0)
+            {
+                float dot = Vector3.Dot(toPoint.normalized, contactNormal);
+                if (dot < -0.5f) continue;
+
+                float normalizedDistance = distance / influenceRadius;
+                float influence = Mathf.Exp(-(normalizedDistance * normalizedDistance) * contactInfluenceFalloff);
+
+                if (point.isMeshVertex == 0)
+                {
+                    influence *= 0.6f;
+                }
+
+                float materialScale = Mathf.Lerp(0.5f, 1.5f, materialProperty);
+                influence *= materialScale;
+
+                float normalizedInfluence = influence / sumInfluence;  // Normalize to conserve total impulse
+
+                Vector3 velocityChange = impulse * normalizedInfluence / point.mass;
+
+                // Add small viscosity drag for energy dissipation (tune 0.05f)
+                velocityChange -= (Vector3)point.velocity * 0.05f * normalizedInfluence;
+
+>>>>>>> Stashed changes
                 point.velocity += (float3)velocityChange;
                 body.allSpringPoints[i] = point;
 
                 if (logCollisionDetails && influence > 0.1f)
                 {
+<<<<<<< Updated upstream
                     Debug.Log($"Applied impulse {velocityChange.magnitude:F2} to point at distance {distance:F2} (influence: {influence:F2})");
+=======
+                    Debug.Log($"Applied impulse {velocityChange.magnitude:F2} to point at distance {distance:F2} (influence: {normalizedInfluence:F2}, material: {materialProperty:F2})");
+>>>>>>> Stashed changes
                 }
             }
         }
     }
 
+<<<<<<< Updated upstream
+=======
+    private void ApplyPositionCorrection(OctreeSpringFiller obj1, OctreeSpringFiller obj2, ContactPoint contact)
+    {
+        if (contact.penetrationDepth <= penetrationSlop) return;
+        float correctionAmount = (contact.penetrationDepth - penetrationSlop) * penetrationCorrectionFactor;
+        Vector3 correction = contact.normal * correctionAmount;
+
+        int iterations = 3;
+        for (int iter = 0; iter < iterations; iter++)
+        {
+            // Compute effective invMass based on nearby points
+            float effectiveInvMass1 = CalculateEffectiveInvMass(obj1, contact.worldPosition, contact.influenceRadius, contact.normal);
+            float effectiveInvMass2 = CalculateEffectiveInvMass(obj2, contact.worldPosition, contact.influenceRadius, -contact.normal);
+            float totalEffectiveInvMass = effectiveInvMass1 + effectiveInvMass2;
+
+            if (totalEffectiveInvMass == 0f) return;
+
+            Vector3 correction1 = -correction * (effectiveInvMass1 / totalEffectiveInvMass) / iterations;
+            Vector3 correction2 = correction * (effectiveInvMass2 / totalEffectiveInvMass) / iterations;
+
+            ApplyPositionCorrectionToNearbyPoints(obj1, contact.worldPosition, correction1, contact.influenceRadius, contact.normal);
+            ApplyPositionCorrectionToNearbyPoints(obj2, contact.worldPosition, correction2, contact.influenceRadius, -contact.normal);
+        }
+    }
+
+    private float CalculateEffectiveInvMass(OctreeSpringFiller body, Vector3 contactPoint, float influenceRadius, Vector3 contactNormal)
+    {
+        float effectiveInvMass = 0f;
+        for (int i = 0; i < body.allSpringPoints.Length; i++)
+        {
+            SpringPointData point = body.allSpringPoints[i];
+            Vector3 toPoint = (Vector3)point.position - contactPoint;
+            float distance = toPoint.magnitude;
+
+            if (distance < influenceRadius && point.isFixed == 0)
+            {
+                float dot = Vector3.Dot(toPoint.normalized, contactNormal);
+                if (dot < -0.1f) continue;
+
+                float normalizedDistance = distance / influenceRadius;
+                float influence = CalculateInfluenceFalloff(normalizedDistance);
+
+                if (point.isMeshVertex == 0) influence *= 0.6f;
+
+                effectiveInvMass += influence / point.mass;  // Weighted inv mass
+            }
+        }
+        return effectiveInvMass;
+    }
+
+    private void ApplyPositionCorrectionToNearbyPoints(OctreeSpringFiller body, Vector3 contactPoint, Vector3 correction, float influenceRadius, Vector3 contactNormal)
+    {
+        // First pass: Compute sum of influences for normalization
+        float sumInfluence = 0f;
+        for (int i = 0; i < body.allSpringPoints.Length; i++)
+        {
+            SpringPointData point = body.allSpringPoints[i];
+            Vector3 toPoint = (Vector3)point.position - contactPoint;
+            float distance = toPoint.magnitude;
+
+            if (distance < influenceRadius && point.isFixed == 0)
+            {
+                float dot = Vector3.Dot(toPoint.normalized, contactNormal);
+                if (dot < -0.1f) continue;
+
+                float normalizedDistance = distance / influenceRadius;
+                float influence = CalculateInfluenceFalloff(normalizedDistance);
+
+                if (point.isMeshVertex == 0)
+                {
+                    influence *= 0.6f;
+                }
+
+                sumInfluence += influence;
+            }
+        }
+
+        if (sumInfluence <= 0f) return;
+
+        // Second pass: Apply normalized influence
+        for (int i = 0; i < body.allSpringPoints.Length; i++)
+        {
+            SpringPointData point = body.allSpringPoints[i];
+            Vector3 toPoint = (Vector3)point.position - contactPoint;
+            float distance = toPoint.magnitude;
+
+            if (distance < influenceRadius && point.isFixed == 0)
+            {
+                float dot = Vector3.Dot(toPoint.normalized, contactNormal);
+                if (dot < -0.1f) continue;
+
+                float normalizedDistance = distance / influenceRadius;
+                float influence = CalculateInfluenceFalloff(normalizedDistance);
+
+                if (point.isMeshVertex == 0)
+                {
+                    influence *= 0.6f;
+                }
+
+                float normalizedInfluence = influence / sumInfluence;
+
+                point.position += (float3)(correction * normalizedInfluence);
+                body.allSpringPoints[i] = point;
+            }
+        }
+    }
+
+>>>>>>> Stashed changes
     private float CalculateInfluenceFalloff(float normalizedDistance)
     {
         // Different falloff curves - you can experiment with these

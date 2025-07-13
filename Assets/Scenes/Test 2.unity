@@ -201,7 +201,11 @@ Transform:
   m_GameObject: {fileID: 111400010}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+<<<<<<< Updated upstream
   m_LocalPosition: {x: 3.49, y: 4.39, z: 0}
+=======
+  m_LocalPosition: {x: 0, y: 1.5, z: -1.22}
+>>>>>>> Stashed changes
   m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -221,10 +225,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   minNodeSize: 0.5
   PointSpacing: 0.5
+<<<<<<< Updated upstream
   isFilled: 0
   isRigid: 0
   maxConnectionsPerPoint: 18
   springConstantL1: 50
+=======
+  isFilled: 1
+  isRigid: 1
+  springConstantL1: 100
+>>>>>>> Stashed changes
   damperConstantL1: 0.6
   connectionRadiusL1: 1
   maxRestLengthL1: 5
@@ -239,7 +249,13 @@ MonoBehaviour:
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+<<<<<<< Updated upstream
   applyGravity: 1
+=======
+  velocity: {x: 0, y: 0, z: 0}
+  applyGravity: 0
+  gravity: {x: 0, y: -9.81, z: 0}
+>>>>>>> Stashed changes
   boundingVolume:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
@@ -260,8 +276,13 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
+<<<<<<< Updated upstream
   visualizeSpringPoints: 1
   visualizeSpringConnections: 1
+=======
+  visualizeSpringPoints: 0
+  visualizeSpringConnections: 0
+>>>>>>> Stashed changes
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
   surfaceDetectionThreshold: 0.2
@@ -284,6 +305,10 @@ MonoBehaviour:
   influenceRadius: 1
   showWeights: 0
   logSubdividedTriangles: 1
+<<<<<<< Updated upstream
+=======
+  maxSubdivisionsPerFrame: 50
+>>>>>>> Stashed changes
   isInitialized: 0
 --- !u!1 &705507993
 GameObject:
@@ -625,7 +650,11 @@ Transform:
   m_GameObject: {fileID: 968068584}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+<<<<<<< Updated upstream
   m_LocalPosition: {x: -2, y: 5, z: 0}
+=======
+  m_LocalPosition: {x: -3.17, y: 1, z: -1.23}
+>>>>>>> Stashed changes
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -660,9 +689,16 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+<<<<<<< Updated upstream
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+=======
+  totalMass: 5
+  bounciness: 0.1
+  friction: 0.2
+  velocity: {x: 0, y: 0, z: 0}
+>>>>>>> Stashed changes
   applyGravity: 0
   boundingVolume:
     m_Center: {x: 0, y: 0, z: 0}
@@ -671,8 +707,8 @@ MonoBehaviour:
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  collisionManager: {fileID: 0}
-  meshDeformer: {fileID: 0}
+  collisionManager: {fileID: 1133259031}
+  meshDeformer: {fileID: 968068591}
   collisionLayer:
     layerName: Default
     layerIndex: 0
@@ -689,7 +725,7 @@ MonoBehaviour:
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
   surfaceDetectionThreshold: 0.2
-  applyVelocity: 0
+  applyVelocity: 1
 --- !u!114 &968068591
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -757,9 +793,20 @@ MonoBehaviour:
   enableContactPointResponse: 1
   contactRadius: 1
   contactInfluenceFalloff: 2
+<<<<<<< Updated upstream
   maxContactsPerCollision: 8
   coefficientOfRestitution: 0.6
   coefficientOfFriction: 0.4
+=======
+  maxContactsPerCollision: 16
+  radiusDepthScale: 0.5
+  baumgarteBeta: 0.2
+  contactStiffness: 5000
+  contactDampingRatio: 1
+  viscousFrictionFactor: 0.5
+  defaultCoefficientOfRestitution: 0.6
+  defaultCoefficientOfFriction: 0.4
+>>>>>>> Stashed changes
   penetrationCorrectionFactor: 0.6
   penetrationSlop: 0.01
   totalCollisionsThisFrame: 0
