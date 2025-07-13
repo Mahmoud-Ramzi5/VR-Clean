@@ -119,6 +119,68 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &834980
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 834982}
+  - component: {fileID: 834981}
+  m_Layer: 0
+  m_Name: CollisionManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &834981
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 834980}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 884242f632e93ae448ee40063e06223e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enableInterObjectCollision: 1
+  enableContactPointResponse: 1
+  baseContactRadius: 1
+  contactInfluenceFalloff: 2
+  maxContactsPerCollision: 8
+  radiusDepthScale: 0.5
+  contactStiffness: 5000
+  contactDampingRatio: 1
+  viscousFrictionFactor: 0.5
+  defaultCoefficientOfRestitution: 0.6
+  defaultCoefficientOfFriction: 0.4
+  penetrationCorrectionFactor: 0.8
+  penetrationSlop: 0.01
+  totalCollisionsThisFrame: 0
+  showCollisionGizmos: 0
+  showContactPoints: 1
+  showInfluenceRadius: 1
+  logCollisionDetails: 0
+--- !u!4 &834982
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 834980}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1.3888268, y: -22.582455, z: 113.8313}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2765188
 GameObject:
   m_ObjectHideFlags: 0
@@ -4293,7 +4355,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _templateInstance: {fileID: 3796389031773342928, guid: e0c5bf19920378944b9115709fd95836, type: 3}
-  _spawnPosition: {x: -7, y: 6, z: 3}
+  _spawnPosition: {x: -3, y: 6, z: 3}
   _spawnScale: {x: 2, y: 2, z: 2}
   _spawnRotation: {x: 0, y: 0, z: 0, w: 1}
   _resetPhysics: 1
@@ -8319,7 +8381,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _templateInstance: {fileID: 3796389031773342928, guid: e0c5bf19920378944b9115709fd95836, type: 3}
-  _spawnPosition: {x: 7, y: 6, z: 3}
+  _spawnPosition: {x: 3, y: 6, z: 3}
   _spawnScale: {x: 2, y: 2, z: 2}
   _spawnRotation: {x: 0, y: 0, z: 0, w: 1}
   _resetPhysics: 1
@@ -16528,7 +16590,7 @@ Transform:
   m_GameObject: {fileID: 5907565742339247733}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 5, z: 10}
+  m_LocalPosition: {x: 0, y: 4, z: 10}
   m_LocalScale: {x: 20, y: 10, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -16589,7 +16651,7 @@ Transform:
   m_GameObject: {fileID: 5041424276681729750}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 10, z: 5}
+  m_LocalPosition: {x: 0, y: 9, z: 5}
   m_LocalScale: {x: 20, y: 1, z: 10}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -17313,7 +17375,7 @@ Transform:
   m_GameObject: {fileID: 299875700546489560}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 10, y: 5, z: 5}
+  m_LocalPosition: {x: 10, y: 4, z: 5}
   m_LocalScale: {x: 1, y: 10, z: 10}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -20466,7 +20528,7 @@ Transform:
   m_GameObject: {fileID: 8410973354968667005}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -10, y: 5, z: 5}
+  m_LocalPosition: {x: -10, y: 4, z: 5}
   m_LocalScale: {x: 1, y: 10, z: 10}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -24371,7 +24433,7 @@ Transform:
   m_GameObject: {fileID: 1606821346263814490}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 5}
+  m_LocalPosition: {x: 0, y: -0.5, z: 5}
   m_LocalScale: {x: 20, y: 1, z: 10}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -27513,3 +27575,4 @@ SceneRoots:
   - {fileID: 705596902}
   - {fileID: 1634203714}
   - {fileID: 777328473}
+  - {fileID: 834982}

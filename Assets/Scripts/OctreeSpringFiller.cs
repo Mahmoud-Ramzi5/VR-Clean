@@ -36,12 +36,21 @@ public class OctreeSpringFiller : MonoBehaviour
     public float maxRestLengthL3 = 3f;
 
 
+    [SerializeField] private Vector3 roomMinBounds = new Vector3(-9.5f, 0f, -1f);
+    [SerializeField] private Vector3 roomMaxBounds = new Vector3(9.5f, 10f, 9.5f);
+
+    [SerializeField] private float roomBounce = 0.5f;
+    [SerializeField] private float roomFriction = 0.8f;
+
+
     [Header("Mesh Settings")]
     public float totalMass = 100f;
 
     public float bounciness = 0.5f;
     public float friction = 0.8f;
-    public Vector3 velocity;
+
+    public Vector3 velocity = Vector3.zero;
+    public bool applyVelocity = false;
 
     private Mesh targetMesh;
     private Bounds meshBounds;
@@ -60,6 +69,7 @@ public class OctreeSpringFiller : MonoBehaviour
     public float groundBounce = 0.5f;   // Bounce coefficient (0 = no bounce, 1 = full bounce)
     public float groundFriction = 0.8f; // Friction coefficient (0 = full stop, 1 = no friction)
     public bool applyGroundCollision = true;
+    public bool applyRoomCollision = true;
 
     [Header("External Systems")]
     public CollisionManager collisionManager;
@@ -97,7 +107,6 @@ public class OctreeSpringFiller : MonoBehaviour
     public bool autoUpdateMeshFromSurface = true;
     public float surfaceDetectionThreshold = 0.2f;
 
-    public bool applyVelocity = false;
 
     Dictionary<int, int> surfacePointToVertexIndex = new Dictionary<int, int>();
 
@@ -282,6 +291,14 @@ public class OctreeSpringFiller : MonoBehaviour
                 FixCorners();
             }
         }
+
+        if (applyVelocity)
+            for (int i = 0; i < allSpringPoints.Length; i++)
+            {
+                SpringPointData p = allSpringPoints[i];
+                p.velocity = velocity;
+                allSpringPoints[i] = p;
+            }
     }
 
     public void OverrideSpringData(NativeArray<SpringPointData> sharedPoints, NativeArray<SpringConnectionData> sharedConnections)
@@ -442,10 +459,16 @@ public class OctreeSpringFiller : MonoBehaviour
         // Handle collisions
         if (applyGroundCollision)
         {
-            collisionJobManager.ScheduleGroundCollisionJobs(
-                groundLevel, groundBounce, groundFriction
-            );
+            collisionJobManager.ScheduleGroundCollisionJobs(groundLevel, groundBounce, groundFriction);
+            collisionJobManager.CompleteAllJobsAndApply();
+        }
 
+        if (applyRoomCollision)
+        {
+            collisionJobManager.ScheduleRoomCollisionJob(
+                roomMinBounds, roomMaxBounds,
+                roomBounce, roomFriction
+            );
             collisionJobManager.CompleteAllJobsAndApply();
         }
 
@@ -563,13 +586,6 @@ public class OctreeSpringFiller : MonoBehaviour
         allSpringPoints = tempPoints.AsArray();
         allSpringConnections = tempConnections.AsArray();
 
-        if (applyVelocity)
-            for (int i = 0; i < allSpringPoints.Length; i++)
-            {
-                SpringPointData p = allSpringPoints[i];
-                p.velocity = new Vector3(2f, 0, 0);
-                allSpringPoints[i] = p;
-            }
 
         // Some logs
         Debug.Log($"Octree Nodes: {total_nodes}");

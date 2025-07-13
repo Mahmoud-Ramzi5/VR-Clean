@@ -61,6 +61,88 @@ public class CollisionJobManager : MonoBehaviour
         }
     }
 
+    [BurstCompile]
+    struct RoomCollisionJob : IJobParallelFor
+    {
+        public NativeArray<SpringPointData> springPoints;
+
+        [ReadOnly] public float3 minBounds;
+        [ReadOnly] public float3 maxBounds;
+
+        [ReadOnly] public float bounce;
+        [ReadOnly] public float friction;
+
+        public void Execute(int i)
+        {
+            SpringPointData point = springPoints[i];
+            float3 pos = point.position;
+            float3 vel = point.velocity;
+
+            bool collided = false;
+
+            // Check X axis
+            if (pos.x < minBounds.x)
+            {
+                pos.x = minBounds.x;
+                vel.x = -vel.x * bounce;
+                vel.y *= friction;
+                vel.z *= friction;
+                collided = true;
+            }
+            else if (pos.x > maxBounds.x)
+            {
+                pos.x = maxBounds.x;
+                vel.x = -vel.x * bounce;
+                vel.y *= friction;
+                vel.z *= friction;
+                collided = true;
+            }
+
+            // Check Y axis
+            if (pos.y < minBounds.y)
+            {
+                pos.y = minBounds.y;
+                vel.y = -vel.y * bounce;
+                vel.x *= friction;
+                vel.z *= friction;
+                collided = true;
+            }
+            else if (pos.y > maxBounds.y)
+            {
+                pos.y = maxBounds.y;
+                vel.y = -vel.y * bounce;
+                vel.x *= friction;
+                vel.z *= friction;
+                collided = true;
+            }
+
+            // Check Z axis
+            if (pos.z < minBounds.z)
+            {
+                pos.z = minBounds.z;
+                vel.z = -vel.z * bounce;
+                vel.x *= friction;
+                vel.y *= friction;
+                collided = true;
+            }
+            else if (pos.z > maxBounds.z)
+            {
+                pos.z = maxBounds.z;
+                vel.z = -vel.z * bounce;
+                vel.x *= friction;
+                vel.y *= friction;
+                collided = true;
+            }
+
+            if (collided)
+            {
+                point.position = pos;
+                point.velocity = vel;
+                springPoints[i] = point;
+            }
+        }
+    }
+
     public void ScheduleGroundCollisionJobs(float groundLevel, float groundBounce, float groundFriction)
     {
         var groundJob = new GroundCollisionJob
@@ -73,6 +155,20 @@ public class CollisionJobManager : MonoBehaviour
         };
 
         collisionJobHandle = groundJob.Schedule(springPoints.Length, 64);
+    }
+
+    public void ScheduleRoomCollisionJob(float3 minBounds, float3 maxBounds, float bounce, float friction)
+    {
+        var roomCollisionJob = new RoomCollisionJob
+        {
+            springPoints = springPoints,
+            minBounds = minBounds,
+            maxBounds = maxBounds,
+            bounce = bounce,
+            friction = friction
+        };
+
+        collisionJobHandle = roomCollisionJob.Schedule(springPoints.Length, 64);
     }
 
     public void CompleteAllJobsAndApply()
