@@ -17,6 +17,11 @@ public class CollisionManager : MonoBehaviour
     public float radiusDepthScale = 0.5f;           // How much penetration scales the radius
 
     [Header("Collision Response")]
+    public float contactStiffness = 5000f;  // Stiffness for penalty repulsion (N/m)
+    [Range(0f, 2f)]
+    public float contactDampingRatio = 1f;  // Damping ratio (1.0 = critical damping)
+    [Range(0f, 1f)]
+    public float viscousFrictionFactor = 0.5f;  // Scales tangential damping relative to friction coeff
     [Range(0f, 1f)]
     public float defaultCoefficientOfRestitution = 0.6f;  // Default if points don't have values
     [Range(0f, 1f)]
@@ -478,6 +483,65 @@ public class CollisionManager : MonoBehaviour
 
         // Position correction to resolve penetration
         ApplyPositionCorrection(obj1, obj2, contact);
+        // Continuous penalty forces and damping for sustained contacts
+        ApplyContinuousContactForces(obj1, obj2, contact);
+
+        // Position correction to resolve penetration (existing)
+        ApplyPositionCorrection(obj1, obj2, contact);
+    }
+
+    private void ApplyContinuousContactForces(OctreeSpringFiller obj1, OctreeSpringFiller obj2, ContactPoint contact)
+    {
+        SpringPointData point1 = obj1.surfaceSpringPoints2[contact.point1Index];
+        SpringPointData point2 = obj2.surfaceSpringPoints2[contact.point2Index];
+
+        Vector3 relativeVelocity = point1.velocity - point2.velocity;
+        float velocityAlongNormal = Vector3.Dot(relativeVelocity, contact.normal);
+
+        float penetration = Mathf.Max(contact.penetrationDepth - penetrationSlop, 0f);
+        if (penetration <= 0f) return;  // No force if not penetrating
+
+        // Effective inverse masses for adaptive stiffness/damping
+        float effectiveInvMass1 = CalculateEffectiveInvMass(obj1, contact.worldPosition, contact.influenceRadius, contact.normal);
+        float effectiveInvMass2 = CalculateEffectiveInvMass(obj2, contact.worldPosition, contact.influenceRadius, -contact.normal);
+        float effectiveInvMass = effectiveInvMass1 + effectiveInvMass2;
+        if (effectiveInvMass <= 0f) return;
+        float effectiveMass = 1f / effectiveInvMass;
+
+        // Blend stiffness with restitution (softer for bouncier materials)
+        float e = contact.restitution;
+        float blendedStiffness = contactStiffness * (1f - e * 0.5f);  // Less stiff for high e
+
+        // Normal penalty force magnitude (Kelvin-Voigt)
+        float repulsionMag = blendedStiffness * penetration;
+        float criticalDamping = 2f * Mathf.Sqrt(blendedStiffness * effectiveMass);
+        float dampingMag = contactDampingRatio * criticalDamping * Mathf.Max(-velocityAlongNormal, 0f);  // Damp only closing to avoid sticking
+        float normalForceMag = repulsionMag + dampingMag;
+
+        // Clamp to prevent negative (tensile) forces
+        normalForceMag = Mathf.Max(0f, normalForceMag);
+
+        Vector3 normalForceImpulse = contact.normal * normalForceMag * Time.fixedDeltaTime;
+
+        // Apply normal force impulse
+        ApplyImpulseToNearbyPoints(obj1, contact.worldPosition, normalForceImpulse, contact.influenceRadius, contact.normal, e);
+        ApplyImpulseToNearbyPoints(obj2, contact.worldPosition, -normalForceImpulse, contact.influenceRadius, -contact.normal, e);
+
+        // Tangential viscous damping for smoother sliding (supplements impulsive friction)
+        if (contact.friction > 0.001f)
+        {
+            Vector3 tangentialVelocity = relativeVelocity - velocityAlongNormal * contact.normal;
+            float tangentialMag = tangentialVelocity.magnitude;
+            if (tangentialMag > 0.001f)
+            {
+                Vector3 tangentDir = tangentialVelocity.normalized;
+                float viscousMag = contact.friction * viscousFrictionFactor * normalForceMag;  // Proportional to normal force
+                Vector3 viscousImpulse = -tangentDir * viscousMag * Time.fixedDeltaTime;
+
+                ApplyImpulseToNearbyPoints(obj1, contact.worldPosition, viscousImpulse, contact.influenceRadius, contact.normal, contact.friction);
+                ApplyImpulseToNearbyPoints(obj2, contact.worldPosition, -viscousImpulse, contact.influenceRadius, -contact.normal, contact.friction);
+            }
+        }
     }
 
     private float CalculateContactImpulse(OctreeSpringFiller obj1, OctreeSpringFiller obj2, ContactPoint contact)
@@ -608,22 +672,47 @@ public class CollisionManager : MonoBehaviour
         float correctionAmount = (contact.penetrationDepth - penetrationSlop) * penetrationCorrectionFactor;
         Vector3 correction = contact.normal * correctionAmount;
 
-        // Multiple iterations for better resolution
         int iterations = 3;
         for (int iter = 0; iter < iterations; iter++)
         {
-            float invMass1 = obj1.totalMass > 0 ? 1f / obj1.totalMass : 0f;
-            float invMass2 = obj2.totalMass > 0 ? 1f / obj2.totalMass : 0f;
-            float totalInvMass = invMass1 + invMass2;
+            // Compute effective invMass based on nearby points
+            float effectiveInvMass1 = CalculateEffectiveInvMass(obj1, contact.worldPosition, contact.influenceRadius, contact.normal);
+            float effectiveInvMass2 = CalculateEffectiveInvMass(obj2, contact.worldPosition, contact.influenceRadius, -contact.normal);
+            float totalEffectiveInvMass = effectiveInvMass1 + effectiveInvMass2;
 
-            if (totalInvMass == 0f) return; // Both objects fixed
+            if (totalEffectiveInvMass == 0f) return;
 
-            Vector3 correction1 = -correction * (invMass1 / totalInvMass) / iterations;
-            Vector3 correction2 = correction * (invMass2 / totalInvMass) / iterations;
+            Vector3 correction1 = -correction * (effectiveInvMass1 / totalEffectiveInvMass) / iterations;
+            Vector3 correction2 = correction * (effectiveInvMass2 / totalEffectiveInvMass) / iterations;
 
             ApplyPositionCorrectionToNearbyPoints(obj1, contact.worldPosition, correction1, contact.influenceRadius, contact.normal);
             ApplyPositionCorrectionToNearbyPoints(obj2, contact.worldPosition, correction2, contact.influenceRadius, -contact.normal);
         }
+    }
+
+    private float CalculateEffectiveInvMass(OctreeSpringFiller body, Vector3 contactPoint, float influenceRadius, Vector3 contactNormal)
+    {
+        float effectiveInvMass = 0f;
+        for (int i = 0; i < body.allSpringPoints.Length; i++)
+        {
+            SpringPointData point = body.allSpringPoints[i];
+            Vector3 toPoint = (Vector3)point.position - contactPoint;
+            float distance = toPoint.magnitude;
+
+            if (distance < influenceRadius && point.isFixed == 0)
+            {
+                float dot = Vector3.Dot(toPoint.normalized, contactNormal);
+                if (dot < -0.1f) continue;
+
+                float normalizedDistance = distance / influenceRadius;
+                float influence = CalculateInfluenceFalloff(normalizedDistance);
+
+                if (point.isMeshVertex == 0) influence *= 0.6f;
+
+                effectiveInvMass += influence / point.mass;  // Weighted inv mass
+            }
+        }
+        return effectiveInvMass;
     }
 
     private void ApplyPositionCorrectionToNearbyPoints(OctreeSpringFiller body, Vector3 contactPoint, Vector3 correction, float influenceRadius, Vector3 contactNormal)
@@ -870,15 +959,6 @@ public class CollisionManager : MonoBehaviour
         return count > 0 ? total / count : (propertySelector(obj.allSpringPoints[0]));
     }
 
-    private void DebugDrawBounds(Bounds bounds, Color color)
-    {
-        Debug.DrawLine(new Vector3(bounds.min.x, bounds.min.y, bounds.min.z), new Vector3(bounds.max.x, bounds.min.y, bounds.min.z), color);
-        Debug.DrawLine(new Vector3(bounds.min.x, bounds.min.y, bounds.min.z), new Vector3(bounds.min.x, bounds.max.y, bounds.min.z), color);
-        Debug.DrawLine(new Vector3(bounds.min.x, bounds.min.y, bounds.min.z), new Vector3(bounds.min.x, bounds.min.y, bounds.max.z), color);
-        Debug.DrawLine(new Vector3(bounds.max.x, bounds.max.y, bounds.max.z), new Vector3(bounds.min.x, bounds.max.y, bounds.max.z), color);
-        Debug.DrawLine(new Vector3(bounds.max.x, bounds.max.y, bounds.max.z), new Vector3(bounds.max.x, bounds.min.y, bounds.max.z), color);
-        Debug.DrawLine(new Vector3(bounds.max.x, bounds.max.y, bounds.max.z), new Vector3(bounds.max.x, bounds.max.y, bounds.min.z), color);
-    }
 
     private void OnDrawGizmos()
     {
