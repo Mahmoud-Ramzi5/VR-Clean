@@ -122,8 +122,8 @@ MonoBehaviour:
   maxRestLengthL3: 5
   roomMinBounds: {x: -9.5, y: 0, z: 0}
   roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
-  roomBounce: 0.1
-  roomFriction: 0.7
+  roomBounce: 0.3
+  roomFriction: 0.4
   totalMass: 300
   bounciness: 0.3
   friction: 0.4

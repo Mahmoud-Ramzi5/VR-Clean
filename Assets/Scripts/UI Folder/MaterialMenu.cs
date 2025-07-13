@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 using static UnityEngine.GraphicsBuffer;
@@ -32,11 +33,21 @@ public class MaterialMenu : MonoBehaviour
         }
         materialDropdown.AddOptions(options);
 
-        //materialDropdown.captionText.text = objects[0].MaterialManager;
+        //materialDropdown.captionText.text = objects[0].GetComponent<MaterialType>().ToString();
 
         materialDropdown.onValueChanged.AddListener(ChangeMaterial);
         // Apply font size to all options
         ApplyDropdownFontSize();
+        Initializethings(objects[0]);
+    }
+
+    public void Initializethings(GameObject target)
+    {
+        if (target == null) return;
+        Renderer renderer = target.GetComponent<Renderer>();
+        string materialName = renderer.sharedMaterial.name;
+
+        materialDropdown.captionText.text = materialName.ToString()+"Room";
     }
 
     void ApplyDropdownFontSize()
