@@ -21,12 +21,12 @@ MonoBehaviour:
   springConstantL1: 180
   damperConstantL1: 0.55
   connectionRadiusL1: 1
-  maxRestLengthL1: 10
+  maxRestLengthL1: 8
   springConstantL2: 130
   damperConstantL2: 0.45
   connectionRadiusL2: 2
-  maxRestLengthL2: 15
+  maxRestLengthL2: 10
   springConstantL3: 90
   damperConstantL3: 0.35
   connectionRadiusL3: 3
-  maxRestLengthL3: 20
+  maxRestLengthL3: 12

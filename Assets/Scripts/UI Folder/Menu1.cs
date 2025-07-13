@@ -40,4 +40,9 @@ public class Menu1 : MenuDataBinderBase
             float.TryParse(Point.text, out target.PointSpacing);
 
     }
+
+    public override void ApplyTo2(OctreeSpringFiller target)
+    {
+        return;
+    }
 }

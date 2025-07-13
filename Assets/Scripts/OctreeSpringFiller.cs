@@ -14,7 +14,8 @@ public class OctreeSpringFiller : MonoBehaviour
     public float minNodeSize = 0.5f;
     public float PointSpacing = 0.5f;
     public bool isFilled = true;
-    public bool isRigid = true;
+    public bool isRigid = true; 
+    public bool isFixCorners = false;
 
     [Header("Spring Settings")]
     [Header("Spring Settings / Layer 1")]
@@ -83,11 +84,11 @@ public class OctreeSpringFiller : MonoBehaviour
     private NativeList<SpringConnectionData> tempConnections = new NativeList<SpringConnectionData>(Allocator.Persistent);
 
     public NativeArray<SpringPointData> allSpringPoints;
-    private NativeArray<SpringConnectionData> allSpringConnections;
+    public NativeArray<SpringConnectionData> allSpringConnections;
 
     // Jobs
-    private CollisionJobManager collisionJobManager;
-    private SpringJobManager springJobManager;
+    public CollisionJobManager collisionJobManager;
+    public SpringJobManager springJobManager;
     private RigidJobManager rigidJobManager;
     private MeshJobManagerCPU meshJobManager;
 
@@ -296,6 +297,29 @@ public class OctreeSpringFiller : MonoBehaviour
 
         // Apply layer preset if selected
         ApplyLayerPreset();
+
+        if (isFixCorners)
+        {
+            FixCorners();
+        }
+    }
+
+    public void OverrideSpringData(NativeArray<SpringPointData> sharedPoints, NativeArray<SpringConnectionData> sharedConnections)
+    {
+        allSpringPoints = new NativeArray<SpringPointData>(sharedPoints, Allocator.Persistent);
+        allSpringConnections = new NativeArray<SpringConnectionData>(sharedConnections, Allocator.Persistent);
+
+        // Reinitialize jobs and surface detection
+        springJobManager = gameObject.AddComponent<SpringJobManager>();
+        springJobManager.InitializeArrays(allSpringPoints, allSpringConnections);
+
+        rigidJobManager = gameObject.AddComponent<RigidJobManager>();
+        rigidJobManager.InitializeArrays(allSpringPoints, allSpringConnections);
+
+        collisionJobManager = gameObject.AddComponent<CollisionJobManager>();
+        collisionJobManager.InitializeArrays(allSpringPoints);
+
+        // Skip FillObjectWithSpringPoints(), because data is already set
     }
 
     private void InitializeCollisionLayer()
@@ -1114,6 +1138,43 @@ public class OctreeSpringFiller : MonoBehaviour
         }
 
         return false;
+    }
+
+    public void FixCorners()
+    {
+        if (allSpringPoints.Length == 0) return;
+
+        // Find the min and max bounds of all points
+        Vector3 min = allSpringPoints[0].position;
+        Vector3 max = allSpringPoints[0].position;
+
+        for (int i = 1; i < allSpringPoints.Length; i++)
+        {
+            min = Vector3.Min(min, allSpringPoints[i].position);
+            max = Vector3.Max(max, allSpringPoints[i].position);
+        }
+
+        // Tolerance for corner detection (1% of the smallest dimension)
+        float tolerance = Vector3.Min(max , min).magnitude * 0.01f;
+
+        // Mark points near the corners as fixed
+        for (int i = 0; i < allSpringPoints.Length; i++)
+        {
+            SpringPointData point = allSpringPoints[i];
+            Vector3 pos = point.position;
+
+            // Check if this point is near any corner (within tolerance)
+            if ((pos.x <= min.x + tolerance || pos.x >= max.x - tolerance) &&
+                (pos.y <= min.y + tolerance || pos.y >= max.y - tolerance) &&
+                (pos.z <= min.z + tolerance || pos.z >= max.z - tolerance))
+            {
+                point.isFixed = 1; // Mark as fixed
+                point.velocity = float3.zero; // Reset velocity
+                allSpringPoints[i] = point;
+            }
+        }
+
+        Debug.Log($"Fixed {allSpringPoints.Count(p => p.isFixed == 1)} corner points");
     }
 
     /// <summary>

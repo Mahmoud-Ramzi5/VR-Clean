@@ -63,6 +63,10 @@ public class MenuManager : MonoBehaviour
             {
                 binder.ApplyTo(simulationScript);
             }
+            foreach (var binder in binders)
+            {
+                binder.ApplyTo2(simulationScript);
+            }
 
             // Start each simulation
             //simulationScript.RunSimulation();

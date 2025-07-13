@@ -74,4 +74,9 @@ public class Menu6 : MenuDataBinderBase
         if (Bounciness != null && !string.IsNullOrWhiteSpace(Bounciness.text))
             float.TryParse(Bounciness.text, out target.bounciness);
     }
+
+    public override void ApplyTo2(OctreeSpringFiller target)
+    {
+        return;
+    }
 }

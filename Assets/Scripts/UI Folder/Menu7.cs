@@ -3,6 +3,8 @@ using UnityEngine.UI;
 
 public class Menu7 : MenuDataBinderBase
 {
+    public GameObject panel;
+    public OctreeSpringFiller target; // Now an array of scripts
     public Button cubeButton;  
     public Button sphereButton; 
     public Button cylinderButton;  
@@ -28,15 +30,23 @@ public class Menu7 : MenuDataBinderBase
     {
         selectedMesh = newMesh;
         Debug.Log("Mesh queued: " + newMesh.name);
-    }
-
-    public override void ApplyTo(OctreeSpringFiller target)
-    {
         // Apply mesh change if one was selected
         if (selectedMesh != null && targetMeshFilter != null)
         {
             targetMeshFilter.mesh = selectedMesh;
             Debug.Log("Applied mesh: " + selectedMesh.name);
+
         }
+        panel.SetActive(false);
+    }
+
+    public override void ApplyTo(OctreeSpringFiller target)
+    {
+
+    }
+
+    public override void ApplyTo2(OctreeSpringFiller target)
+    {
+        return;
     }
 }

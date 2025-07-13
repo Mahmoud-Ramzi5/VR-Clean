@@ -7,4 +7,5 @@ public abstract class MenuDataBinderBase : MonoBehaviour
     /// to your simulation controller (e.g., OctreeSpringFiller).
     /// </summary>
     public abstract void ApplyTo(OctreeSpringFiller target);
+    public abstract void ApplyTo2(OctreeSpringFiller target);
 }
