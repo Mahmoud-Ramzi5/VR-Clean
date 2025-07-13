@@ -356,8 +356,8 @@ MonoBehaviour:
   connectionRadiusL3: 3
   maxRestLengthL3: 3
   totalMass: 100
-  bounciness: 0.5
-  friction: 0.8
+  bounciness: 1
+  friction: 1
   velocity: {x: 0, y: 0, z: 0}
   applyGravity: 1
   gravity: {x: 0, y: -9.81, z: 0}
@@ -449,7 +449,7 @@ Transform:
   m_GameObject: {fileID: 171372771}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 3.45, y: 6.63, z: 1}
+  m_LocalPosition: {x: 4.52, y: 5.44, z: 1.04}
   m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -795,7 +795,7 @@ Transform:
   m_GameObject: {fileID: 968068584}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 3.45, y: 3.63, z: 1}
+  m_LocalPosition: {x: 4.15, y: 9, z: 1}
   m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -830,8 +830,8 @@ MonoBehaviour:
   connectionRadiusL3: 3
   maxRestLengthL3: 3
   totalMass: 100
-  bounciness: 0.5
-  friction: 0.8
+  bounciness: 1
+  friction: 1
   velocity: {x: 0, y: 0, z: 0}
   applyGravity: 1
   gravity: {x: 0, y: -9.81, z: 0}
@@ -931,8 +931,8 @@ MonoBehaviour:
   contactInfluenceFalloff: 2
   maxContactsPerCollision: 16
   radiusDepthScale: 0.5
-  coefficientOfRestitution: 0.6
-  coefficientOfFriction: 0.4
+  defaultCoefficientOfRestitution: 0.6
+  defaultCoefficientOfFriction: 0.4
   penetrationCorrectionFactor: 0.6
   penetrationSlop: 0.01
   totalCollisionsThisFrame: 0
