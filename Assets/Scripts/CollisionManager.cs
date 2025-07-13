@@ -18,9 +18,9 @@ public class CollisionManager : MonoBehaviour
 
     [Header("Collision Response")]
     [Range(0f, 1f)]
-    public float coefficientOfRestitution = 0.6f;
+    public float defaultCoefficientOfRestitution = 0.6f;  // Default if points don't have values
     [Range(0f, 1f)]
-    public float coefficientOfFriction = 0.4f; // Note: Friction not implemented in this GJK response
+    public float defaultCoefficientOfFriction = 0.4f;     // Default if points don't have values
     public float penetrationCorrectionFactor = 0.8f; // How strongly to push objects apart (0-1)
     public float penetrationSlop = 0.01f; // A small allowance for penetration to prevent jitter
 
@@ -47,6 +47,8 @@ public class CollisionManager : MonoBehaviour
         public int point1Index;  // Index of point from object 1 involved in contact
         public int point2Index;   // Index of point from object 2 involved in contact
         public float influenceRadius;
+        public float restitution;  // Blended restitution for this contact
+        public float friction;     // Blended friction for this contact
     }
 
     /// <summary>
@@ -83,9 +85,6 @@ public class CollisionManager : MonoBehaviour
                     totalCollisionsThisFrame++;
                     lastFrameCollisions.Add(info);
 
-                    // Apply layer-specific collision properties
-                    ApplyLayerSpecificCollision(obj1, obj2, info);
-
                     if (enableContactPointResponse)
                     {
                         HandleContactPointCollision(obj1, obj2, info);
@@ -96,19 +95,6 @@ public class CollisionManager : MonoBehaviour
                     }
                 }
             }
-        }
-    }
-
-    private void ApplyLayerSpecificCollision(OctreeSpringFiller obj1, OctreeSpringFiller obj2, CollisionInfo info)
-    {
-        var layer1 = obj1.GetCollisionLayer();
-        var layer2 = obj2.GetCollisionLayer();
-
-        if (layer1 != null && layer2 != null)
-        {
-            // Blend material properties for collision response
-            coefficientOfRestitution = (layer1.restitution + layer2.restitution) * 0.5f;
-            coefficientOfFriction = (layer1.friction + layer2.friction) * 0.5f;
         }
     }
 
@@ -192,8 +178,12 @@ public class CollisionManager : MonoBehaviour
             Vector3 relativeVel = point1.velocity - point2.velocity;
             float impactSpeed = Vector3.Dot(relativeVel, info.Normal);
 
-            // NEW: Dynamic radius based on penetration depth
+            // Dynamic radius based on penetration depth
             float dynamicRadius = baseContactRadius * (1f + info.Depth * radiusDepthScale);
+
+            // Blend material properties from both contact points
+            float blendedRestitution = (point1.bounciness + point2.bounciness) * 0.5f;
+            float blendedFriction = (point1.friction + point2.friction) * 0.5f;
 
             contact = new ContactPoint
             {
@@ -203,7 +193,9 @@ public class CollisionManager : MonoBehaviour
                 impactVelocity = impactSpeed,
                 point1Index = closest1,
                 point2Index = closest2,
-                influenceRadius = dynamicRadius
+                influenceRadius = dynamicRadius,
+                restitution = blendedRestitution,
+                friction = blendedFriction
             };
         }
         else
@@ -211,6 +203,8 @@ public class CollisionManager : MonoBehaviour
             // Fallback if surface points aren't found
             contact.point1Index = -1;
             contact.point2Index = -1;
+            contact.restitution = defaultCoefficientOfRestitution;
+            contact.friction = defaultCoefficientOfFriction;
         }
 
         return contact;
@@ -278,8 +272,12 @@ public class CollisionManager : MonoBehaviour
                 Vector3 relativeVel = point1.velocity - closestPoint2.velocity;
                 float impactSpeed = Vector3.Dot(relativeVel, blendedNormal);
 
-                // NEW: Dynamic radius
+                // Dynamic radius
                 float dynamicRadius = baseContactRadius * (1f + penetration * radiusDepthScale);
+
+                // Blend material properties
+                float blendedRestitution = (point1.bounciness + closestPoint2.bounciness) * 0.5f;
+                float blendedFriction = (point1.friction + closestPoint2.friction) * 0.5f;
 
                 contact = new ContactPoint
                 {
@@ -289,12 +287,16 @@ public class CollisionManager : MonoBehaviour
                     impactVelocity = impactSpeed,
                     point1Index = penetratingPointIndex,
                     point2Index = closestIndex,
-                    influenceRadius = dynamicRadius
+                    influenceRadius = dynamicRadius,
+                    restitution = blendedRestitution,
+                    friction = blendedFriction
                 };
             }
             else
             {
                 contact.point2Index = -1;
+                contact.restitution = defaultCoefficientOfRestitution;
+                contact.friction = defaultCoefficientOfFriction;
             }
         }
         else
@@ -315,8 +317,12 @@ public class CollisionManager : MonoBehaviour
                 Vector3 relativeVel = closestPoint1.velocity - point2.velocity;
                 float impactSpeed = Vector3.Dot(relativeVel, blendedNormal);
 
-                // NEW: Dynamic radius
+                // Dynamic radius
                 float dynamicRadius = baseContactRadius * (1f + penetration * radiusDepthScale);
+
+                // Blend material properties
+                float blendedRestitution = (closestPoint1.bounciness + point2.bounciness) * 0.5f;
+                float blendedFriction = (closestPoint1.friction + point2.friction) * 0.5f;
 
                 contact = new ContactPoint
                 {
@@ -326,12 +332,16 @@ public class CollisionManager : MonoBehaviour
                     impactVelocity = impactSpeed,
                     point1Index = closestIndex,
                     point2Index = penetratingPointIndex,
-                    influenceRadius = dynamicRadius
+                    influenceRadius = dynamicRadius,
+                    restitution = blendedRestitution,
+                    friction = blendedFriction
                 };
             }
             else
             {
                 contact.point1Index = -1;
+                contact.restitution = defaultCoefficientOfRestitution;
+                contact.friction = defaultCoefficientOfFriction;
             }
         }
 
@@ -358,7 +368,8 @@ public class CollisionManager : MonoBehaviour
     private List<ContactPoint> SelectBestContacts(List<ContactPoint> contacts)
     {
         // Sort contacts by multiple criteria for best selection
-        contacts.Sort((a, b) => {
+        contacts.Sort((a, b) =>
+        {
             // Primary: Highest impact velocity (most significant collision)
             int impactComparison = b.impactVelocity.CompareTo(a.impactVelocity);
             if (impactComparison != 0) return impactComparison;
@@ -383,7 +394,7 @@ public class CollisionManager : MonoBehaviour
             // Ensure minimum distance between selected contacts for stability
             foreach (var selected in selectedContacts)
             {
-                if (Vector3.Distance(candidate.worldPosition, selected.worldPosition) < candidate.influenceRadius * 0.5f)  // NEW: Use dynamic radius
+                if (Vector3.Distance(candidate.worldPosition, selected.worldPosition) < candidate.influenceRadius * 0.5f)
                 {
                     tooClose = true;
                     break;
@@ -437,32 +448,32 @@ public class CollisionManager : MonoBehaviour
         SpringPointData point1 = obj1.surfaceSpringPoints2[contact.point1Index];
         SpringPointData point2 = obj2.surfaceSpringPoints2[contact.point2Index];
 
-        // Calculate impulse magnitude for this contact
+        // Calculate impulse magnitude for this contact using per-point material properties
         float impulseMagnitude = CalculateContactImpulse(obj1, obj2, contact);
         Vector3 impulse = contact.normal * impulseMagnitude;
 
         if (point1.isFixed == 0)
         {
-            point1.velocity += (float3)impulse / point1.mass;
+            point1.velocity += (float3)(impulse / point1.mass);
             obj1.surfaceSpringPoints2[contact.point1Index] = point1;
         }
 
         if (point2.isFixed == 0)
         {
-            point2.velocity -= (float3)impulse / point2.mass;
+            point2.velocity -= (float3)(impulse / point2.mass);
             obj2.surfaceSpringPoints2[contact.point2Index] = point2;
         }
 
         // Apply impulse to nearby points in both objects
-        ApplyImpulseToNearbyPoints(obj1, contact.worldPosition, impulse, contact.influenceRadius, contact.normal);
-        ApplyImpulseToNearbyPoints(obj2, contact.worldPosition, -impulse, contact.influenceRadius, -contact.normal);  // Opposite normal for obj2
+        ApplyImpulseToNearbyPoints(obj1, contact.worldPosition, impulse, contact.influenceRadius, contact.normal, contact.restitution);
+        ApplyImpulseToNearbyPoints(obj2, contact.worldPosition, -impulse, contact.influenceRadius, -contact.normal, contact.restitution);
 
-        // Apply friction if enabled
-        if (coefficientOfFriction > 0.001f)
+        // Apply friction if the contact friction is significant
+        if (contact.friction > 0.001f)
         {
             Vector3 frictionImpulse = CalculateFrictionImpulse(obj1, obj2, contact, impulseMagnitude);
-            ApplyImpulseToNearbyPoints(obj1, contact.worldPosition, frictionImpulse, contact.influenceRadius, contact.normal);
-            ApplyImpulseToNearbyPoints(obj2, contact.worldPosition, -frictionImpulse, contact.influenceRadius, -contact.normal);
+            ApplyImpulseToNearbyPoints(obj1, contact.worldPosition, frictionImpulse, contact.influenceRadius, contact.normal, contact.friction);
+            ApplyImpulseToNearbyPoints(obj2, contact.worldPosition, -frictionImpulse, contact.influenceRadius, -contact.normal, contact.friction);
         }
 
         // Position correction to resolve penetration
@@ -484,8 +495,11 @@ public class CollisionManager : MonoBehaviour
         float invMass1 = point1.mass > 0 ? 1.0f / point1.mass : 0.0f;
         float invMass2 = point2.mass > 0 ? 1.0f / point2.mass : 0.0f;
 
+        // Use the contact's blended restitution
+        float e = contact.restitution;
+
         // Calculate impulse magnitude
-        float j = -(1 + coefficientOfRestitution) * velocityAlongNormal;
+        float j = -(1 + e) * velocityAlongNormal;
         j /= (invMass1 + invMass2);
 
         return j;
@@ -513,7 +527,7 @@ public class CollisionManager : MonoBehaviour
         Vector3 tangentDirection = tangentialVelocity.normalized;
 
         // Relative tangential speed (positive)
-        float vr_t = Vector3.Dot(relativeVelocity, tangentDirection);  // == vtMag since aligned
+        float vr_t = Vector3.Dot(relativeVelocity, tangentDirection);
 
         // Inverse masses (handle fixed/infinite mass)
         float invMass1 = (point1.mass > 0) ? 1f / point1.mass : 0f;
@@ -521,13 +535,16 @@ public class CollisionManager : MonoBehaviour
         float denom = invMass1 + invMass2;
         if (denom <= 0.0001f) return Vector3.zero;  // Both fixed, no impulse
 
+        // Use the contact's blended friction
+        float mu = contact.friction;
+
         // Static vs dynamic friction
-        float staticFrictionCoef = coefficientOfFriction * 1.2f;  // mu_s > mu_d
-        float dynamicFrictionCoef = coefficientOfFriction;
-        float mu = (vtMag < 0.01f) ? staticFrictionCoef : dynamicFrictionCoef;
+        float staticFrictionCoef = mu * 1.2f;  // mu_s > mu_d
+        float dynamicFrictionCoef = mu;
+        float frictionCoef = (vtMag < 0.01f) ? staticFrictionCoef : dynamicFrictionCoef;
 
         // Maximum friction impulse magnitude
-        float maxFriction = mu * normalImpulseMagnitude;
+        float maxFriction = frictionCoef * normalImpulseMagnitude;
 
         // Trial friction impulse scalar (negative to oppose motion)
         float j_f = -vr_t / denom;
@@ -535,37 +552,43 @@ public class CollisionManager : MonoBehaviour
         // Clamp to friction cone
         if (Mathf.Abs(j_f) > maxFriction)
         {
-            j_f = -Mathf.Sign(vr_t) * maxFriction;  // vr_t > 0, so -maxFriction
+            j_f = -Mathf.Sign(vr_t) * maxFriction;
         }
 
         // Friction impulse vector
         return j_f * tangentDirection;
     }
 
-    private void ApplyImpulseToNearbyPoints(OctreeSpringFiller body, Vector3 contactPoint, Vector3 impulse, float influenceRadius, Vector3 contactNormal)
+    private void ApplyImpulseToNearbyPoints(OctreeSpringFiller body, Vector3 contactPoint, Vector3 impulse,
+                                           float influenceRadius, Vector3 contactNormal, float materialProperty)
     {
         for (int i = 0; i < body.allSpringPoints.Length; i++)
         {
             SpringPointData point = body.allSpringPoints[i];
-            
+
             Vector3 toPoint = (Vector3)point.position - contactPoint;
             float distance = toPoint.magnitude;
 
             if (distance < influenceRadius && point.isFixed == 0)
             {
-                // NEW: Directional bias - only apply if point is "behind" the contact surface
+                // Directional bias - only apply if point is "behind" the contact surface
                 float dot = Vector3.Dot(toPoint.normalized, contactNormal);
-                if (dot < -0.5f) continue;  // Skip if opposite side (adjust threshold)
+                if (dot < -0.5f) continue;  // Skip if opposite side
 
                 // Calculate influence based on distance with Gaussian falloff for realism
                 float normalizedDistance = distance / influenceRadius;
                 float influence = Mathf.Exp(-(normalizedDistance * normalizedDistance) * contactInfluenceFalloff);
 
-                // NEW: Bias for surface points (assume SpringPointData has isSurface or use isMeshVertex)
+                // Bias for surface points
                 if (point.isMeshVertex == 0)
                 {  // Internal point
                     influence *= 0.6f;  // Weaker influence inside
                 }
+
+                // Scale influence by the material property (bounciness or friction)
+                // This allows points with different material properties to respond differently
+                float materialScale = Mathf.Lerp(0.5f, 1.5f, materialProperty);
+                influence *= materialScale;
 
                 Vector3 velocityChange = impulse * influence / point.mass;
                 point.velocity += (float3)velocityChange;
@@ -573,16 +596,10 @@ public class CollisionManager : MonoBehaviour
 
                 if (logCollisionDetails && influence > 0.1f)
                 {
-                    Debug.Log($"Applied impulse {velocityChange.magnitude:F2} to point at distance {distance:F2} (influence: {influence:F2})");
+                    Debug.Log($"Applied impulse {velocityChange.magnitude:F2} to point at distance {distance:F2} (influence: {influence:F2}, material: {materialProperty:F2})");
                 }
             }
         }
-    }
-
-    private float CalculateInfluenceFalloff(float normalizedDistance)
-    {
-        // NEW: Default to Gaussian, remove switch for simplicity/realism
-        return Mathf.Exp(-(normalizedDistance * normalizedDistance) * contactInfluenceFalloff);
     }
 
     private void ApplyPositionCorrection(OctreeSpringFiller obj1, OctreeSpringFiller obj2, ContactPoint contact)
@@ -591,8 +608,8 @@ public class CollisionManager : MonoBehaviour
         float correctionAmount = (contact.penetrationDepth - penetrationSlop) * penetrationCorrectionFactor;
         Vector3 correction = contact.normal * correctionAmount;
 
-        // NEW: Multiple iterations for better resolution
-        int iterations = 3;  // Tune 2-5
+        // Multiple iterations for better resolution
+        int iterations = 3;
         for (int iter = 0; iter < iterations; iter++)
         {
             float invMass1 = obj1.totalMass > 0 ? 1f / obj1.totalMass : 0f;
@@ -619,29 +636,38 @@ public class CollisionManager : MonoBehaviour
 
             if (distance < influenceRadius && point.isFixed == 0)
             {
-                // NEW: Directional bias for correction
+                // Directional bias for correction
                 float dot = Vector3.Dot(toPoint.normalized, contactNormal);
                 if (dot < -0.1f) continue;
 
                 float normalizedDistance = distance / influenceRadius;
                 float influence = CalculateInfluenceFalloff(normalizedDistance);
 
-                // NEW: Surface bias
+                // Surface bias
                 if (point.isMeshVertex == 0)
                 {
                     influence *= 0.6f;
                 }
 
-                point.position += (float3)correction * influence;
+                point.position += (float3)(correction * influence);
                 body.allSpringPoints[i] = point;
             }
         }
     }
 
+    private float CalculateInfluenceFalloff(float normalizedDistance)
+    {
+        // Gaussian falloff for realistic response
+        return Mathf.Exp(-(normalizedDistance * normalizedDistance) * contactInfluenceFalloff);
+    }
+
     // Fallback to original global collision response
     private void HandleGlobalCollision(OctreeSpringFiller obj1, OctreeSpringFiller obj2, CollisionInfo info)
     {
-        // Your original collision response code here
+        // Use the GJK collision response when contact point response is disabled
+        HandleGJKCollisionResponse(obj1, obj2, info);
+
+        // Also apply the per-point collision response
         obj1.HandleCollisionResponse(info, obj2);
         obj2.HandleCollisionResponse(new CollisionInfo
         {
@@ -650,7 +676,6 @@ public class CollisionManager : MonoBehaviour
             DidCollide = true
         }, obj1);
     }
-
 
     private void TriggerMeshDeformation(OctreeSpringFiller obj1, OctreeSpringFiller obj2)
     {
@@ -664,30 +689,19 @@ public class CollisionManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Handles the physics response for two colliding objects using the data from GJK/EPA.
-    /// </summary>
-    private void HandleCollisionPair(OctreeSpringFiller obj1, OctreeSpringFiller obj2, CollisionInfo info)
-    {
-        // Apply the actual physics response (this was commented out)
-        HandleGJKCollisionResponse(obj1, obj2, info);
-
-        // Also apply the per-point collision response
-        obj1.HandleCollisionResponse(info, obj2);
-        obj2.HandleCollisionResponse(new CollisionInfo
-        {
-            Normal = -info.Normal,
-            Depth = info.Depth,
-            DidCollide = true
-        }, obj1);
-
-        // Optional: Trigger mesh deformation
-        TriggerMeshDeformation(obj1, obj2);
-    }
-
-    // Make this method private (it was already correct, just noting the visibility)
+    // This method is now used only when contact point response is disabled
     private void HandleGJKCollisionResponse(OctreeSpringFiller obj1, OctreeSpringFiller obj2, CollisionInfo info)
     {
+        // Calculate average material properties from all points
+        float avgRestitution1 = GetAverageMaterialProperty(obj1, p => p.bounciness);
+        float avgRestitution2 = GetAverageMaterialProperty(obj2, p => p.bounciness);
+        float avgFriction1 = GetAverageMaterialProperty(obj1, p => p.friction);
+        float avgFriction2 = GetAverageMaterialProperty(obj2, p => p.friction);
+
+        // Blend the material properties
+        float blendedRestitution = (avgRestitution1 + avgRestitution2) * 0.5f;
+        float blendedFriction = (avgFriction1 + avgFriction2) * 0.5f;
+
         // --- 1. Calculate Relative Velocity ---
         Vector3 avgVelocity1 = GetAverageVelocity(obj1);
         Vector3 avgVelocity2 = GetAverageVelocity(obj2);
@@ -703,8 +717,8 @@ public class CollisionManager : MonoBehaviour
         float invMass1 = (totalMass1 > 0) ? 1.0f / totalMass1 : 0.0f;
         float invMass2 = (totalMass2 > 0) ? 1.0f / totalMass2 : 0.0f;
 
-        // Use the smaller coefficient of restitution
-        float e = coefficientOfRestitution;
+        // Use the blended coefficient of restitution
+        float e = blendedRestitution;
 
         // Impulse scalar formula
         float j = -(1 + e) * velocityAlongNormal;
@@ -715,23 +729,81 @@ public class CollisionManager : MonoBehaviour
         Vector3 velocityChange1 = impulse * invMass1;
         Vector3 velocityChange2 = -impulse * invMass2;
 
-        // Apply velocity changes to obj1
+        // Apply velocity changes to obj1 with per-point material scaling
         for (int i = 0; i < obj1.allSpringPoints.Length; i++)
         {
             SpringPointData point = obj1.allSpringPoints[i];
-            point.velocity += (float3)velocityChange1;
-            obj1.allSpringPoints[i] = point;
+            if (point.isFixed == 0)
+            {
+                // Scale velocity change by point's bounciness relative to average
+                float bounceScale = (avgRestitution1 > 0) ? point.bounciness / avgRestitution1 : 1f;
+                point.velocity += (float3)(velocityChange1 * bounceScale);
+                obj1.allSpringPoints[i] = point;
+            }
         }
 
-        // Apply velocity changes to obj2  
+        // Apply velocity changes to obj2 with per-point material scaling
         for (int i = 0; i < obj2.allSpringPoints.Length; i++)
         {
             SpringPointData point = obj2.allSpringPoints[i];
-            point.velocity += (float3)velocityChange2;
-            obj2.allSpringPoints[i] = point;
+            if (point.isFixed == 0)
+            {
+                // Scale velocity change by point's bounciness relative to average
+                float bounceScale = (avgRestitution2 > 0) ? point.bounciness / avgRestitution2 : 1f;
+                point.velocity += (float3)(velocityChange2 * bounceScale);
+                obj2.allSpringPoints[i] = point;
+            }
         }
 
-        // --- 3. Positional Correction (Resolve Penetration) ---
+        // --- 3. Apply Friction ---
+        if (blendedFriction > 0.001f && velocityAlongNormal < 0)
+        {
+            // Calculate tangential velocity
+            Vector3 tangentialVelocity = relativeVelocity - (Vector3)(velocityAlongNormal * info.Normal);
+            float tangentialMagnitude = tangentialVelocity.magnitude;
+
+            if (tangentialMagnitude > 0.001f)
+            {
+                Vector3 tangentDirection = tangentialVelocity.normalized;
+
+                // Calculate friction impulse
+                float frictionImpulseMagnitude = blendedFriction * Mathf.Abs(j);
+                float maxFrictionImpulse = tangentialMagnitude / (invMass1 + invMass2);
+
+                // Clamp friction to prevent reversal
+                frictionImpulseMagnitude = Mathf.Min(frictionImpulseMagnitude, maxFrictionImpulse);
+
+                Vector3 frictionImpulse = -tangentDirection * frictionImpulseMagnitude;
+                Vector3 frictionChange1 = frictionImpulse * invMass1;
+                Vector3 frictionChange2 = -frictionImpulse * invMass2;
+
+                // Apply friction to obj1
+                for (int i = 0; i < obj1.allSpringPoints.Length; i++)
+                {
+                    SpringPointData point = obj1.allSpringPoints[i];
+                    if (point.isFixed == 0)
+                    {
+                        float frictionScale = (avgFriction1 > 0) ? point.friction / avgFriction1 : 1f;
+                        point.velocity += (float3)(frictionChange1 * frictionScale);
+                        obj1.allSpringPoints[i] = point;
+                    }
+                }
+
+                // Apply friction to obj2
+                for (int i = 0; i < obj2.allSpringPoints.Length; i++)
+                {
+                    SpringPointData point = obj2.allSpringPoints[i];
+                    if (point.isFixed == 0)
+                    {
+                        float frictionScale = (avgFriction2 > 0) ? point.friction / avgFriction2 : 1f;
+                        point.velocity += (float3)(frictionChange2 * frictionScale);
+                        obj2.allSpringPoints[i] = point;
+                    }
+                }
+            }
+        }
+
+        // --- 4. Positional Correction (Resolve Penetration) ---
         Vector3 correction = Mathf.Max(info.Depth - penetrationSlop, 0.0f) / (invMass1 + invMass2) * penetrationCorrectionFactor * info.Normal;
         Vector3 posChange1 = correction * invMass1;
         Vector3 posChange2 = -correction * invMass2;
@@ -740,35 +812,62 @@ public class CollisionManager : MonoBehaviour
         for (int i = 0; i < obj1.allSpringPoints.Length; i++)
         {
             SpringPointData point = obj1.allSpringPoints[i];
-            point.position += (float3)posChange1;
-            obj1.allSpringPoints[i] = point;
+            if (point.isFixed == 0)
+            {
+                point.position += (float3)posChange1;
+                obj1.allSpringPoints[i] = point;
+            }
         }
-        for (int i = 0; i < obj1.allSpringPoints.Length; i++)
+
+        for (int i = 0; i < obj2.allSpringPoints.Length; i++)
         {
             SpringPointData point = obj2.allSpringPoints[i];
-            point.position += (float3)posChange2;
-            obj1.allSpringPoints[i] = point;
+            if (point.isFixed == 0)
+            {
+                point.position += (float3)posChange2;
+                obj2.allSpringPoints[i] = point;
+            }
         }
     }
 
-    private float3 GetAverageVelocity(OctreeSpringFiller obj)
+    private Vector3 GetAverageVelocity(OctreeSpringFiller obj)
     {
-        if (obj.allSpringPoints.Length == 0) return float3.zero;
+        if (obj.allSpringPoints.Length == 0) return Vector3.zero;
 
-        float3 totalVelocity = float3.zero;
-        int movablePoints = 0;
+        Vector3 totalVelocity = Vector3.zero;
+        float totalMass = 0f;
 
         for (int i = 0; i < obj.allSpringPoints.Length; i++)
         {
             SpringPointData p = obj.allSpringPoints[i];
             if (p.isFixed == 0)
             {
-                totalVelocity += p.velocity;
-                movablePoints++;
+                totalVelocity += (Vector3)p.velocity * p.mass;
+                totalMass += p.mass;
             }
         }
 
-        return movablePoints > 0 ? totalVelocity / movablePoints : float3.zero;
+        return totalMass > 0 ? totalVelocity / totalMass : Vector3.zero;
+    }
+
+    private float GetAverageMaterialProperty(OctreeSpringFiller obj, System.Func<SpringPointData, float> propertySelector)
+    {
+        if (obj.allSpringPoints.Length == 0) return 0f;
+
+        float total = 0f;
+        int count = 0;
+
+        for (int i = 0; i < obj.allSpringPoints.Length; i++)
+        {
+            SpringPointData point = obj.allSpringPoints[i];
+            if (point.isFixed == 0)
+            {
+                total += propertySelector(point);
+                count++;
+            }
+        }
+
+        return count > 0 ? total / count : (propertySelector(obj.allSpringPoints[0]));
     }
 
     private void DebugDrawBounds(Bounds bounds, Color color)

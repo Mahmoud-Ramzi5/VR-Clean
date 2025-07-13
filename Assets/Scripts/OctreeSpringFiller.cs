@@ -385,9 +385,41 @@ public class OctreeSpringFiller : MonoBehaviour
         // Apply material properties to spring constants
         CalculateRealisticSpringConstants();
 
-        // Apply to collision properties
-        collisionManager.coefficientOfRestitution = collisionLayer.restitution;
-        collisionManager.coefficientOfFriction = collisionLayer.friction;
+        // Apply material properties to all spring points
+        ApplyMaterialPropertiesToPoints();
+
+        // Update collision manager defaults (used only as fallback)
+        if (collisionManager != null)
+        {
+            collisionManager.defaultCoefficientOfRestitution = collisionLayer.restitution;
+            collisionManager.defaultCoefficientOfFriction = collisionLayer.friction;
+        }
+    }
+
+    private void ApplyMaterialPropertiesToPoints()
+    {
+        if (collisionLayer == null) return;
+
+        // Apply to all spring points
+        for (int i = 0; i < allSpringPoints.Length; i++)
+        {
+            SpringPointData point = allSpringPoints[i];
+            point.bounciness = collisionLayer.restitution;
+            point.friction = collisionLayer.friction;
+            allSpringPoints[i] = point;
+        }
+
+        // Also apply to surface points if they're separate
+        if (surfaceSpringPoints2.IsCreated)
+        {
+            for (int i = 0; i < surfaceSpringPoints2.Length; i++)
+            {
+                SpringPointData point = surfaceSpringPoints2[i];
+                point.bounciness = collisionLayer.restitution;
+                point.friction = collisionLayer.friction;
+                surfaceSpringPoints2[i] = point;
+            }
+        }
     }
 
     private float CalculateVolumeFromMesh()
