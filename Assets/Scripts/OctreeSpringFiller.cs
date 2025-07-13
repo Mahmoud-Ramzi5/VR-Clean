@@ -590,10 +590,18 @@ public class OctreeSpringFiller : MonoBehaviour
         meshJobManager.ScheduleMeshVerticesUpdateJobs(getVertices(), meshDeformer.workingMesh.triangles, transform.localToWorldMatrix, transform.worldToLocalMatrix);
         meshJobManager.CompleteAllJobsAndApply(getVertices(), meshDeformer.workingMesh.triangles, meshDeformer.workingMesh, surfaceSpringPoints);
     }
+<<<<<<< HEAD
     }
     [HideInInspector] public bool subdivisionComplete = false;
+=======
+>>>>>>> d151934c1f65c47da1a2ca6521bddb5fc02ffbe4
     void LateUpdate()
     {
+        if (visualizeRenderer == null || !allSpringPoints.IsCreated || !allSpringConnections.IsCreated)
+        {
+            return;  // Skip rendering if not initialized
+        }
+
         visualizeRenderer.DrawInstancedPoints(visualizeSpringPoints, allSpringPoints);
 
         visualizeRenderer.UploadConnectionsToGPU(allSpringPoints, allSpringConnections);
@@ -761,7 +769,7 @@ public class OctreeSpringFiller : MonoBehaviour
         }
     }
 
-    bool IsPointNearSurface(Vector3 worldPos, float distanceThreshold = 1f)
+    bool IsPointNearSurface(Vector3 worldPos, float distanceThreshold = 0.1f)
     {
         // Simple: check distance to nearest mesh vertex
         float minDist = float.MaxValue;
