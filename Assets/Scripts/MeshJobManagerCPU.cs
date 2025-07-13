@@ -53,6 +53,71 @@ public class MeshJobManagerCPU : MonoBehaviour
             meshTrianglesNative[i] = meshTriangles[i];
         }
     }
+
+    /// <summary>
+    /// Updates mesh vertices based on native spring points, analogous to UpdateSurfacePointsInMesh.
+    /// </summary>
+    public void UpdateSurfacePointsInMesh(Vector3[] meshVerts, int[] meshTris, Matrix4x4 localToWorld, Matrix4x4 worldToLocal, Mesh targetMesh, bool autoUpdateMeshFromSurface)
+    {
+        if (!autoUpdateMeshFromSurface || VertexPointMap.Count() == 0)
+            return;
+
+        // Copy managed to native array
+        for (int i = 0; i < meshVerts.Length; i++)
+            meshVerticesNative[i] = meshVerts[i];
+
+        bool meshChanged = false;
+
+        // Update native meshVerticesNative from surface points mapping
+        foreach (var kvp in VertexPointMap)
+        {
+            int vertexIndex = kvp.Key;
+            int pointIndex = kvp.Value;
+
+            if (pointIndex < springPoints.Length && vertexIndex < meshVerticesNative.Length)
+            {
+                SpringPointData surfacePoint = springPoints[pointIndex];
+                float3 worldPos = surfacePoint.position;
+
+                float3 newLocal = math.transform(worldToLocal, worldPos);
+                float3 oldLocal = meshVerticesNative[vertexIndex];
+                if (math.distance(newLocal, oldLocal) > 0.001f)
+                {
+                    meshVerticesNative[vertexIndex] = newLocal;
+                    meshChanged = true;
+                }
+            }
+        }
+
+        if (meshChanged)
+        {
+            // Copy back to managed
+            Vector3[] newVertices = new Vector3[meshVerticesNative.Length];
+            for (int i = 0; i < meshVerticesNative.Length; i++)
+                newVertices[i] = meshVerticesNative[i];
+
+            targetMesh.vertices = newVertices;
+            targetMesh.RecalculateNormals();
+            targetMesh.RecalculateBounds();
+
+            // Update surfaceSpringPoints list from mapping
+            surfaceSpringPoints.Clear();
+            foreach (var kvp in VertexPointMap)
+            {
+                int vertexIndex = kvp.Key;
+                int pointIndex = kvp.Value;
+
+                if (pointIndex < springPoints.Length)
+                {
+                    var sp = springPoints[pointIndex];
+                    sp.position = math.transform(localToWorld, meshVerticesNative[vertexIndex]);
+                    surfaceSpringPoints.Add(sp);
+                }
+            }
+        }
+    }
+
+
     // Burst-compiled job
     [BurstCompile]
     struct GetPositionsJob : IJobParallelFor
