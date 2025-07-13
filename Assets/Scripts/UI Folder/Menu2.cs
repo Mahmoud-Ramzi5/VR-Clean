@@ -53,9 +53,4 @@ public class Menu2 : MenuDataBinderBase
         target.visualizeSpringPoints = Show_points.isOn;
         target.visualizeSpringConnections = Show_connections.isOn;
     }
-
-    public override void ApplyTo2(OctreeSpringFiller target)
-    {
-        return;
-    }
 }

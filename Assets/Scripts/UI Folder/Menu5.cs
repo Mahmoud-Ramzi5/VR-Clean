@@ -37,11 +37,6 @@ public class Menu5 : MenuDataBinderBase
 
     public override void ApplyTo(OctreeSpringFiller target)
     {
-        return;
-    }
-
-    public override void ApplyTo2(OctreeSpringFiller target)
-    {
         if (Layer3_spring_constant != null && !string.IsNullOrWhiteSpace(Layer3_spring_constant.text))
             float.TryParse(Layer3_spring_constant.text, out target.springConstantL3);
 

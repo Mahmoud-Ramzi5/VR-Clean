@@ -34,13 +34,7 @@ public class Menu3 : MenuDataBinderBase
         Layer1_connection_radius.text = target.connectionRadiusL1.ToString("F2");
         Layer1_max_rest_length.text = target.maxRestLengthL1.ToString("F2");
     }
-
     public override void ApplyTo(OctreeSpringFiller target)
-    {
-        return;
-    }
-
-    public override void ApplyTo2(OctreeSpringFiller target)
     {
         if (Layer1_spring_constant != null && !string.IsNullOrWhiteSpace(Layer1_spring_constant.text))
             float.TryParse(Layer1_spring_constant.text, out target.springConstantL1);

@@ -42,7 +42,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3796389031773342928}
-  m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!23 &8238553343060580934
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -66,7 +66,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 92dfcc09cc10b0a429ec0a645bc91616, type: 2}
+  - {fileID: 2100000, guid: a5813af496f1b4f4a99cbe8a296c0257, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -105,21 +105,21 @@ MonoBehaviour:
   isFilled: 1
   isRigid: 1
   isFixCorners: 0
-  springConstantL1: 220
-  damperConstantL1: 0.7
+  springConstantL1: 850
+  damperConstantL1: 0.85
   connectionRadiusL1: 1
   maxRestLengthL1: 3
-  springConstantL2: 180
-  damperConstantL2: 0.6
+  springConstantL2: 700
+  damperConstantL2: 0.8
   connectionRadiusL2: 2
   maxRestLengthL2: 4
-  springConstantL3: 140
-  damperConstantL3: 0.5
+  springConstantL3: 500
+  damperConstantL3: 0.75
   connectionRadiusL3: 3
   maxRestLengthL3: 5
-  totalMass: 120
-  bounciness: 0.2
-  friction: 0.5
+  totalMass: 300
+  bounciness: 0.3
+  friction: 0.4
   velocity: {x: 0, y: 0, z: 0}
   applyGravity: 1
   gravity: {x: 0, y: -9.81, z: 0}
@@ -163,5 +163,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec3f314a6c7bd84daec4379820a2cf2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  materialType: 1
+  materialType: 3
   materialDatabase: {fileID: 11400000, guid: 3a5fe3bd8ae9ba947b42c666475a8b38, type: 2}

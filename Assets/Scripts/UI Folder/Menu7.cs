@@ -44,9 +44,4 @@ public class Menu7 : MenuDataBinderBase
     {
 
     }
-
-    public override void ApplyTo2(OctreeSpringFiller target)
-    {
-        return;
-    }
 }
