@@ -1,12 +1,17 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
+using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
+using static Unity.Burst.Intrinsics.X86;
+using static UnityEditor.Searcher.SearcherWindow.Alignment;
+using static UnityEngine.Rendering.DebugUI.Table;
 
 public class OctreeSpringFiller : MonoBehaviour
 {
@@ -109,7 +114,7 @@ public class OctreeSpringFiller : MonoBehaviour
     private List<SpringPointData> surfaceSpringPoints = new List<SpringPointData>();
     Dictionary<int, int> surfacePointToVertexIndex = new Dictionary<int, int>();
     public List<SpringPointData> SurfacePoints => surfaceSpringPoints;
-    public List<SpringPointData> surfacePoints = new List<SpringPointData>();
+    public HashSet<SpringPointData> surfacePoints = new HashSet<SpringPointData>();
 
 
     // changes for the new connections
@@ -584,14 +589,17 @@ public class OctreeSpringFiller : MonoBehaviour
         }
 
         // Handle Mesh Update
-        //UpdateMeshFromPoints();
-        //meshJobManager.DispatchMeshUpdate(meshVertices, transform.worldToLocalMatrix, targetMesh, transform);
-        if (subdivisionComplete) { 
-        meshJobManager.ScheduleMeshVerticesUpdateJobs(getVertices(), meshDeformer.workingMesh.triangles, transform.localToWorldMatrix, transform.worldToLocalMatrix);
-        meshJobManager.CompleteAllJobsAndApply(getVertices(), meshDeformer.workingMesh.triangles, meshDeformer.workingMesh, surfaceSpringPoints);
-    }
-    }
-    [HideInInspector] public bool subdivisionComplete = false;
+        if (subdivisionComplete)
+        {
+            UpdateMeshFromPoints();
+        }
+            //meshJobManager.DispatchMeshUpdate(meshVertices, transform.worldToLocalMatrix, targetMesh, transform);
+            //    if (subdivisionComplete) { 
+            //    meshJobManager.ScheduleMeshVerticesUpdateJobs(getVertices(), meshDeformer.workingMesh.triangles, transform.localToWorldMatrix, transform.worldToLocalMatrix);
+            //    meshJobManager.CompleteAllJobsAndApply(getVertices(), meshDeformer.workingMesh.triangles, meshDeformer.workingMesh, surfaceSpringPoints);
+            //}
+        }
+        [HideInInspector] public bool subdivisionComplete = false;
     void LateUpdate()
     {
         visualizeRenderer.DrawInstancedPoints(visualizeSpringPoints, allSpringPoints);
@@ -1187,7 +1195,7 @@ public class OctreeSpringFiller : MonoBehaviour
         foreach (var conn in allSpringConnections)
         {
 
-            Debug.DrawLine(allSpringPoints[conn.pointA].position, allSpringPoints[conn.pointB].position, Color.white);
+          //  Debug.DrawLine(allSpringPoints[conn.pointA].position, allSpringPoints[conn.pointB].position, Color.white);
         }
     }
 
@@ -1328,7 +1336,10 @@ public class OctreeSpringFiller : MonoBehaviour
     }
 
     // Add this dictionary as a class member to cache closest points
-    private Dictionary<int, int> vertexToClosestPointMap = new Dictionary<int, int>();
+   
+ 
+  // Add this dictionary as a class member to cache closest points
+  private Dictionary<int, int> vertexToClosestPointMap = new Dictionary<int, int>();
 
     void UpdateMeshFromPoints()
     {
@@ -1410,6 +1421,7 @@ public class OctreeSpringFiller : MonoBehaviour
                 }
             }
             targetMesh.triangles = currentTriangles;
+
         }
 
         targetMesh.RecalculateNormals();
@@ -1418,6 +1430,25 @@ public class OctreeSpringFiller : MonoBehaviour
         // Update cached references
         meshVertices = newVertices;
         meshTriangles = currentTriangles;
+        Debug.Log(surfacePoints.Count());
+    }
+
+    private int FindClosestPointIndex(Vector3 worldPos)
+    {
+        int closestIndex = 0;
+        float minDist = float.MaxValue;
+
+        for (int i = 0; i < allSpringPoints.Length; i++)
+        {
+            float dist = Vector3.Distance(worldPos, allSpringPoints[i].position);
+            if (dist < minDist)
+            {
+                minDist = dist;
+                closestIndex = i;
+            }
+        }
+
+        return closestIndex;
     }
 
     Vector3[] getVertices()
@@ -1491,23 +1522,7 @@ public class OctreeSpringFiller : MonoBehaviour
     }
 
     // Helper method to find the index of the closest point
-    private int FindClosestPointIndex(Vector3 worldPos)
-    {
-        int closestIndex = 0;
-        float minDist = float.MaxValue;
-
-        for (int i = 0; i < allSpringPoints.Length; i++)
-        {
-            float dist = Vector3.Distance(worldPos, allSpringPoints[i].position);
-            if (dist < minDist)
-            {
-                minDist = dist;
-                closestIndex = i;
-            }
-        }
-
-        return closestIndex;
-    }
+   
 
 
 
@@ -1591,7 +1606,7 @@ public class OctreeSpringFiller : MonoBehaviour
     {
         if (surfaceSpringPoints != null && surfaceSpringPoints.Count > 0)
         {
-            Gizmos.color = Color.yellow;
+            //Gizmos.color = Color.yellow;
             foreach (var sp in surfaceSpringPoints)
             {
                 Gizmos.DrawSphere(sp.position, 0.05f);

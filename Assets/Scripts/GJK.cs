@@ -1,6 +1,7 @@
-using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Mathematics;
+using UnityEngine;
 
 /// <summary>
 /// Contains the result of a GJK/EPA collision query.
@@ -103,12 +104,12 @@ public static class GJK
         }
 
         // Initialize with the first point to ensure we have a valid starting point
-        furthestPoint = body.surfacePoints[0].position;
+        furthestPoint = body.surfacePoints.ElementAt(0).position;
         maxDot = math.dot(furthestPoint, worldDirection);
 
         for (int i = 0; i < body.surfacePoints.Count; i++)
         {
-            SpringPointData sp = body.surfacePoints[i];
+            SpringPointData sp = body.surfacePoints.ElementAt(i);
             float dot = math.dot(sp.position, worldDirection);
             if (dot > maxDot)
             {
