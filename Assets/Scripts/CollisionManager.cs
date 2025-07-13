@@ -77,12 +77,6 @@ public class CollisionManager : MonoBehaviour
                 OctreeSpringFiller obj2 = AllSoftBodies[j];
                 obj2.UpdateBoundingVolume();
 
-                // CHECK COLLISION LAYERS FIRST
-                if (!obj1.CanCollideWith(obj2))
-                {
-                    continue; // Skip collision if layers don't interact
-                }
-
                 if (!obj1.boundingVolume.Intersects(obj2.boundingVolume)) continue;
 
                 if (GJK.DetectCollision(obj1, obj2, out CollisionInfo info))
