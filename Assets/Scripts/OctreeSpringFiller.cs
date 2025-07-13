@@ -92,10 +92,9 @@ public class OctreeSpringFiller : MonoBehaviour
     private MeshJobManagerCPU meshJobManager;
 
     // Surface point tracking
-    private NativeList<SpringPointData> surfaceSpringPoints2;
+    public NativeList<SpringPointData> surfaceSpringPoints2;
     private NativeList<float3> surfacePointsLocalSpace;
 
-    public NativeList<SpringPointData> surfacePoints2 => surfaceSpringPoints2;
 
 
     // Surface integration settings
@@ -106,10 +105,7 @@ public class OctreeSpringFiller : MonoBehaviour
 
     public bool applyVelocity = false;
 
-    private List<SpringPointData> surfaceSpringPoints = new List<SpringPointData>();
     Dictionary<int, int> surfacePointToVertexIndex = new Dictionary<int, int>();
-    public List<SpringPointData> SurfacePoints => surfaceSpringPoints;
-    public List<SpringPointData> surfacePoints = new List<SpringPointData>();
 
 
     // changes for the new connections
@@ -259,11 +255,11 @@ public class OctreeSpringFiller : MonoBehaviour
         );
 
         // copy data 
-        for (int i = 0; i < surfaceSpringPoints2.Length; i++)
-        {
-            SpringPointData point = surfaceSpringPoints2[i];
-            surfaceSpringPoints.Add(point);
-        }
+        //for (int i = 0; i < surfaceSpringPoints2.Length; i++)
+        //{
+        //    SpringPointData point = surfaceSpringPoints2[i];
+        //    surfaceSpringPoints.Add(point);
+        //}
 
         for (int i = 0; i < surfacePointsLocalSpace.Length; i++)
         {
@@ -435,7 +431,7 @@ public class OctreeSpringFiller : MonoBehaviour
         }
 
         Debug.Log("MeshDeformer is ready, proceeding with subdivision...");
-        meshDeformer.SubdivideMeshWithPoints(surfaceSpringPoints);
+        meshDeformer.SubdivideMeshWithPoints(surfaceSpringPoints2);
     }
     //private void Update()
     //{
@@ -463,6 +459,15 @@ public class OctreeSpringFiller : MonoBehaviour
 
     void FixedUpdate()
     {
+        if (surfaceSpringPoints2.IsCreated)
+        {
+            // Calculate surface points
+            meshJobManager.IdentifySurfacePoints(
+                meshVertices,
+                meshTriangles,
+                transform.worldToLocalMatrix
+            );
+        }
         float deltaTime = Time.fixedDeltaTime;
 
         if (isRigid)
@@ -626,8 +631,11 @@ public class OctreeSpringFiller : MonoBehaviour
     public void FillObjectWithSpringPoints()
     {
         // NEW: Clear surface point data
-        surfaceSpringPoints.Clear();
-        surfacePointToVertexIndex.Clear();
+        if (surfaceSpringPoints2.IsCreated)
+        {
+            surfaceSpringPoints2.Clear();
+            surfacePointToVertexIndex.Clear();
+        }
 
         // Recalculate accurate world-space bounds
         if (meshVertices.Length <= 0)
@@ -1335,8 +1343,6 @@ public class OctreeSpringFiller : MonoBehaviour
     {
         if (allSpringPoints == null || allSpringPoints.Length == 0) return;
 
-        surfacePoints.Clear();
-
         // Get current mesh data directly from the mesh
         Vector3[] currentVertices = targetMesh.vertices;
         int[] currentTriangles = targetMesh.triangles;
@@ -1372,7 +1378,6 @@ public class OctreeSpringFiller : MonoBehaviour
                 pointIndex >= 0 && pointIndex < allSpringPoints.Length)
             {
                 SpringPointData closestPoint = allSpringPoints[pointIndex];
-                surfacePoints.Add(closestPoint);
 
                 // Defensive check
                 if (closestPoint.mass > 0 || closestPoint.isFixed == 0)
@@ -1390,7 +1395,6 @@ public class OctreeSpringFiller : MonoBehaviour
                 // Fallback if cache is invalid
                 Vector3 worldVertex = transform.TransformPoint(currentVertices[i]);
                 SpringPointData closestPoint = FindClosestPoint(worldVertex);
-                surfacePoints.Add(closestPoint);
                 newVertices[i] = transform.InverseTransformPoint(closestPoint.position);
             }
         }
@@ -1498,17 +1502,17 @@ public class OctreeSpringFiller : MonoBehaviour
 
 
             // Update SpringPointData from mesh vertex changes
-            for (int i = 0; i < surfaceSpringPoints.Count; i++)
+            for (int i = 0; i < surfaceSpringPoints2.Length; i++)
             {
                 int springPointIndex = surfacePointToVertexIndex.Keys.ElementAt(i);
                 int vertexIndex = surfacePointToVertexIndex.Values.ElementAt(i);
 
-                if (springPointIndex < surfaceSpringPoints.Count && vertexIndex < meshVertices.Length)
+                if (springPointIndex < surfaceSpringPoints2.Length && vertexIndex < meshVertices.Length)
                 {
                     Vector3 worldPosition = transform.TransformPoint(meshVertices[vertexIndex]);
-                    SpringPointData sp = surfaceSpringPoints[springPointIndex];
+                    SpringPointData sp = surfaceSpringPoints2[springPointIndex];
                     sp.position = worldPosition;
-                    surfaceSpringPoints[springPointIndex] = sp;
+                    surfaceSpringPoints2[springPointIndex] = sp;
                 }
             }
 
@@ -1518,10 +1522,10 @@ public class OctreeSpringFiller : MonoBehaviour
     // NEW Gizmos for debugging surface points
     private void OnDrawGizmosSelected()
     {
-        if (surfaceSpringPoints != null && surfaceSpringPoints.Count > 0)
+        if (surfaceSpringPoints2.IsCreated && surfaceSpringPoints2.Length > 0)
         {
             Gizmos.color = Color.yellow;
-            foreach (var sp in surfaceSpringPoints)
+            foreach (var sp in surfaceSpringPoints2)
             {
                 Gizmos.DrawSphere(sp.position, 0.05f);
             }
@@ -1537,9 +1541,9 @@ public class OctreeSpringFiller : MonoBehaviour
 
     public void HandleCollisionResponse(CollisionInfo info, OctreeSpringFiller other)
     {
-        for (int i = 0; i < SurfacePoints.Count; i++)
+        for (int i = 0; i < surfaceSpringPoints2.Length; i++)
         {
-            SpringPointData point = SurfacePoints[i];
+            SpringPointData point = surfaceSpringPoints2[i];
             Vector3 otherLocal = other.transform.InverseTransformPoint(point.position);
 
             if (other.IsPointInside(otherLocal))
@@ -1556,14 +1560,14 @@ public class OctreeSpringFiller : MonoBehaviour
                     point.velocity = tangentVel * (1 - groundFriction);
                 }
             }
-            SurfacePoints[i] = point;
+            surfaceSpringPoints2[i] = point;
         }
     }
 
     public List<Vector3> GetSurfacePointsInCollision(OctreeSpringFiller other)
     {
         List<Vector3> points = new List<Vector3>();
-        foreach (var point in SurfacePoints)
+        foreach (var point in surfaceSpringPoints2)
         {
             if (other.IsPointInside(other.transform.InverseTransformPoint(point.position)))
             {

@@ -21,7 +21,7 @@ public class CollisionManager : MonoBehaviour
     public float coefficientOfRestitution = 0.6f;
     [Range(0f, 1f)]
     public float coefficientOfFriction = 0.4f; // Note: Friction not implemented in this GJK response
-    public float penetrationCorrectionFactor = 0.6f; // How strongly to push objects apart (0-1)
+    public float penetrationCorrectionFactor = 0.8f; // How strongly to push objects apart (0-1)
     public float penetrationSlop = 0.01f; // A small allowance for penetration to prevent jitter
 
     // Collision statistics
@@ -186,8 +186,8 @@ public class CollisionManager : MonoBehaviour
 
         if (closest1 >= 0 && closest2 >= 0)
         {
-            SpringPointData point1 = obj1.SurfacePoints[closest1];
-            SpringPointData point2 = obj2.SurfacePoints[closest2];
+            SpringPointData point1 = obj1.surfaceSpringPoints2[closest1];
+            SpringPointData point2 = obj2.surfaceSpringPoints2[closest2];
 
             Vector3 relativeVel = point1.velocity - point2.velocity;
             float impactSpeed = Vector3.Dot(relativeVel, info.Normal);
@@ -221,9 +221,9 @@ public class CollisionManager : MonoBehaviour
         List<ContactPoint> penetratingContacts = new List<ContactPoint>();
 
         // Find surface points of obj1 that are penetrating obj2
-        for (int i = 0; i < obj1.SurfacePoints.Count; i++)
+        for (int i = 0; i < obj1.surfaceSpringPoints2.Length; i++)
         {
-            SpringPointData point1 = obj1.SurfacePoints[i];
+            SpringPointData point1 = obj1.surfaceSpringPoints2[i];
             Vector3 localPoint = obj2.transform.InverseTransformPoint(point1.position);
 
             if (obj2.IsPointInside(localPoint))
@@ -237,9 +237,9 @@ public class CollisionManager : MonoBehaviour
         }
 
         // Find surface points of obj2 that are penetrating obj1
-        for (int i = 0; i < obj2.SurfacePoints.Count; i++)
+        for (int i = 0; i < obj2.surfaceSpringPoints2.Length; i++)
         {
-            SpringPointData point2 = obj2.SurfacePoints[i];
+            SpringPointData point2 = obj2.surfaceSpringPoints2[i];
             Vector3 localPoint = obj1.transform.InverseTransformPoint(point2.position);
 
             if (obj1.IsPointInside(localPoint))
@@ -263,12 +263,12 @@ public class CollisionManager : MonoBehaviour
         if (isObj1Penetrating)
         {
             // obj1's point is penetrating obj2
-            SpringPointData point1 = obj1.SurfacePoints[penetratingPointIndex];
+            SpringPointData point1 = obj1.surfaceSpringPoints2[penetratingPointIndex];
             int closestIndex = FindClosestSurfacePointIndex(obj2, point1.position);
 
             if (closestIndex >= 0)
             {
-                SpringPointData closestPoint2 = obj2.SurfacePoints[closestIndex];
+                SpringPointData closestPoint2 = obj2.surfaceSpringPoints2[closestIndex];
                 float penetration = Vector3.Distance(point1.position, closestPoint2.position);
 
                 // Use a blend between local normal and EPA normal for better stability
@@ -300,12 +300,12 @@ public class CollisionManager : MonoBehaviour
         else
         {
             // obj2's point is penetrating obj1
-            SpringPointData point2 = obj2.SurfacePoints[penetratingPointIndex];
+            SpringPointData point2 = obj2.surfaceSpringPoints2[penetratingPointIndex];
             int closestIndex = FindClosestSurfacePointIndex(obj1, point2.position);
 
             if (closestIndex >= 0)
             {
-                SpringPointData closestPoint1 = obj1.SurfacePoints[closestIndex];
+                SpringPointData closestPoint1 = obj1.surfaceSpringPoints2[closestIndex];
                 float penetration = Vector3.Distance(point2.position, closestPoint1.position);
 
                 // Use a blend between local normal and EPA normal for better stability
@@ -419,9 +419,9 @@ public class CollisionManager : MonoBehaviour
         int closestIndex = -1;
         float minDistance = float.MaxValue;
 
-        for (int i = 0; i < body.SurfacePoints.Count; i++)
+        for (int i = 0; i < body.surfaceSpringPoints2.Length; i++)
         {
-            float distance = Vector3.Distance(body.SurfacePoints[i].position, worldPosition);
+            float distance = Vector3.Distance(body.surfaceSpringPoints2[i].position, worldPosition);
             if (distance < minDistance)
             {
                 minDistance = distance;
@@ -434,8 +434,8 @@ public class CollisionManager : MonoBehaviour
 
     private void ApplyContactPointResponse(OctreeSpringFiller obj1, OctreeSpringFiller obj2, ContactPoint contact)
     {
-        SpringPointData point1 = obj1.SurfacePoints[contact.point1Index];
-        SpringPointData point2 = obj2.SurfacePoints[contact.point2Index];
+        SpringPointData point1 = obj1.surfaceSpringPoints2[contact.point1Index];
+        SpringPointData point2 = obj2.surfaceSpringPoints2[contact.point2Index];
 
         // Calculate impulse magnitude for this contact
         float impulseMagnitude = CalculateContactImpulse(obj1, obj2, contact);
@@ -444,13 +444,13 @@ public class CollisionManager : MonoBehaviour
         if (point1.isFixed == 0)
         {
             point1.velocity += (float3)impulse / point1.mass;
-            obj1.SurfacePoints[contact.point1Index] = point1;
+            obj1.surfaceSpringPoints2[contact.point1Index] = point1;
         }
 
         if (point2.isFixed == 0)
         {
             point2.velocity -= (float3)impulse / point2.mass;
-            obj2.SurfacePoints[contact.point2Index] = point2;
+            obj2.surfaceSpringPoints2[contact.point2Index] = point2;
         }
 
         // Apply impulse to nearby points in both objects
@@ -471,8 +471,8 @@ public class CollisionManager : MonoBehaviour
 
     private float CalculateContactImpulse(OctreeSpringFiller obj1, OctreeSpringFiller obj2, ContactPoint contact)
     {
-        SpringPointData point1 = obj1.SurfacePoints[contact.point1Index];
-        SpringPointData point2 = obj2.SurfacePoints[contact.point2Index];
+        SpringPointData point1 = obj1.surfaceSpringPoints2[contact.point1Index];
+        SpringPointData point2 = obj2.surfaceSpringPoints2[contact.point2Index];
 
         // Calculate relative velocity at contact point
         Vector3 relativeVelocity = point1.velocity - point2.velocity;
@@ -493,8 +493,8 @@ public class CollisionManager : MonoBehaviour
 
     private Vector3 CalculateFrictionImpulse(OctreeSpringFiller obj1, OctreeSpringFiller obj2, ContactPoint contact, float normalImpulseMagnitude)
     {
-        SpringPointData point1 = obj1.SurfacePoints[contact.point1Index];
-        SpringPointData point2 = obj2.SurfacePoints[contact.point2Index];
+        SpringPointData point1 = obj1.surfaceSpringPoints2[contact.point1Index];
+        SpringPointData point2 = obj2.surfaceSpringPoints2[contact.point2Index];
 
         // Calculate relative velocity at contact point
         Vector3 relativeVelocity = point1.velocity - point2.velocity;
@@ -555,7 +555,7 @@ public class CollisionManager : MonoBehaviour
             {
                 // NEW: Directional bias - only apply if point is "behind" the contact surface
                 float dot = Vector3.Dot(toPoint.normalized, contactNormal);
-                if (dot < -0.1f) continue;  // Skip if opposite side (adjust threshold)
+                if (dot < -0.5f) continue;  // Skip if opposite side (adjust threshold)
 
                 // Calculate influence based on distance with Gaussian falloff for realism
                 float normalizedDistance = distance / influenceRadius;
@@ -595,11 +595,14 @@ public class CollisionManager : MonoBehaviour
         int iterations = 3;  // Tune 2-5
         for (int iter = 0; iter < iterations; iter++)
         {
-            float mass1Ratio = obj2.totalMass / (obj1.totalMass + obj2.totalMass);
-            float mass2Ratio = obj1.totalMass / (obj1.totalMass + obj2.totalMass);
+            float invMass1 = obj1.totalMass > 0 ? 1f / obj1.totalMass : 0f;
+            float invMass2 = obj2.totalMass > 0 ? 1f / obj2.totalMass : 0f;
+            float totalInvMass = invMass1 + invMass2;
 
-            Vector3 correction1 = correction * mass1Ratio / iterations;
-            Vector3 correction2 = -correction * mass2Ratio / iterations;
+            if (totalInvMass == 0f) return; // Both objects fixed
+
+            Vector3 correction1 = -correction * (invMass1 / totalInvMass) / iterations;
+            Vector3 correction2 = correction * (invMass2 / totalInvMass) / iterations;
 
             ApplyPositionCorrectionToNearbyPoints(obj1, contact.worldPosition, correction1, contact.influenceRadius, contact.normal);
             ApplyPositionCorrectionToNearbyPoints(obj2, contact.worldPosition, correction2, contact.influenceRadius, -contact.normal);
@@ -818,7 +821,8 @@ public class CollisionManager : MonoBehaviour
 
         foreach (var body in AllSoftBodies)
         {
-            GUILayout.Label($"{body.name}: Surface={body.SurfacePoints.Count}");
+            if (body.surfaceSpringPoints2.IsCreated)
+                GUILayout.Label($"{body.name}: Surface={body.surfaceSpringPoints2.Length}");
         }
     }
 }

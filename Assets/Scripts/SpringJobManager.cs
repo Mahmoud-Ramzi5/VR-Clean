@@ -156,6 +156,7 @@ public class SpringJobManager : MonoBehaviour
                 }
 
                 point.velocity = velocity;
+                point.acc = acceleration;
             }
 
             // --- Position Update ---

@@ -381,8 +381,8 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  visualizeSpringPoints: 0
-  visualizeSpringConnections: 0
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
   surfaceDetectionThreshold: 0.2
@@ -833,7 +833,7 @@ MonoBehaviour:
   bounciness: 0.5
   friction: 0.8
   velocity: {x: 0, y: 0, z: 0}
-  applyGravity: 0
+  applyGravity: 1
   gravity: {x: 0, y: -9.81, z: 0}
   boundingVolume:
     m_Center: {x: 0, y: 0, z: 0}

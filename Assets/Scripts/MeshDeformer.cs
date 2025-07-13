@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Collections;
 using UnityEngine;
 
 public class MeshDeformer : MonoBehaviour
@@ -342,9 +343,9 @@ public class MeshDeformer : MonoBehaviour
         }
     }
 
-    public void SubdivideMeshWithPoints(List<SpringPointData> newPoints)
+    public void SubdivideMeshWithPoints(NativeList<SpringPointData> newPoints)
     {
-        if (newPoints == null || newPoints.Count == 0) return;
+        if (newPoints.Length == 0) return;
 
         // Convert current vertices to world space for distance checks
         Vector3[] worldVertices = new Vector3[currentVertices.Length];
