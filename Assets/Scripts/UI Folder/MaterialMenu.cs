@@ -20,6 +20,7 @@ public class MaterialMenu : MonoBehaviour
 
     void Start()
     {
+
         // Initialize material presets array
         materials = new Material [] { wood, metal, plastic, rubber, stone };
         // Populate dropdown
@@ -27,9 +28,12 @@ public class MaterialMenu : MonoBehaviour
         List<string> options = new List<string>();
         foreach (var item in materials)
         {
-            options.Add(item.name);
+            options.Add(item.name+"Room");
         }
         materialDropdown.AddOptions(options);
+
+        //materialDropdown.captionText.text = objects[0].MaterialManager;
+
         materialDropdown.onValueChanged.AddListener(ChangeMaterial);
         // Apply font size to all options
         ApplyDropdownFontSize();
@@ -73,6 +77,36 @@ public class MaterialMenu : MonoBehaviour
             foreach (var child in objectt.GetComponentsInChildren<Renderer>())
             {
                 child.sharedMaterial = materials[index];
+            }
+            // Get the main panel reference
+            MainPanelReference mainPanel = GetComponentInParent<MainPanelReference>(true);
+            if (mainPanel != null && mainPanel.springFillerRef != null)
+            {
+                if(index == 0)
+                {
+                    mainPanel.springFillerRef.roomBounce = 0.2f;
+                    mainPanel.springFillerRef.roomFriction = 0.5f;
+                }
+                else if(index == 1)
+                {
+                    mainPanel.springFillerRef.roomBounce = 0.3f;
+                    mainPanel.springFillerRef.roomFriction = 0.4f;
+                }
+                else if (index == 2)
+                {
+                    mainPanel.springFillerRef.roomBounce = 0.6f;
+                    mainPanel.springFillerRef.roomFriction = 0.3f;
+                }
+                else if (index == 3)
+                {
+                    mainPanel.springFillerRef.roomBounce = 0.9f;
+                    mainPanel.springFillerRef.roomFriction = 0.8f;
+                }
+                else if (index == 4)
+                {
+                    mainPanel.springFillerRef.roomBounce = 0.1f;
+                    mainPanel.springFillerRef.roomFriction = 0.7f;
+                }
             }
 
             Debug.Log("Directly applied material: " + materials[index].name);

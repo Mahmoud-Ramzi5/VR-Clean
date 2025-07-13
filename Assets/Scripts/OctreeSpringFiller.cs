@@ -39,8 +39,8 @@ public class OctreeSpringFiller : MonoBehaviour
     [SerializeField] private Vector3 roomMinBounds = new Vector3(-9.5f, 0f, -1f);
     [SerializeField] private Vector3 roomMaxBounds = new Vector3(9.5f, 10f, 9.5f);
 
-    [SerializeField] private float roomBounce = 0.5f;
-    [SerializeField] private float roomFriction = 0.8f;
+    [SerializeField] public float roomBounce = 0.5f;
+    [SerializeField] public float roomFriction = 0.8f;
 
 
     [Header("Mesh Settings")]
