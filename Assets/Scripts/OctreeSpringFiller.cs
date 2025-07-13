@@ -758,6 +758,17 @@ public class OctreeSpringFiller : MonoBehaviour
         }
     }
 
+    bool IsPointNearSurface(Vector3 worldPos, float distanceThreshold = 1f)
+    {
+        // Simple: check distance to nearest mesh vertex
+        float minDist = float.MaxValue;
+        foreach (var v in meshVertices)
+        {
+            minDist = Mathf.Min(minDist, Vector3.Distance(worldPos, transform.TransformPoint(v)));
+        }
+        return minDist < distanceThreshold;
+    }
+
     void FillNodeWithSpringPoints(OctreeNode node)
     {
         Bounds localBounds = node.localBounds;
@@ -785,7 +796,7 @@ public class OctreeSpringFiller : MonoBehaviour
                         Mathf.Lerp(localBounds.min.z, localBounds.max.z, normalizedPos.z)
                     );
 
-                    // Convert to world space
+                    // Convert to world space - this is how worldPos is obtained
                     Vector3 worldPos = transform.TransformPoint(localPos);
 
                     // Use approximate comparison instead of exact Contains
@@ -794,6 +805,11 @@ public class OctreeSpringFiller : MonoBehaviour
 
                     if (!alreadyExists)
                     {
+                        // Your line here: Adaptive spacing based on surface proximity
+                        float currentSpacing = IsPointNearSurface(worldPos) ? PointSpacing * 0.5f : PointSpacing;
+                        // Note: In practice, you'd use currentSpacing to adjust step sizes or skip additions,
+                        // but for simplicity, it can influence whether to add the point or not.
+
                         if (isFilled)
                         {
                             if (IsPointInsideMesh(worldPos))
@@ -810,7 +826,6 @@ public class OctreeSpringFiller : MonoBehaviour
                                 CreateSpringPoint(worldPos, node.worldBounds, false);
                             }
                         }
-
                     }
                 }
             }
