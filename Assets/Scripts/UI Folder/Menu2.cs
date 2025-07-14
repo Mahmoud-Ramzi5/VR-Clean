@@ -12,6 +12,12 @@ public class Menu2 : MenuDataBinderBase
     public Toggle Show_points;
     public Toggle Show_connections;
 
+    public CollisionManager collisionManager;
+    public Toggle Collision;
+    public Toggle Subdivision;
+    public Toggle AutoMesh;
+    
+
 
     // Option 1: Initialize when UI becomes active (recommended)
     void Start()
@@ -41,6 +47,13 @@ public class Menu2 : MenuDataBinderBase
 
         Show_points.isOn = target.visualizeSpringPoints;
         Show_connections.isOn = target.visualizeSpringConnections;
+
+        if (collisionManager != null)
+        {
+            Collision.isOn = collisionManager;
+        }
+        Subdivision.isOn = target.enableMeshSubdivision;
+        AutoMesh.isOn = target.autoUpdateMeshFromSurface;
     }
 
     public override void ApplyTo(OctreeSpringFiller target)
@@ -52,5 +65,9 @@ public class Menu2 : MenuDataBinderBase
 
         target.visualizeSpringPoints = Show_points.isOn;
         target.visualizeSpringConnections = Show_connections.isOn;
+
+        collisionManager.enableInterObjectCollision = Collision.isOn;
+        target.enableMeshSubdivision = Subdivision.isOn;
+        target.autoUpdateMeshFromSurface = AutoMesh.isOn;
     }
 }
