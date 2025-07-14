@@ -34,7 +34,7 @@ public class PerformanceMonitor : MonoBehaviour
             // Try to initialize system process info
             currentProcess = Process.GetCurrentProcess();
             lastCpuTime = currentProcess.TotalProcessorTime;
-            lastUpdateTime = DateTime.Now;
+            lastUpdateTime = DateTime.UtcNow;
             systemInfoAvailable = true;
         }
         catch
@@ -63,13 +63,25 @@ public class PerformanceMonitor : MonoBehaviour
             UpdateFPS();
             UpdateRAM();
 
+            // Retry once per loop if Process failed in Start()
+            if (!systemInfoAvailable)
+            {
+                try
+                {
+                    currentProcess = Process.GetCurrentProcess();
+                    lastCpuTime = currentProcess.TotalProcessorTime;
+                    lastUpdateTime = DateTime.UtcNow;
+                    systemInfoAvailable = true;
+                }
+                catch (Exception e)
+                {
+                    UpdateCPU_Fallback();
+                }
+            }
+
             if (systemInfoAvailable)
             {
                 UpdateCPU();
-            }
-            else
-            {
-                cpuText.text = "CPU: N/A (Build)";
             }
 
             if (showGPU && SystemInfo.supportsGpuRecorder)
@@ -130,37 +142,40 @@ public class PerformanceMonitor : MonoBehaviour
 
     void UpdateCPU()
     {
-        if (!systemInfoAvailable) return;
-
         try
         {
-            TimeSpan newCpuTime = currentProcess.TotalProcessorTime;
-            DateTime now = DateTime.Now;
-            double elapsedTime = (now - lastUpdateTime).TotalMilliseconds;
+            var newCpuTime = currentProcess.TotalProcessorTime;
+            var now = DateTime.UtcNow;
+            var elapsed = (now - lastUpdateTime).TotalMilliseconds;
+            var usedMs = (newCpuTime - lastCpuTime).TotalMilliseconds;
 
-            if (elapsedTime <= 0) elapsedTime = 1; // prevent division by zero
+            if (elapsed <= 0) elapsed = 1;
 
-            float cpuUsage = (float)((newCpuTime.TotalMilliseconds - lastCpuTime.TotalMilliseconds) /
-                                (Environment.ProcessorCount * elapsedTime));
+            float cpuPercent = (float)(usedMs / (elapsed * Environment.ProcessorCount) * 100);
+            cpuText.text = $"CPU: {cpuPercent:0.0}%";
 
-            lastCpuTime = newCpuTime;
             lastUpdateTime = now;
-
-            cpuText.text = $"CPU: {Mathf.Clamp(cpuUsage * 100f, 0f, 100f):0.0}%";
+            lastCpuTime = newCpuTime;
         }
-        catch
+        catch (Exception e)
         {
-            cpuText.text = "CPU: Error";
+            cpuText.text = "CPU: N/A";
         }
+    }
+
+    void UpdateCPU_Fallback()
+    {
+        float cpuMs = Time.deltaTime * 1000f;
+        cpuText.text = $"CPU Time: {cpuMs:0.0} ms";
     }
 
     void UpdateGPU()
     {
         try
         {
-            // This approach only works in some platforms
-            if (SystemInfo.supportsGpuRecorder)
+            if (showGPU && SystemInfo.supportsGpuRecorder)
             {
+                FrameTimingManager.CaptureFrameTimings();
                 FrameTiming[] timings = new FrameTiming[1];
                 uint frames = FrameTimingManager.GetLatestTimings(1, timings);
 
@@ -179,7 +194,7 @@ public class PerformanceMonitor : MonoBehaviour
                 gpuText.text = "GPU: Unsupported";
             }
         }
-        catch
+        catch (Exception ex)
         {
             gpuText.text = "GPU: Error";
         }
