@@ -378,20 +378,18 @@ public class MeshDeformer : MonoBehaviour
         {
             int originalTriangleCount = originalMesh.triangles.Length / 3;
             debugLog.Append($"Original triangles: {originalTriangleCount}\n");
-
+            finalNumber = finalNumber / 4;
             int divisionRatio = originalTriangleCount / finalNumber;
             debugLog.Append($"Check {originalTriangleCount}/{finalNumber} == 3: {divisionRatio}\n");
 
-            if (divisionRatio == 3)
+            if (divisionRatio %3==0)
             {
+               
                 debugLog.Append("CONDITIONS MET - Subdividing mesh!\n");
+                for(int i = 0; i < divisionRatio; i++) { 
                 SubdivideAllTriangles(false);
+                }
 
-                // Recursive debug
-                debugLog.Append("Recursively calling SubdivideMeshWithPoints()...\n");
-                Debug.Log(debugLog);
-
-                SubdivideMeshWithPoints(newPoints);
                 return;
             }
             else
@@ -410,7 +408,16 @@ public class MeshDeformer : MonoBehaviour
     {
         return (a + b - 1) / b;  // Ensures rounding UP
     }
+    public void SubdivideAllTriangles(bool create = true)
+    {
+        List<int> allTriangleIndices = new List<int>();
+        for (int i = 0; i < currentTriangles.Length / 3; i++)
+        {
+            allTriangleIndices.Add(i);
+        }
 
+        SubdivideSelectedTriangles(allTriangleIndices, create);
+    }
     private void SubdivideSelectedTriangles(List<int> triangleIndices, bool create = true)
     {
         Vector3[] oldVertices = workingMesh.vertices;
