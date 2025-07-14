@@ -41,8 +41,8 @@ public class MeshJobManagerCPU : MonoBehaviour
         //surfacePointsLocalSpace = new NativeList<float3>(Allocator.Persistent);
 
         VertexPointMap = new NativeParallelHashMap<int, int>(meshVertices.Length * 2, Allocator.Persistent);
-        meshVerticesNative = new NativeArray<float3>(meshVertices.Length * 2, Allocator.Persistent);
-        meshTrianglesNative = new NativeArray<int>(meshTriangles.Length * 2, Allocator.Persistent);
+        meshVerticesNative = new NativeArray<float3>(meshVertices.Length *200, Allocator.Persistent);
+        meshTrianglesNative = new NativeArray<int>(meshTriangles.Length * 200, Allocator.Persistent);
 
         for (int i = 0; i < meshVertices.Length; i++)
         {
@@ -265,7 +265,7 @@ public class MeshJobManagerCPU : MonoBehaviour
             meshVertices = meshVerticesNative,
             meshTriangles = meshTrianglesNative,
             surfaceDetectionThreshold = surfaceDetectionThreshold,
-            angleThreshold = 45f, // Configurable angle threshold (e.g., 45 degrees)
+            angleThreshold = 40f, // Configurable angle threshold (e.g., 45 degrees)
             worldToLocalMatrix = worldToLocal,
             surfacePoints = surfaceSpringPoints.AsParallelWriter()
         }.Schedule(springPoints.Length, 64).Complete();

@@ -347,54 +347,54 @@ public class MeshDeformer : MonoBehaviour
 
     public void SubdivideMeshWithPoints(NativeList<SpringPointData> newPoints)
     {
-        StringBuilder debugLog = new StringBuilder("\n--- SubdivideMeshWithPoints() ---\n");
+        //StringBuilder debugLog = new StringBuilder("\n--- SubdivideMeshWithPoints() ---\n");
 
         if (newPoints.Length == 0)
         {
-            debugLog.Append("No new points - exiting.\n");
-            // Debug.Log(debugLog);
+            //debugLog.Append("No new points - exiting.\n");
+            //// Debug.Log(debugLog);
             return;
         }
 
         // Log initial input
-        debugLog.Append($"Input points: {newPoints.Length}\n");
+        //debugLog.Append($"Input points:/ {newPoints.Length}\n");
 
         // Step 1: Add half of input (with ceiling division)
         int afterAddingHalf = newPoints.Length + CeilDivide(newPoints.Length, 2);
-        debugLog.Append($"After adding half: {newPoints.Length} + Ceil({newPoints.Length}/2) = {afterAddingHalf}\n");
+        //debugLog.Append($"After adding half: {newPoints.Length} + Ceil({newPoints.Length}/2) = {afterAddingHalf}\n");
 
         // Step 2: First division by 3 (ceiling)
         int afterFirstDivision = afterAddingHalf / 3;
-        debugLog.Append($"After first /3: Ceil({afterAddingHalf}/3) = {afterFirstDivision}\n");
+        //debugLog.Append($"After first /3: Ceil({afterAddingHalf}/3) = {afterFirstDivision}\n");
 
         // Step 3: Second division by 3 (ceiling)
         int finalNumber = afterFirstDivision / 3;
-        debugLog.Append($"After second /3: Ceil({afterFirstDivision}/3) = {finalNumber}\n");
+        //debugLog.Append($"After second /3: Ceil({afterFirstDivision}/3) = {finalNumber}\n");
 
         // Step 4: Check divisibility by 4
         bool divisibleBy4 = finalNumber % 4 == 0;
-        debugLog.Append($"Check {finalNumber} % 4 == 0: {divisibleBy4}\n");
+        //debugLog.Append($"Check {finalNumber} % 4 == 0: {divisibleBy4}\n");
 
         if (divisibleBy4)
         {
             int originalTriangleCount = originalMesh.triangles.Length / 3;
-            debugLog.Append($"Original triangles: {originalTriangleCount}\n");
+            //debugLog.Append($"Original triangles: {originalTriangleCount}\n");
 
             finalNumber /= 4;
             if (finalNumber == 0)
             {
-                debugLog.Append("After dividing by 4, finalNumber is zero, skipping subdivision to avoid division by zero.\n");
+                //debugLog.Append("After dividing by 4, finalNumber is zero, skipping subdivision to avoid division by zero.\n");
                 // Debug.Log(debugLog.ToString());
                 return;
             }
 
             int divisionRatio = originalTriangleCount / finalNumber;
-            debugLog.Append($"Check {originalTriangleCount}/{finalNumber} == 3: {divisionRatio}\n");
+            //debugLog.Append($"Check {originalTriangleCount}/{finalNumber} == 3: {divisionRatio}\n");
 
             if (divisionRatio % 3 == 0)
             {
-                debugLog.Append("CONDITIONS MET - Subdividing mesh!\n");
-                for (int i = 0; i < divisionRatio; i++)
+                //debugLog.Append("CONDITIONS MET - Subdividing mesh!\n");
+                for (int i = 0; i < (divisionRatio); i++)
                 {
                     SubdivideAllTriangles(false);
                 }
@@ -403,12 +403,12 @@ public class MeshDeformer : MonoBehaviour
             }
             else
             {
-                debugLog.Append($"Division ratio {divisionRatio} != 3 - skipping subdivision.\n");
+                //debugLog.Append($"Division ratio {divisionRatio} != 3 - skipping subdivision.\n");
             }
         }
         else
         {
-            debugLog.Append($"{finalNumber} not divisible by 4 - skipping subdivision.\n");
+            //debugLog.Append($"{finalNumber} not divisible by 4 - skipping subdivision.\n");
         }
 
         // Debug.Log(debugLog);
@@ -424,7 +424,7 @@ public class MeshDeformer : MonoBehaviour
         {
             allTriangleIndices.Add(i);
         }
-
+        Debug.Log("yo");
         SubdivideSelectedTriangles(allTriangleIndices, create);
     }
     private void SubdivideSelectedTriangles(List<int> triangleIndices, bool create = true)
