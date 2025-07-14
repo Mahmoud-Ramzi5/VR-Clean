@@ -343,118 +343,64 @@ public class MeshDeformer : MonoBehaviour
         }
     }
 
-    public void SubdivideMeshWithPoints(NativeList<SpringPointData> newPoints)
+    public void SubdivideMeshWithPoints(List<SpringPointData> newPoints)
     {
-        if (newPoints.Length == 0) return;
+        if (newPoints == null || newPoints.Count == 0) return;
 
-        // Convert current vertices to world space for distance checks
         Vector3[] worldVertices = new Vector3[currentVertices.Length];
         for (int i = 0; i < currentVertices.Length; i++)
         {
             worldVertices[i] = transform.TransformPoint(currentVertices[i]);
         }
 
-        // Create a list to track triangles that need subdivision
-        try
+        List<int> trianglesToSubdivide = new List<int>();
+
+        for (int i = 0; i < currentTriangles.Length; i += 3)
         {
-            List<int> trianglesToSubdivide = new List<int>();
-            for (int i = 0; i < currentTriangles.Length; i += 3)
+            int triangleIndex = i / 3;
+            if (triangleIndex >= triangleDataList.Count) continue;
+
+            TriangleData data = triangleDataList[triangleIndex];
+            if (!data.canSubdivide || data.subdivisionLevel >= maxSubdivisionLevel) continue;
+
+            Vector3 v0 = worldVertices[currentTriangles[i]];
+            Vector3 v1 = worldVertices[currentTriangles[i + 1]];
+            Vector3 v2 = worldVertices[currentTriangles[i + 2]];
+            Vector3 centroid = (v0 + v1 + v2) / 3f;
+
+            int springPointCount = 0;
+            foreach (SpringPointData pointData in newPoints)
             {
-                int triangleIndex = i / 3;
-                if (triangleIndex >= triangleDataList.Count) continue;
-
-                TriangleData data = triangleDataList[triangleIndex];
-                if (!data.canSubdivide || data.subdivisionLevel >= maxSubdivisionLevel)
+                if (Vector3.Distance(pointData.position, centroid) < influenceRadius)
                 {
-                    continue;
-                }
-
-                int idx0 = currentTriangles[i];
-                int idx1 = currentTriangles[i + 1];
-                int idx2 = currentTriangles[i + 2];
-
-                Vector3 v0 = worldVertices[idx0];
-                Vector3 v1 = worldVertices[idx1];
-                Vector3 v2 = worldVertices[idx2];
-                Vector3 centroid = (v0 + v1 + v2) / 3f;
-
-                // Count spring points near this triangle
-                int springPointCount = 0;
-                foreach (SpringPointData pointData in newPoints)
-                {
-                    Vector3 point = pointData.position;
-                    if (Vector3.Distance(point, centroid) < influenceRadius)
-                    {
-                        springPointCount++;
-                        if (springPointCount > 3) break;
-                    }
-                }
-
-                if (springPointCount > 3)
-                {
-                    trianglesToSubdivide.Add(triangleIndex);
+                    springPointCount++;
+                    if (springPointCount > 3) break;
                 }
             }
 
-            // Recursively subdivide problem triangles
-            while (trianglesToSubdivide.Count > 0)
+            if (springPointCount > 3)
             {
-                // Create a copy of triangles to process in this iteration
-                List<int> currentBatch = new List<int>(trianglesToSubdivide);
-                trianglesToSubdivide.Clear();
-
-                // Subdivide all marked triangles
-                SubdivideSelectedTriangles(currentBatch, false);
-
-                // Update world vertices after subdivision
-                worldVertices = new Vector3[currentVertices.Length];
-                for (int i = 0; i < currentVertices.Length; i++)
-                {
-                    worldVertices[i] = transform.TransformPoint(currentVertices[i]);
-                }
-
-                // Check newly created triangles
-                for (int i = triangleDataList.Count - currentBatch.Count * 4; i < triangleDataList.Count; i++)
-                {
-                    TriangleData data = triangleDataList[i];
-                    if (!data.canSubdivide || data.subdivisionLevel >= maxSubdivisionLevel)
-                        continue;
-
-                    int triStart = i * 3;
-                    if (triStart + 2 >= currentTriangles.Length) continue;
-
-                    int idx0 = currentTriangles[triStart];
-                    int idx1 = currentTriangles[triStart + 1];
-                    int idx2 = currentTriangles[triStart + 2];
-
-                    Vector3 v0 = worldVertices[idx0];
-                    Vector3 v1 = worldVertices[idx1];
-                    Vector3 v2 = worldVertices[idx2];
-                    Vector3 centroid = (v0 + v1 + v2) / 3f;
-
-                    // Count spring points near this new triangle
-                    int springPointCount = 0;
-                    foreach (SpringPointData pointData in newPoints)
-                    {
-                        Vector3 point = pointData.position;
-                        if (Vector3.Distance(point, centroid) < influenceRadius)
-                        {
-                            springPointCount++;
-                        }
-                    }
-
-                    if (springPointCount > 3)
-                    {
-                        trianglesToSubdivide.Add(i);
-                    }
-                }
+                trianglesToSubdivide.Add(triangleIndex);
             }
         }
-        catch (Exception ex)
+
+        if (trianglesToSubdivide.Count > 0)
         {
-            Debug.Log(ex.Message);
+            SubdivideAllTriangles(false);
+            SubdivideMeshWithPoints(newPoints);
         }
     }
+    public void SubdivideAllTriangles(bool create = true)
+    {
+        List<int> allTriangleIndices = new List<int>();
+        for (int i = 0; i < currentTriangles.Length / 3; i++)
+        {
+            allTriangleIndices.Add(i);
+        }
+
+        SubdivideSelectedTriangles(allTriangleIndices, create);
+    }
+
 
     private void SubdivideSelectedTriangles(List<int> triangleIndices, bool create = true)
     {
