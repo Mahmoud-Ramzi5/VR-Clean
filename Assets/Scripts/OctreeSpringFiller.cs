@@ -64,7 +64,7 @@ public class OctreeSpringFiller : MonoBehaviour
     public MeshDeformer meshDeformer;
 
     [Header("Collision Layer System")]
-    [SerializeField] private CollisionLayer collisionLayer;
+    [SerializeField] public CollisionLayer collisionLayer;
 
     // Layer presets for easy setup
     [Header("Layer Presets")]
@@ -418,6 +418,16 @@ public class OctreeSpringFiller : MonoBehaviour
                 point.bounciness = collisionLayer.restitution;
                 point.friction = collisionLayer.friction;
                 surfaceSpringPoints2[i] = point;
+            }
+        }
+        // NEW: For jelly/gel, reduce stiffness near surface
+        if (collisionLayer.poissonRatio > 0.4f) // Incompressible like jelly
+        {
+            for (int i = 0; i < allSpringPoints.Length; i++)
+            {
+                var p = allSpringPoints[i];
+                if (p.isMeshVertex == 1) p.mass *= 0.8f; // Softer surface
+                allSpringPoints[i] = p;
             }
         }
     }
@@ -1607,6 +1617,23 @@ public class OctreeSpringFiller : MonoBehaviour
             }
         }
         return points;
+    }
+
+    public float GetTotalKineticEnergy()
+    {
+        float ke = 0f;
+        foreach (var p in allSpringPoints) ke += 0.5f * p.mass * math.lengthsq(p.velocity);
+        return ke;
+    }
+
+    public void DampenVelocities(float factor)
+    {
+        for (int i = 0; i < allSpringPoints.Length; i++)
+        {
+            var p = allSpringPoints[i];
+            p.velocity *= factor;
+            allSpringPoints[i] = p;
+        }
     }
 
 }

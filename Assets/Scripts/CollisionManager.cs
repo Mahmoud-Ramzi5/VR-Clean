@@ -56,6 +56,45 @@ public class CollisionManager : MonoBehaviour
         public float friction;     // Blended friction for this contact
     }
 
+    private struct MergeSpring
+    {
+        public OctreeSpringFiller body1;
+        public OctreeSpringFiller body2;
+        public int point1Index;
+        public int point2Index;
+        public float restLength;
+        public float springConstant;
+        public float damperConstant;
+    }
+
+    private List<MergeSpring> tempMergeSprings = new List<MergeSpring>();
+
+    // NEW: Spatial Hash for broad-phase optimization
+    private SpatialHash<OctreeSpringFiller> bodySpatialHash;
+    private float hashCellSize = 10f; // Adjust based on typical body size; larger for bigger scenes
+    void Awake()
+    {
+        // Initialize spatial hash with a reasonable cell size
+        bodySpatialHash = new SpatialHash<OctreeSpringFiller>(hashCellSize);
+    }
+
+    void FixedUpdate()
+    {
+        // Remove temporary merge springs that are no longer needed
+        for (int i = tempMergeSprings.Count - 1; i >= 0; i--)
+        {
+            MergeSpring mergeSpring = tempMergeSprings[i];
+            Vector3 pos1 = mergeSpring.body1.allSpringPoints[mergeSpring.point1Index].position;
+            Vector3 pos2 = mergeSpring.body2.allSpringPoints[mergeSpring.point2Index].position;
+            float currentDist = Vector3.Distance(pos1, pos2);
+
+            if (currentDist > mergeSpring.restLength * 1.5f) // Separated
+            {
+                tempMergeSprings.RemoveAt(i);
+            }
+        }
+    }
+
     /// <summary>
     /// This is now the primary collision resolution method called in FixedUpdate.
     /// </summary>
@@ -67,36 +106,55 @@ public class CollisionManager : MonoBehaviour
         lastFrameCollisions.Clear();
         currentFrameContacts.Clear();
 
-        for (int i = 0; i < AllSoftBodies.Count; i++)
+        // NEW: Clear and rebuild spatial hash each frame (since bodies move)
+        bodySpatialHash.Clear();
+        foreach (var body in AllSoftBodies)
         {
-            OctreeSpringFiller obj1 = AllSoftBodies[i];
-            obj1.UpdateBoundingVolume();
+            body.UpdateBoundingVolume(); // Ensure bounds are up-to-date
+            bodySpatialHash.Add(body.boundingVolume.center, body);
+        }
 
-            for (int j = i + 1; j < AllSoftBodies.Count; j++)
+        // NEW: Use spatial hash to find potential pairs instead of O(n^2) loop
+        HashSet<KeyValuePair<int, int>> checkedPairs = new HashSet<KeyValuePair<int, int>>(); // Avoid duplicates
+        foreach (var body1 in AllSoftBodies)
+        {
+            // Query nearby bodies using the bounding volume extent
+            float queryRadius = body1.boundingVolume.extents.magnitude * 2f; // Conservative radius
+            var nearbyBodies = bodySpatialHash.Query(body1.boundingVolume.center, queryRadius);
+
+            foreach (var body2 in nearbyBodies)
             {
-                OctreeSpringFiller obj2 = AllSoftBodies[j];
-                obj2.UpdateBoundingVolume();
+                if (body1 == body2) continue;
+
+                // Ensure we don't check pairs twice (i < j)
+                int id1 = AllSoftBodies.IndexOf(body1);
+                int id2 = AllSoftBodies.IndexOf(body2);
+                if (id1 > id2) continue; // Skip if already would have been checked from the other side
+
+                var pair = new KeyValuePair<int, int>(Mathf.Min(id1, id2), Mathf.Max(id1, id2));
+                if (checkedPairs.Contains(pair)) continue;
+                checkedPairs.Add(pair);
 
                 // CHECK COLLISION LAYERS FIRST
-                if (!obj1.CanCollideWith(obj2))
+                if (!body1.CanCollideWith(body2))
                 {
                     continue; // Skip collision if layers don't interact
                 }
 
-                if (!obj1.boundingVolume.Intersects(obj2.boundingVolume)) continue;
+                if (!body1.boundingVolume.Intersects(body2.boundingVolume)) continue;
 
-                if (GJK.DetectCollision(obj1, obj2, out CollisionInfo info))
+                if (GJK.DetectCollision(body1, body2, out CollisionInfo info))
                 {
                     totalCollisionsThisFrame++;
                     lastFrameCollisions.Add(info);
 
                     if (enableContactPointResponse)
                     {
-                        HandleContactPointCollision(obj1, obj2, info);
+                        HandleContactPointCollision(body1, body2, info);
                     }
                     else
                     {
-                        HandleGlobalCollision(obj1, obj2, info);
+                        HandleGlobalCollision(body1, body2, info);
                     }
                 }
             }
@@ -113,11 +171,69 @@ public class CollisionManager : MonoBehaviour
             Debug.Log($"Collision between {obj1.name} and {obj2.name}: {contacts.Count} contact points found");
         }
 
+        // Calculate pre-collision KE before applying responses
+        float preKE1 = obj1.GetTotalKineticEnergy();
+        float preKE2 = obj2.GetTotalKineticEnergy();
+
+        if (ShouldMerge(obj1, obj2, info))
+        {
+            CreateTemporaryMergeSprings(obj1, obj2, contacts);
+        }
+
         // Apply response at each contact point
         foreach (var contact in contacts)
         {
             ApplyContactPointResponse(obj1, obj2, contact);
             currentFrameContacts.Add(contact); // For debug visualization
+        }
+
+        VerifyEnergyConservation(obj1, obj2, contacts, preKE1, preKE2);
+    }
+
+    private void CreateTemporaryMergeSprings(OctreeSpringFiller obj1, OctreeSpringFiller obj2, List<ContactPoint> contacts)
+    {
+        foreach (var contact in contacts)
+        {
+            // Connect closest points across bodies with weak springs
+            int p1 = contact.point1Index;
+            int p2 = contact.point2Index;
+
+            float dist = Vector3.Distance(obj1.allSpringPoints[p1].position, obj2.allSpringPoints[p2].position);
+
+            tempMergeSprings.Add(new MergeSpring
+            {
+                body1 = obj1,
+                body2 = obj2,
+                point1Index = p1,
+                point2Index = p2,
+                restLength = dist,
+                springConstant = 10f,
+                damperConstant = 0.1f
+            });
+        }
+    }
+
+    private bool ShouldMerge(OctreeSpringFiller obj1, OctreeSpringFiller obj2, CollisionInfo info)
+    {
+        // Check material softness (e.g., low Young's modulus from layer)
+        return obj1.collisionLayer.youngsModulus < 1e6f && // Soft threshold
+               obj2.collisionLayer.youngsModulus < 1e6f &&
+               info.Depth > 0.1f; // Deep penetration
+    }
+
+    private void VerifyEnergyConservation(OctreeSpringFiller obj1, OctreeSpringFiller obj2, List<ContactPoint> contacts, float preKE1, float preKE2)
+    {
+        // After applying impulses, get post KE
+        float postKE1 = obj1.GetTotalKineticEnergy();
+        float postKE2 = obj2.GetTotalKineticEnergy();
+
+        // If post > pre (energy gain), dissipate excess proportionally
+        float excess = Mathf.Max(0, (postKE1 + postKE2) - (preKE1 + preKE2));
+        if (excess > 0)
+        {
+            float dampFactor = Mathf.Pow(0.95f, excess / (preKE1 + preKE2)); // Exponential damp
+            obj1.DampenVelocities(dampFactor);
+            obj2.DampenVelocities(dampFactor);
         }
     }
 
@@ -512,10 +628,16 @@ public class CollisionManager : MonoBehaviour
         float e = contact.restitution;
         float blendedStiffness = contactStiffness * (1f - e * 0.5f);  // Less stiff for high e
 
+
         // Normal penalty force magnitude (Kelvin-Voigt)
         float repulsionMag = blendedStiffness * penetration;
         float criticalDamping = 2f * Mathf.Sqrt(blendedStiffness * effectiveMass);
         float dampingMag = contactDampingRatio * criticalDamping * Mathf.Max(-velocityAlongNormal, 0f);  // Damp only closing to avoid sticking
+        float keAlongNormal = 0.5f * effectiveMass * velocityAlongNormal * velocityAlongNormal;
+
+        // Dissipate excess energy (e.g., for inelastic)
+        float dissipation = (1 - contact.restitution) * keAlongNormal * 0.1f; // Tune factor
+        dampingMag += dissipation / Time.fixedDeltaTime;
         float normalForceMag = repulsionMag + dampingMag;
 
         // Clamp to prevent negative (tensile) forces
@@ -532,10 +654,11 @@ public class CollisionManager : MonoBehaviour
         {
             Vector3 tangentialVelocity = relativeVelocity - velocityAlongNormal * contact.normal;
             float tangentialMag = tangentialVelocity.magnitude;
+
             if (tangentialMag > 0.001f)
             {
                 Vector3 tangentDir = tangentialVelocity.normalized;
-                float viscousMag = contact.friction * viscousFrictionFactor * normalForceMag;  // Proportional to normal force
+                float viscousMag = contact.friction * viscousFrictionFactor * normalForceMag; // Proportional to normal force
                 Vector3 viscousImpulse = -tangentDir * viscousMag * Time.fixedDeltaTime;
 
                 ApplyImpulseToNearbyPoints(obj1, contact.worldPosition, viscousImpulse, contact.influenceRadius, contact.normal, contact.friction);
@@ -558,19 +681,21 @@ public class CollisionManager : MonoBehaviour
 
         float invMass1 = point1.mass > 0 ? 1.0f / point1.mass : 0.0f;
         float invMass2 = point2.mass > 0 ? 1.0f / point2.mass : 0.0f;
-
-        // Use the contact's blended restitution
+        // NEW: Use effective (reduced) mass for conservation
+        float reducedMass = 1f / (invMass1 + invMass2);
         float e = contact.restitution;
 
-        // Calculate impulse magnitude
-        float j = -(1 + e) * velocityAlongNormal;
-        j /= (invMass1 + invMass2);
+        // NEW: Impulse with momentum conservation
+        float j = -(1 + e) * velocityAlongNormal * reducedMass;
+        // Clamp j to prevent energy gain (e.g., if damping insufficient)
+        j = Mathf.Max(j, -Mathf.Abs(velocityAlongNormal) * reducedMass * 0.95f); // Dissipate 5%
 
         return j;
     }
 
     private Vector3 CalculateFrictionImpulse(OctreeSpringFiller obj1, OctreeSpringFiller obj2, ContactPoint contact, float normalImpulseMagnitude)
     {
+
         SpringPointData point1 = obj1.surfaceSpringPoints2[contact.point1Index];
         SpringPointData point2 = obj2.surfaceSpringPoints2[contact.point2Index];
 
@@ -599,16 +724,12 @@ public class CollisionManager : MonoBehaviour
         float denom = invMass1 + invMass2;
         if (denom <= 0.0001f) return Vector3.zero;  // Both fixed, no impulse
 
-        // Use the contact's blended friction
-        float mu = contact.friction;
+        float staticThreshold = 0.01f; // Small velocity = static
+        float mu_s = contact.friction * 1.2f; // Static coef > dynamic
+        float mu_d = contact.friction;
 
-        // Static vs dynamic friction
-        float staticFrictionCoef = mu * 1.2f;  // mu_s > mu_d
-        float dynamicFrictionCoef = mu;
-        float frictionCoef = (vtMag < 0.01f) ? staticFrictionCoef : dynamicFrictionCoef;
-
-        // Maximum friction impulse magnitude
-        float maxFriction = frictionCoef * normalImpulseMagnitude;
+        float mu = (vtMag < staticThreshold) ? mu_s : mu_d;
+        float maxFriction = mu * normalImpulseMagnitude;
 
         // Trial friction impulse scalar (negative to oppose motion)
         float j_f = -vr_t / denom;
@@ -1003,5 +1124,87 @@ public class CollisionManager : MonoBehaviour
             if (body.surfaceSpringPoints2.IsCreated)
                 GUILayout.Label($"{body.name}: Surface={body.surfaceSpringPoints2.Length}");
         }
+    }
+
+    private class SpatialHash<T> where T : class
+    {
+        private readonly Dictionary<Vector3Int, List<T>> buckets = new Dictionary<Vector3Int, List<T>>();
+        private readonly float cellSize;
+
+        public SpatialHash(float cellSize)
+        {
+            this.cellSize = cellSize;
+        }
+
+        public void Clear()
+        {
+            buckets.Clear();
+        }
+
+        public void Add(Vector3 position, T item)
+        {
+            Vector3Int cell = GetCell(position);
+            if (!buckets.TryGetValue(cell, out var list))
+            {
+                list = new List<T>();
+                buckets[cell] = list;
+            }
+            list.Add(item);
+        }
+
+        public IEnumerable<T> Query(Vector3 position, float radius)
+        {
+            List<T> results = new List<T>();
+            Vector3Int centerCell = GetCell(position);
+            int cellRadius = Mathf.CeilToInt(radius / cellSize) + 1; // Conservative
+
+            for (int x = -cellRadius; x <= cellRadius; x++)
+            {
+                for (int y = -cellRadius; y <= cellRadius; y++)
+                {
+                    for (int z = -cellRadius; z <= cellRadius; z++)
+                    {
+                        Vector3Int neighborCell = centerCell + new Vector3Int(x, y, z);
+                        if (buckets.TryGetValue(neighborCell, out var list))
+                        {
+                            foreach (var item in list)
+                            {
+                                results.Add(item);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return results;
+        }
+
+        private Vector3Int GetCell(Vector3 position)
+        {
+            return new Vector3Int(
+                Mathf.FloorToInt(position.x / cellSize),
+                Mathf.FloorToInt(position.y / cellSize),
+                Mathf.FloorToInt(position.z / cellSize)
+            );
+        }
+    }
+
+    // NEW: Simple Vector3Int struct (since Unity doesn't have one built-in)
+    private struct Vector3Int
+    {
+        public int x, y, z;
+
+        public Vector3Int(int x, int y, int z)
+        {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+
+        public static Vector3Int operator +(Vector3Int a, Vector3Int b) => new Vector3Int(a.x + b.x, a.y + b.y, a.z + b.z);
+
+        public override int GetHashCode() => (x * 73856093) ^ (y * 19349663) ^ (z * 83492791);
+
+        public override bool Equals(object obj) => obj is Vector3Int other && x == other.x && y == other.y && z == other.z;
     }
 }
