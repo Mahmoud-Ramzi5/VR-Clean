@@ -68,13 +68,13 @@ public class PerformanceStatsMonitor : MonoBehaviour
 
         if (showDebugLogs)
         {
-            Debug.Log($"RefreshFillers() found {springFillers.Length} instances:");
+            // Debug.Log($"RefreshFillers() found {springFillers.Length} instances:");
             foreach (var filler in springFillers)
             {
                 string status = filler == null ? "NULL" :
                     (!filler.gameObject.activeInHierarchy ? "INACTIVE" : "ACTIVE");
-                Debug.Log($"- {filler?.name ?? "NULL"} ({status})",
-                    filler != null ? filler.gameObject : null);
+                // Debug.Log($"- {filler?.name ?? "NULL"} ({status})",
+                //     filler != null ? filler.gameObject : null);
             }
         }
     }
@@ -83,7 +83,8 @@ public class PerformanceStatsMonitor : MonoBehaviour
     {
         if (springFillers == null || springFillers.Length == 0)
         {
-            if (showDebugLogs) Debug.LogWarning("No OctreeSpringFiller instances found");
+            // if (showDebugLogs)
+            //     Debug.LogWarning("No OctreeSpringFiller instances found");
             UpdateAllTexts("N/A");
             return;
         }
@@ -114,7 +115,7 @@ public class PerformanceStatsMonitor : MonoBehaviour
             }
             else if (showDebugLogs)
             {
-                Debug.LogWarning($"{filler.name} has no target mesh", filler.gameObject);
+                // Debug.LogWarning($"{filler.name} has no target mesh", filler.gameObject);
             }
 
             // Spring point data
@@ -124,7 +125,7 @@ public class PerformanceStatsMonitor : MonoBehaviour
             }
             else if (showDebugLogs)
             {
-                Debug.LogWarning($"{filler.name} spring points not created", filler.gameObject);
+                // Debug.LogWarning($"{filler.name} spring points not created", filler.gameObject);
             }
 
             // Connection data
@@ -134,12 +135,12 @@ public class PerformanceStatsMonitor : MonoBehaviour
             }
             else if (showDebugLogs)
             {
-                Debug.LogWarning($"{filler.name} spring connections not created", filler.gameObject);
+                // Debug.LogWarning($"{filler.name} spring connections not created", filler.gameObject);
             }
         }
 
         // Update UI
-        UpdateText(bodiesText, activeBodies,"Bodies:");
+        UpdateText(bodiesText, activeBodies, "Bodies:");
         UpdateText(verticesText, totalVertices, "Verticies:");
         UpdateText(indicesText, totalIndices, "Indices:");
         UpdateText(trianglesText, totalTriangles, "Triangles:");
@@ -148,12 +149,12 @@ public class PerformanceStatsMonitor : MonoBehaviour
 
         if (showDebugLogs)
         {
-            Debug.Log($"Stats Updated:\n" +
-                $"Bodies: {activeBodies}\n" +
-                $"Vertices: {totalVertices}\n" +
-                $"Triangles: {totalTriangles}\n" +
-                $"Points: {totalPoints}\n" +
-                $"Connections: {totalConnections}");
+            // Debug.Log($"Stats Updated:\n" +
+            //     $"Bodies: {activeBodies}\n" +
+            //     $"Vertices: {totalVertices}\n" +
+            //     $"Triangles: {totalTriangles}\n" +
+            //     $"Points: {totalPoints}\n" +
+            //     $"Connections: {totalConnections}");
         }
     }
 
@@ -165,15 +166,15 @@ public class PerformanceStatsMonitor : MonoBehaviour
         }
         else if (showDebugLogs)
         {
-            Debug.LogWarning("A text component is not assigned in inspector!");
+            // Debug.LogWarning("A text component is not assigned in inspector!");
         }
     }
 
     void UpdateAllTexts(string value)
     {
-        if (bodiesText != null) bodiesText.text = "Bodies: "+value;
-        if (verticesText != null) verticesText.text = "Verticies: "+value;
-        if (indicesText != null) indicesText.text = "Indices: "+value;
+        if (bodiesText != null) bodiesText.text = "Bodies: " + value;
+        if (verticesText != null) verticesText.text = "Verticies: " + value;
+        if (indicesText != null) indicesText.text = "Indices: " + value;
         if (trianglesText != null) trianglesText.text = "Triangles: " + value;
         if (pointsText != null) pointsText.text = "Points: " + value;
         if (connectionsText != null) connectionsText.text = "Connections: " + value;
