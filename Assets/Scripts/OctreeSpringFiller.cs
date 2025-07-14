@@ -455,8 +455,12 @@ public class OctreeSpringFiller : MonoBehaviour
             yield return null; // Wait one frame
         }
 
+        Debug.Log(meshDeformer.meshFilter.mesh.vertices.Length);
+        Debug.Log(meshDeformer.meshFilter.mesh.triangles.Length);
+
         // Debug.Log("MeshDeformer is ready, proceeding with subdivision...");
-        meshDeformer.SubdivideMeshWithPoints(surfaceSpringPoints2);
+        meshDeformer.UpdateMeshWithPoints(surfaceSpringPoints2);
+        Debug.Log(surfaceSpringPoints2.Length);
         Debug.Log(meshDeformer.meshFilter.mesh.vertices.Length);
         Debug.Log(meshDeformer.meshFilter.mesh.triangles.Length);
     }
@@ -624,8 +628,8 @@ public class OctreeSpringFiller : MonoBehaviour
         // Handle Mesh Update
         UpdateMeshFromPoints();
         //meshJobManager.DispatchMeshUpdate(meshVertices, transform.worldToLocalMatrix, targetMesh, transform);
-        //meshJobManager.ScheduleMeshVerticesUpdateJobs(meshVertices, meshTriangles, transform);
-        //meshJobManager.CompleteAllJobsAndApply(meshVertices, meshTriangles, targetMesh);
+        //meshJobManager.ScheduleMeshVerticesUpdateJobs(meshVertices, meshTriangles, transform.localToWorldMatrix, transform.worldToLocalMatrix);
+        //meshJobManager.CompleteAllJobsAndApply(meshVertices, meshTriangles, targetMesh, surfacePoints);
     }
     void LateUpdate()
     {
@@ -1657,16 +1661,6 @@ public class OctreeSpringFiller : MonoBehaviour
             p.velocity *= factor;
             allSpringPoints[i] = p;
         }
-    }
-
-    public float GetMaxPointVelocityMagnitude()
-    {
-        float maxVel = 0f;
-        for (int i = 0; i < allSpringPoints.Length; i++)
-        {
-            maxVel = Mathf.Max(maxVel, math.length(allSpringPoints[i].velocity));
-        }
-        return maxVel;
     }
 
 }
