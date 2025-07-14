@@ -75,6 +75,14 @@ public class OctreeSpringFiller : MonoBehaviour
     public CollisionManager collisionManager;
     public MeshDeformer meshDeformer;
 
+    [Header("Collision Layer")]
+    [SerializeField] public CollisionLayer collisionLayer;
+
+    // Layer presets for easy setup
+    [Header("Layer Presets")]
+    [SerializeField] private CollisionLayerPreset layerPreset = CollisionLayerPreset.Default;
+
+
     [Header("Visualize Settings")]
     public bool visualizeSpringPoints = true;
     public bool visualizeSpringConnections = true;
@@ -154,6 +162,15 @@ public class OctreeSpringFiller : MonoBehaviour
         new float3(0, -1, 1), new float3(0, -1, -1)
     };
 
+    public enum CollisionLayerPreset
+    {
+        Default,
+        Rubber,
+        Metal,
+        Plastic,
+        Gel,
+        Custom
+    }
 
     private void Awake()
     {
@@ -286,10 +303,11 @@ public class OctreeSpringFiller : MonoBehaviour
             {
                 Debug.LogWarning($"{gameObject.name}: No CollisionManager found in scene!");
             }
-            if (isFixCorners)
-            {
-                FixCorners();
-            }
+        }
+
+        if (isFixCorners)
+        {
+            FixCorners();
         }
 
         if (applyVelocity)
@@ -299,7 +317,16 @@ public class OctreeSpringFiller : MonoBehaviour
                 p.velocity = velocity;
                 allSpringPoints[i] = p;
             }
+
+        if (collisionLayer == null)
+        {
+            InitializeCollisionLayer();
+        }
+
+        // Apply layer preset if selected
+        ApplyLayerPreset();
     }
+
 
     public void OverrideSpringData(NativeArray<SpringPointData> sharedPoints, NativeArray<SpringConnectionData> sharedConnections)
     {
@@ -317,6 +344,107 @@ public class OctreeSpringFiller : MonoBehaviour
         collisionJobManager.InitializeArrays(allSpringPoints);
 
         // Skip FillObjectWithSpringPoints(), because data is already set
+    }
+
+    private void InitializeCollisionLayer()
+    {
+        collisionLayer = new CollisionLayer();
+        collisionLayer.layerName = gameObject.name + "_Layer";
+        collisionLayer.layerIndex = 0; // Default layer
+    }
+
+    private void ApplyLayerPreset()
+    {
+        switch (layerPreset)
+        {
+            case CollisionLayerPreset.Default:
+                // Already initialized with default values
+                break;
+
+            case CollisionLayerPreset.Rubber:
+                collisionLayer.density = 1200f;
+                collisionLayer.restitution = 0.9f;
+                collisionLayer.friction = 0.8f;
+                collisionLayer.youngsModulus = 0.01e6f;
+                collisionLayer.poissonRatio = 0.49f;
+                break;
+
+            case CollisionLayerPreset.Metal:
+                collisionLayer.density = 7800f;
+                collisionLayer.restitution = 0.3f;
+                collisionLayer.friction = 0.6f;
+                collisionLayer.youngsModulus = 200e9f;
+                collisionLayer.poissonRatio = 0.27f;
+                break;
+
+            case CollisionLayerPreset.Plastic:
+                collisionLayer.density = 1400f;
+                collisionLayer.restitution = 0.5f;
+                collisionLayer.friction = 0.4f;
+                collisionLayer.youngsModulus = 3e9f;
+                collisionLayer.poissonRatio = 0.35f;
+                break;
+
+            case CollisionLayerPreset.Gel:
+                collisionLayer.density = 1000f;
+                collisionLayer.restitution = 0.1f;
+                collisionLayer.friction = 0.2f;
+                collisionLayer.youngsModulus = 0.001e6f;
+                collisionLayer.poissonRatio = 0.45f;
+                collisionLayer.dampingFactor = 0.5f;
+                break;
+        }
+    }
+
+    // Public methods for collision layer system
+    public bool CanCollideWith(OctreeSpringFiller other)
+    {
+        if (collisionLayer == null || other.collisionLayer == null)
+            return true; // Default behavior if layers not set
+
+        return collisionLayer.CanCollideWith(other.collisionLayer.layerIndex);
+    }
+
+    public CollisionLayer GetCollisionLayer()
+    {
+        return collisionLayer;
+    }
+
+    public void SetCollisionLayer(CollisionLayer newLayer)
+    {
+        collisionLayer = newLayer;
+        ApplyMaterialProperties();
+    }
+
+    public void SetLayerIndex(int newIndex)
+    {
+        if (collisionLayer != null)
+        {
+            collisionLayer.layerIndex = newIndex;
+        }
+    }
+
+    private void ApplyMaterialProperties()
+    {
+        if (collisionLayer == null) return;
+
+        // NEW: For jelly/gel, reduce stiffness near surface
+        if (collisionLayer.poissonRatio > 0.4f) // Incompressible like jelly
+        {
+            for (int i = 0; i < allSpringPoints.Length; i++)
+            {
+                var p = allSpringPoints[i];
+                if (p.isMeshVertex == 1) p.mass *= 0.8f; // Softer surface
+                allSpringPoints[i] = p;
+            }
+        }
+
+        // Update collision manager defaults (used only as fallback)
+        if (collisionManager != null)
+        {
+            collisionManager.defaultCoefficientOfRestitution = collisionLayer.restitution;
+            collisionManager.defaultCoefficientOfFriction = collisionLayer.friction;
+        }
     }
 
     private IEnumerator WaitForMeshDeformerInitialization()
@@ -1509,6 +1637,23 @@ public class OctreeSpringFiller : MonoBehaviour
             }
         }
         return points;
+    }
+
+    public float GetTotalKineticEnergy()
+    {
+        float ke = 0f;
+        foreach (var p in allSpringPoints) ke += 0.5f * p.mass * math.lengthsq(p.velocity);
+        return ke;
+    }
+
+    public void DampenVelocities(float factor)
+    {
+        for (int i = 0; i < allSpringPoints.Length; i++)
+        {
+            var p = allSpringPoints[i];
+            p.velocity *= factor;
+            allSpringPoints[i] = p;
+        }
     }
 
 }
