@@ -352,7 +352,7 @@ public class MeshDeformer : MonoBehaviour
         if (newPoints.Length == 0)
         {
             //debugLog.Append("No new points - exiting.\n");
-            //// Debug.Log(debugLog);
+            // Debug.Log(debugLog);
             return;
         }
 
@@ -394,7 +394,7 @@ public class MeshDeformer : MonoBehaviour
             if (divisionRatio % 3 == 0)
             {
                 //debugLog.Append("CONDITIONS MET - Subdividing mesh!\n");
-                for (int i = 0; i < (divisionRatio); i++)
+                for (int i = 0; i < divisionRatio; i++)
                 {
                     SubdivideAllTriangles(false);
                 }
@@ -424,7 +424,6 @@ public class MeshDeformer : MonoBehaviour
         {
             allTriangleIndices.Add(i);
         }
-        Debug.Log("yo");
         SubdivideSelectedTriangles(allTriangleIndices, create);
     }
     private void SubdivideSelectedTriangles(List<int> triangleIndices, bool create = true)

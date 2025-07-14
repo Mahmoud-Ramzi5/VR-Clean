@@ -624,8 +624,8 @@ public class OctreeSpringFiller : MonoBehaviour
         // Handle Mesh Update
         UpdateMeshFromPoints();
         //meshJobManager.DispatchMeshUpdate(meshVertices, transform.worldToLocalMatrix, targetMesh, transform);
-        //meshJobManager.ScheduleMeshVerticesUpdateJobs(meshVertices, meshTriangles, transform.localToWorldMatrix, transform.worldToLocalMatrix);
-        //meshJobManager.CompleteAllJobsAndApply(meshVertices, meshTriangles, targetMesh, surfacePoints);
+        //meshJobManager.ScheduleMeshVerticesUpdateJobs(meshVertices, meshTriangles, transform);
+        //meshJobManager.CompleteAllJobsAndApply(meshVertices, meshTriangles, targetMesh);
     }
     void LateUpdate()
     {
@@ -1657,6 +1657,16 @@ public class OctreeSpringFiller : MonoBehaviour
             p.velocity *= factor;
             allSpringPoints[i] = p;
         }
+    }
+
+    public float GetMaxPointVelocityMagnitude()
+    {
+        float maxVel = 0f;
+        for (int i = 0; i < allSpringPoints.Length; i++)
+        {
+            maxVel = Mathf.Max(maxVel, math.length(allSpringPoints[i].velocity));
+        }
+        return maxVel;
     }
 
 }
