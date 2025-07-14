@@ -20,26 +20,6 @@ public class PrefabSpawner : MonoBehaviour
     private NativeArray<SpringPointData> _sharedPoints;
     private NativeArray<SpringConnectionData> _sharedConnections;
     private bool _springDataInitialized = false;
-    private Vector3 _originalPrefabPosition;
-
-    private void Start()
-    {
-     
-    }
-
-    private void InitializeSharedSpringData()
-    {
-        if (_springDataInitialized) return;
-
-        var temp = Instantiate(_templateInstance, _spawnPosition, _spawnRotation);
-        var filler = temp.GetComponent<OctreeSpringFiller>();
-        filler.FillObjectWithSpringPoints(); // force generation
-        _sharedPoints = new NativeArray<SpringPointData>(filler.allSpringPoints, Allocator.Persistent);
-        _sharedConnections = new NativeArray<SpringConnectionData>(filler.allSpringConnections, Allocator.Persistent);
-        Destroy(temp); // temp object used only for data gen
-        _springDataInitialized = true;
-    }
-
     void CopyPhysics(OctreeSpringFiller source, OctreeSpringFiller target)
     {
         target.springConstantL1 = source.springConstantL1;
