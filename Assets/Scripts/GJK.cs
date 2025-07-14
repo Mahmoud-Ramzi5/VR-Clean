@@ -1,9 +1,10 @@
-// GJK.cs (Updated with Larger Limits and Safety Checks)
-
+using UnityEngine;
+using System.Collections.Generic;
 using Unity.Mathematics;
-using Unity.Collections;
-using Unity.Burst;
 
+/// <summary>
+/// Contains the result of a GJK/EPA collision query.
+/// </summary>
 public struct CollisionInfo
 {
     public bool DidCollide;
@@ -11,94 +12,132 @@ public struct CollisionInfo
     public float Depth;
 }
 
+/// <summary>
+/// A static class providing a full GJK and EPA implementation for convex shapes.
+/// </summary>
 public static class GJK
 {
     private const int MaxGJKIterations = 32;
     private const int MaxEPAIterations = 32;
     private const float Epsilon = 0.0001f;
-    private const int MaxSimplexSize = 4;
-    private const int MaxPolytopeSize = 128;  // Increased from 64
-    private const int MaxFacesSize = 384;     // 128 faces * 3 indices
-    private const int MaxEdgesSize = 384;     // Increased conservative
 
-    [BurstCompile]
-    public static bool DetectCollision(NativeSlice<float3> pointsA, NativeSlice<float3> pointsB, out CollisionInfo info)
+    /// <summary>
+    /// Detects collision between two soft bodies using the GJK algorithm.
+    /// If a collision occurs, it uses EPA to find the penetration normal and depth.
+    /// </summary>
+    public static bool DetectCollision(OctreeSpringFiller bodyA, OctreeSpringFiller bodyB, out CollisionInfo info)
     {
         info = new CollisionInfo();
+        List<float3> simplex = new List<float3>();
+        float3 direction = (float3)(bodyA.transform.position - bodyB.transform.position);
+        if (math.all(direction == float3.zero))
+        {
+            direction = new float3(1, 0, 0); // right
+        }
 
-        NativeArray<float3> simplex = new NativeArray<float3>(MaxSimplexSize, Allocator.Temp);
-        int simplexCount = 0;
-
-        float3 direction = new float3(1, 0, 0);  // Arbitrary initial direction
-
-        // Initial support
-        float3 support = Support(pointsA, pointsB, direction);
-        simplex[simplexCount++] = support;
+        // Initial support point
+        float3 support = Support(bodyA, bodyB, direction);
+        simplex.Add(support);
         direction = -support;
 
+        // GJK Main Loop
         for (int i = 0; i < MaxGJKIterations; i++)
         {
-            support = Support(pointsA, pointsB, direction);
+            // DEBUG: Visualize the current search direction from the origin of the Minkowski Difference.
+            Debug.DrawRay(float3.zero, math.normalize(direction) * 2, Color.cyan, 0.1f);
+
+            support = Support(bodyA, bodyB, direction);
 
             if (math.dot(support, direction) < 0f)
             {
+                // No collision
                 info.DidCollide = false;
+                // Debug.Log($"GJK End: No Collision found after {i} iterations!"); // DEBUG
                 return false;
             }
 
-            simplex[simplexCount++] = support;
+            simplex.Add(support);
 
-            if (HandleSimplex(simplex, ref simplexCount, ref direction))
+            if (HandleSimplex(ref simplex, ref direction))
             {
+                // Collision found, proceed to EPA
                 info.DidCollide = true;
-                EPA(simplex, simplexCount, pointsA, pointsB, out info.Normal, out info.Depth);
+                // Debug.Log($"GJK End: Collision found after {i} iterations! Proceeding to EPA."); // DEBUG
+                EPA(simplex, bodyA, bodyB, out info.Normal, out info.Depth);
                 return true;
             }
         }
 
+        // Max iterations reached, likely no collision
         info.DidCollide = false;
         return false;
     }
 
-    [BurstCompile]
-    private static float3 Support(NativeSlice<float3> pointsA, NativeSlice<float3> pointsB, float3 direction)
+    /// <summary>
+    /// The Support function for the Minkowski Difference of two soft bodies.
+    /// </summary>
+    private static float3 Support(OctreeSpringFiller bodyA, OctreeSpringFiller bodyB, float3 direction)
     {
-        float3 p1 = FindFurthestPoint(pointsA, direction);
-        float3 p2 = FindFurthestPoint(pointsB, -direction);
+        float3 p1 = FindFurthestPoint(bodyA, direction);
+        float3 p2 = FindFurthestPoint(bodyB, -direction);
+
+        // DEBUG: Draw a line between the two support points in world space.
+        Debug.DrawLine(p1, p2, Color.magenta, 0.1f);
+
         return p1 - p2;
     }
 
-    [BurstCompile]
-    private static float3 FindFurthestPoint(NativeSlice<float3> points, float3 direction)
+    /// <summary>
+    /// Finds the point on a soft body's surface furthest in a given world-space direction.
+    /// This is the corrected version that uses the current deformed shape.
+    /// </summary>
+    private static float3 FindFurthestPoint(OctreeSpringFiller body, float3 worldDirection)
     {
-        if (points.Length == 0) return float3.zero;
+        float3 furthestPoint = float3.zero;
+        float maxDot = float.NegativeInfinity;
 
-        float3 furthest = points[0];
-        float maxDot = math.dot(furthest, direction);
-
-        for (int i = 1; i < points.Length; i++)
+        if (body.surfaceSpringPoints2.Length == 0)
         {
-            float dot = math.dot(points[i], direction);
+            // Debug.LogWarning($"{body.name} has no surface points for GJK calculation!", body);
+            return body.transform.position;
+        }
+
+        // Initialize with the first point to ensure we have a valid starting point
+        furthestPoint = body.surfaceSpringPoints2[0].position;
+        maxDot = math.dot(furthestPoint, worldDirection);
+
+        for (int i = 0; i < body.surfaceSpringPoints2.Length; i++)
+        {
+            SpringPointData sp = body.surfaceSpringPoints2[i];
+            float dot = math.dot(sp.position, worldDirection);
             if (dot > maxDot)
             {
                 maxDot = dot;
-                furthest = points[i];
+                furthestPoint = sp.position;
             }
         }
-        return furthest;
+
+        // DEBUG: Visualize the search direction on the body and the resulting furthest point.
+        float3 origin = (float3)body.transform.position;
+        Debug.DrawRay(origin, math.normalize(worldDirection) * 2, Color.green, 0.1f);
+        Debug.DrawLine(origin, furthestPoint, Color.yellow, 0.1f);
+
+        return furthestPoint;
     }
 
-    [BurstCompile]
-    private static bool HandleSimplex(NativeArray<float3> simplex, ref int count, ref float3 direction)
+    /// <summary>
+    /// Processes the current simplex to see if it contains the origin.
+    /// If not, it updates the simplex and the search direction.
+    /// </summary>
+    private static bool HandleSimplex(ref List<float3> simplex, ref float3 direction)
     {
-        if (count == 2) return Line(simplex, ref count, ref direction);
-        if (count == 3) return Triangle(simplex, ref count, ref direction);
-        if (count == 4) return Tetrahedron(simplex, ref count, ref direction);
+        if (simplex.Count == 2) return Line(ref simplex, ref direction);
+        if (simplex.Count == 3) return Triangle(ref simplex, ref direction);
+        if (simplex.Count == 4) return Tetrahedron(ref simplex, ref direction);
         return false;
     }
 
-    [BurstCompile]
-    private static bool Line(NativeArray<float3> simplex, ref int count, ref float3 direction)
+    private static bool Line(ref List<float3> simplex, ref float3 direction)
     {
         float3 a = simplex[1];
         float3 b = simplex[0];
@@ -111,15 +150,13 @@ public static class GJK
         }
         else
         {
-            simplex[0] = a;
-            count = 1;
+            simplex = new List<float3> { a };
             direction = ao;
         }
         return false;
     }
 
-    [BurstCompile]
-    private static bool Triangle(NativeArray<float3> simplex, ref int count, ref float3 direction)
+    private static bool Triangle(ref List<float3> simplex, ref float3 direction)
     {
         float3 a = simplex[2];
         float3 b = simplex[1];
@@ -135,27 +172,19 @@ public static class GJK
         {
             if (math.dot(ac, ao) > 0)
             {
-                simplex[0] = a;
-                simplex[1] = c;
-                count = 2;
+                simplex = new List<float3> { c, a };
                 direction = math.cross(math.cross(ac, ao), ac);
             }
             else
             {
-                simplex[0] = a;
-                simplex[1] = b;
-                count = 2;
-                return Line(simplex, ref count, ref direction);
+                return Line(ref simplex, ref direction);
             }
         }
         else
         {
             if (math.dot(math.cross(ab, abc), ao) > 0)
             {
-                simplex[0] = a;
-                simplex[1] = b;
-                count = 2;
-                return Line(simplex, ref count, ref direction);
+                return Line(ref simplex, ref direction);
             }
             else
             {
@@ -166,18 +195,15 @@ public static class GJK
                 else
                 {
                     direction = -abc;
-                    // Swap winding
-                    float3 temp = simplex[1];
-                    simplex[1] = simplex[0];
-                    simplex[0] = temp;
+                    // Swap winding order for EPA
+                    simplex = new List<float3> { b, c, a };
                 }
             }
         }
         return false;
     }
 
-    [BurstCompile]
-    private static bool Tetrahedron(NativeArray<float3> simplex, ref int count, ref float3 direction)
+    private static bool Tetrahedron(ref List<float3> simplex, ref float3 direction)
     {
         float3 a = simplex[3];
         float3 b = simplex[2];
@@ -195,60 +221,52 @@ public static class GJK
 
         if (math.dot(abc, ao) > 0)
         {
-            simplex[0] = a;
-            simplex[1] = b;
-            simplex[2] = c;
-            count = 3;
-            return Triangle(simplex, ref count, ref direction);
+            simplex = new List<float3> { c, b, a };
+            return Triangle(ref simplex, ref direction);
         }
         if (math.dot(acd, ao) > 0)
         {
-            simplex[0] = a;
-            simplex[1] = c;
-            simplex[2] = d;
-            count = 3;
-            return Triangle(simplex, ref count, ref direction);
+            simplex = new List<float3> { d, c, a };
+            return Triangle(ref simplex, ref direction);
         }
         if (math.dot(adb, ao) > 0)
         {
-            simplex[0] = a;
-            simplex[1] = d;
-            simplex[2] = b;
-            count = 3;
-            return Triangle(simplex, ref count, ref direction);
+            simplex = new List<float3> { b, d, a };
+            return Triangle(ref simplex, ref direction);
         }
-        return true; // Origin enclosed
+        return true; // Origin is enclosed
     }
 
-    [BurstCompile]
-    private static void EPA(NativeArray<float3> initialSimplex, int initialCount, NativeSlice<float3> pointsA, NativeSlice<float3> pointsB, out float3 normal, out float depth)
+    /// <summary>
+    /// Expanding Polytope Algorithm. Calculates the penetration depth and normal.
+    /// </summary>
+    private static void EPA(List<float3> simplex, OctreeSpringFiller bodyA, OctreeSpringFiller bodyB, out float3 normal, out float depth)
     {
-        NativeArray<float3> polytope = new NativeArray<float3>(MaxPolytopeSize, Allocator.Temp);
-        int polytopeCount = initialCount;
-        for (int i = 0; i < initialCount; i++) polytope[i] = initialSimplex[i];
-
-        NativeArray<int> faces = new NativeArray<int>(MaxFacesSize, Allocator.Temp);
-        int faceCount = 12;
-        faces[0] = 0; faces[1] = 1; faces[2] = 2;
-        faces[3] = 0; faces[4] = 3; faces[5] = 1;
-        faces[6] = 0; faces[7] = 2; faces[8] = 3;
-        faces[9] = 1; faces[10] = 3; faces[11] = 2;
-
-        for (int iter = 0; iter < MaxEPAIterations; iter++)
+        List<float3> polytope = new List<float3>(simplex);
+        List<int> faces = new List<int>
         {
-            // Find closest face
+            0, 1, 2,
+            0, 3, 1,
+            0, 2, 3,
+            1, 3, 2
+        };
+
+        for (int i = 0; i < MaxEPAIterations; i++)
+        {
+            // Find face closest to origin
             int minFaceIndex = 0;
             float minDistance = float.MaxValue;
             float3 minNormal = float3.zero;
 
-            for (int j = 0; j < faceCount / 3; j++)
+            for (int j = 0; j < faces.Count / 3; j++)
             {
-                int idx = j * 3;
-                float3 a = polytope[faces[idx]];
-                float3 b = polytope[faces[idx + 1]];
-                float3 c = polytope[faces[idx + 2]];
+                float3 a = polytope[faces[j * 3]];
+                float3 b = polytope[faces[j * 3 + 1]];
+                float3 c = polytope[faces[j * 3 + 2]];
 
-                float3 n = math.normalize(math.cross(b - a, c - a));
+                float3 n = math.cross(b - a, c - a);
+                n = math.normalize(n);
+
                 float dist = math.dot(n, a);
 
                 if (dist < minDistance)
@@ -259,127 +277,85 @@ public static class GJK
                 }
             }
 
-            float3 support = Support(pointsA, pointsB, minNormal);
+            float3 support = Support(bodyA, bodyB, minNormal);
             float sDist = math.dot(minNormal, support);
 
             if (math.abs(sDist - minDistance) < Epsilon)
             {
+                // Convergence
                 normal = minNormal;
                 depth = sDist;
-                polytope.Dispose();
-                faces.Dispose();
                 return;
             }
 
-            // Expand: Collect edges of visible faces
-            NativeArray<int2> edges = new NativeArray<int2>(MaxEdgesSize, Allocator.Temp);
-            int edgeCount = 0;
-            int newFaceCount = 0;
-            NativeArray<int> newFaces = new NativeArray<int>(MaxFacesSize, Allocator.Temp);
+            // Expand polytope
+            List<int> newFaces = new List<int>();
+            List<int2> edges = new List<int2>();
+            int newPointIndex = polytope.Count;
+            polytope.Add(support);
 
-            for (int j = 0; j < faceCount / 3; j++)
+            for (int j = 0; j < faces.Count / 3; j++)
             {
-                int idx = j * 3;
-                int i1 = faces[idx];
-                int i2 = faces[idx + 1];
-                int i3 = faces[idx + 2];
+                int i1 = faces[j * 3];
+                int i2 = faces[j * 3 + 1];
+                int i3 = faces[j * 3 + 2];
 
-                float3 pa = polytope[i1];
-                float3 pb = polytope[i2];
-                float3 pc = polytope[i3];
+                float3 a = polytope[i1];
+                float3 b = polytope[i2];
+                float3 c = polytope[i3];
 
-                if (math.dot(math.cross(pb - pa, pc - pa), support - pa) < 0)
+                if (math.dot(math.cross(b - a, c - a), support - a) < 0)
                 {
-                    AddEdge(edges, ref edgeCount, i1, i2);
-                    AddEdge(edges, ref edgeCount, i2, i3);
-                    AddEdge(edges, ref edgeCount, i3, i1);
+                    // Face is visible from the new point, add its edges to the list
+                    AddEdge(edges, i1, i2);
+                    AddEdge(edges, i2, i3);
+                    AddEdge(edges, i3, i1);
                 }
                 else
                 {
-                    // Keep face
-                    newFaces[newFaceCount] = i1;
-                    newFaces[newFaceCount + 1] = i2;
-                    newFaces[newFaceCount + 2] = i3;
-                    newFaceCount += 3;
+                    // Face is not visible, keep it
+                    newFaces.AddRange(new int[] { i1, i2, i3 });
                 }
             }
 
-            // Add new point
-            int newPointIndex = polytopeCount;
-            polytope[polytopeCount++] = support;
-
-            // Safety check for overflow
-            if (polytopeCount >= MaxPolytopeSize || (newFaceCount + edgeCount * 3) >= MaxFacesSize)
+            // Create new faces from the silhouette edges to the new point
+            foreach (var edge in edges)
             {
-                FindClosestFace(polytope, polytopeCount, faces, faceCount, out normal, out depth);
-                polytope.Dispose();
-                faces.Dispose();
-                edges.Dispose();
-                newFaces.Dispose();
-                return;
+                newFaces.AddRange(new int[] { edge.x, edge.y, newPointIndex });
             }
-
-            // Create new faces from edges
-            for (int e = 0; e < edgeCount; e++)
-            {
-                newFaces[newFaceCount] = edges[e].x;
-                newFaces[newFaceCount + 1] = edges[e].y;
-                newFaces[newFaceCount + 2] = newPointIndex;
-                newFaceCount += 3;
-            }
-
-            // Copy back to faces
-            for (int f = 0; f < newFaceCount; f++)
-            {
-                faces[f] = newFaces[f];
-            }
-            faceCount = newFaceCount;
-
-            edges.Dispose();
-            newFaces.Dispose();
+            faces = newFaces;
         }
 
-        // Fallback
-        FindClosestFace(polytope, polytopeCount, faces, faceCount, out normal, out depth);
-
-        polytope.Dispose();
-        faces.Dispose();
+        // Max iterations reached, return best guess
+        FindClosestFace(polytope, faces, out normal, out depth);
     }
 
-    [BurstCompile]
-    private static void AddEdge(NativeArray<int2> edges, ref int count, int a, int b)
+    private static void AddEdge(List<int2> edges, int a, int b)
     {
-        int2 rev = new int2(b, a);
-        for (int i = 0; i < count; i++)
+        var reverse = new int2(b, a);
+        if (edges.Contains(reverse))
         {
-            if (edges[i].Equals(rev))
-            {
-                // Remove by swapping with last
-                edges[i] = edges[--count];
-                return;
-            }
+            edges.Remove(reverse);
         }
-        if (count < MaxEdgesSize)
+        else
         {
-            edges[count++] = new int2(a, b);
+            edges.Add(new int2(a, b));
         }
     }
 
-    [BurstCompile]
-    private static void FindClosestFace(NativeArray<float3> polytope, int polytopeCount, NativeArray<int> faces, int faceCount, out float3 normal, out float depth)
+    private static void FindClosestFace(List<float3> polytope, List<int> faces, out float3 normal, out float depth)
     {
         float minDistance = float.MaxValue;
-        normal = new float3(0, 1, 0);
-        depth = 0f;
+        normal = new float3(0, 1, 0); // up
 
-        for (int i = 0; i < faceCount / 3; i++)
+        for (int i = 0; i < faces.Count / 3; i++)
         {
-            int idx = i * 3;
-            float3 a = polytope[faces[idx]];
-            float3 b = polytope[faces[idx + 1]];
-            float3 c = polytope[faces[idx + 2]];
+            float3 a = polytope[faces[i * 3]];
+            float3 b = polytope[faces[i * 3 + 1]];
+            float3 c = polytope[faces[i * 3 + 2]];
 
-            float3 n = math.normalize(math.cross(b - a, c - a));
+            float3 n = math.cross(b - a, c - a);
+            n = math.normalize(n);
             float dist = math.dot(n, a);
 
             if (dist < minDistance)
