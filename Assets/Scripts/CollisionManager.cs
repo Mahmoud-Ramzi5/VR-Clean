@@ -1289,17 +1289,17 @@ public class CollisionManager : MonoBehaviour
         }
     }
 
-    void OnGUI()
-    {
-        GUILayout.Label($"Collisions: {totalCollisionsThisFrame}");
-        GUILayout.Label($"Bodies: {AllSoftBodies.Count}");
+    //void OnGUI()
+    //{
+    //    GUILayout.Label($"Collisions: {totalCollisionsThisFrame}");
+    //    GUILayout.Label($"Bodies: {AllSoftBodies.Count}");
 
-        foreach (var body in AllSoftBodies)
-        {
-            if (body.surfaceSpringPoints2.IsCreated)
-                GUILayout.Label($"{body.name}: Surface={body.surfaceSpringPoints2.Length}");
-        }
-    }
+    //    foreach (var body in AllSoftBodies)
+    //    {
+    //        if (body.surfaceSpringPoints2.IsCreated)
+    //            GUILayout.Label($"{body.name}: Surface={body.surfaceSpringPoints2.Length}");
+    //    }
+    //}
     private class SpatialHash<T> where T : class
     {
         private readonly Dictionary<Vector3Int, List<T>> buckets = new Dictionary<Vector3Int, List<T>>();
