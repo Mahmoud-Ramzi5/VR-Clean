@@ -301,7 +301,7 @@ public class OctreeSpringFiller : MonoBehaviour
             collisionManager = FindObjectOfType<CollisionManager>();
             if (collisionManager == null)
             {
-                Debug.LogWarning($"{gameObject.name}: No CollisionManager found in scene!");
+                // Debug.LogWarning($"{gameObject.name}: No CollisionManager found in scene!");
             }
         }
 
@@ -451,11 +451,11 @@ public class OctreeSpringFiller : MonoBehaviour
     {
         while (!meshDeformer.isInitialized)
         {
-            Debug.Log("Waiting for MeshDeformer to initialize...");
+            // Debug.Log("Waiting for MeshDeformer to initialize...");
             yield return null; // Wait one frame
         }
 
-        Debug.Log("MeshDeformer is ready, proceeding with subdivision...");
+        // Debug.Log("MeshDeformer is ready, proceeding with subdivision...");
         meshDeformer.SubdivideMeshWithPoints(surfaceSpringPoints2);
     }
     //private void Update()
@@ -607,7 +607,8 @@ public class OctreeSpringFiller : MonoBehaviour
         else
         {
             // NEW DEBUG LOG: This will alert you if the manager isn't assigned.
-            // if (enableMeshSubdivision) Debug.LogWarning($"{gameObject.name}: CollisionManager is not assigned in the inspector!", this);
+            // if (enableMeshSubdivision)
+            //     Debug.LogWarning($"{gameObject.name}: CollisionManager is not assigned in the inspector!", this);
         }
 
         if (Time.frameCount % 3 == 0) // Every 3 frames
@@ -645,7 +646,7 @@ public class OctreeSpringFiller : MonoBehaviour
         {
             CollisionManager.AllSoftBodies.Add(this);
             // NEW DEBUG LOG
-            Debug.Log($"{gameObject.name} added to CollisionManager. Total bodies: {CollisionManager.AllSoftBodies.Count}", this);
+            // Debug.Log($"{gameObject.name} added to CollisionManager. Total bodies: {CollisionManager.AllSoftBodies.Count}", this);
         }
     }
 
@@ -655,7 +656,7 @@ public class OctreeSpringFiller : MonoBehaviour
         {
             CollisionManager.AllSoftBodies.Remove(this);
             // NEW DEBUG LOG
-            Debug.Log($"{gameObject.name} removed from CollisionManager. Total bodies: {CollisionManager.AllSoftBodies.Count}", this);
+            // Debug.Log($"{gameObject.name} removed from CollisionManager. Total bodies: {CollisionManager.AllSoftBodies.Count}", this);
         }
     }
 
@@ -671,7 +672,7 @@ public class OctreeSpringFiller : MonoBehaviour
         // Recalculate accurate world-space bounds
         if (meshVertices.Length <= 0)
         {
-            Debug.Log("Vertices Error");
+            // Debug.Log("Vertices Error");
             return;
         }
 
@@ -679,7 +680,7 @@ public class OctreeSpringFiller : MonoBehaviour
         float complexityEstimate = meshBounds.size.magnitude / PointSpacing;
         if (complexityEstimate > 100000)
         {
-            Debug.LogError($"Aborted: Excessive complexity ({complexityEstimate})");
+            // Debug.LogError($"Aborted: Excessive complexity ({complexityEstimate})");
             return;
         }
 
@@ -716,9 +717,9 @@ public class OctreeSpringFiller : MonoBehaviour
 
 
         // Some logs
-        Debug.Log($"Octree Nodes: {total_nodes}");
-        Debug.Log($"Created {allSpringPoints.Length} spring points.");
-        Debug.Log($"Created {allSpringConnections.Length} spring connections.");
+        // Debug.Log($"Octree Nodes: {total_nodes}");
+        // Debug.Log($"Created {allSpringPoints.Length} spring points.");
+        // Debug.Log($"Created {allSpringConnections.Length} spring connections.");
     }
 
     int BuildOctree(OctreeNode node)
@@ -1176,7 +1177,7 @@ public class OctreeSpringFiller : MonoBehaviour
             }
         }
 
-        Debug.Log($"Fixed {allSpringPoints.Count(p => p.isFixed == 1)} corner points");
+        // Debug.Log($"Fixed {allSpringPoints.Count(p => p.isFixed == 1)} corner points");
     }
 
     bool IsPointNearSurface(Vector3 worldPos, float distanceThreshold = 0.1f)

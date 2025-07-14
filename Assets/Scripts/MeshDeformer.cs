@@ -157,7 +157,7 @@ public class MeshDeformer : MonoBehaviour
 
         if (logSubdividedTriangles)
         {
-            Debug.Log($"Subdividing triangle {triangleIndex} at position {localPoint}");
+            // Debug.Log($"Subdividing triangle {triangleIndex} at position {localPoint}");
         }
 
         SubdivideSelectedTriangles(new List<int> { triangleIndex });
@@ -203,8 +203,8 @@ public class MeshDeformer : MonoBehaviour
         {
             if (logSubdividedTriangles)
             {
-                Debug.Log($"Subdividing {trianglesToSubdivide.Count} triangles at indices: " +
-                         string.Join(", ", trianglesToSubdivide));
+                // Debug.Log($"Subdividing {trianglesToSubdivide.Count} triangles at indices: " +
+                //         string.Join(", ", trianglesToSubdivide));
             }
 
             SubdivideSelectedTriangles(trianglesToSubdivide);
@@ -265,11 +265,12 @@ public class MeshDeformer : MonoBehaviour
 
     void BuildInfluenceMapping()
     {
-        vertexInfluences = new List<WeightedInfluence>[baseVertices.Length];
-        for (int i = 0; i < baseVertices.Length; i++)
+        Vector3[] currentMeshVertices = workingMesh.vertices;
+        vertexInfluences = new List<WeightedInfluence>[currentMeshVertices.Length];
+        for (int i = 0; i < currentMeshVertices.Length; i++)
         {
             vertexInfluences[i] = new List<WeightedInfluence>();
-            Vector3 vertexWorld = transform.TransformPoint(baseVertices[i]);
+            Vector3 vertexWorld = transform.TransformPoint(currentMeshVertices[i]);
             float totalWeight = 0f;
             int maxInfluences = 4;  // Limit for perf
 
@@ -351,7 +352,7 @@ public class MeshDeformer : MonoBehaviour
         if (newPoints.Length == 0)
         {
             debugLog.Append("No new points - exiting.\n");
-            Debug.Log(debugLog);
+            // Debug.Log(debugLog);
             return;
         }
 
@@ -378,16 +379,24 @@ public class MeshDeformer : MonoBehaviour
         {
             int originalTriangleCount = originalMesh.triangles.Length / 3;
             debugLog.Append($"Original triangles: {originalTriangleCount}\n");
-            finalNumber = finalNumber / 4;
+
+            finalNumber /= 4;
+            if (finalNumber == 0)
+            {
+                debugLog.Append("After dividing by 4, finalNumber is zero, skipping subdivision to avoid division by zero.\n");
+                // Debug.Log(debugLog.ToString());
+                return;
+            }
+
             int divisionRatio = originalTriangleCount / finalNumber;
             debugLog.Append($"Check {originalTriangleCount}/{finalNumber} == 3: {divisionRatio}\n");
 
-            if (divisionRatio %3==0)
+            if (divisionRatio % 3 == 0)
             {
-               
                 debugLog.Append("CONDITIONS MET - Subdividing mesh!\n");
-                for(int i = 0; i < divisionRatio; i++) { 
-                SubdivideAllTriangles(false);
+                for (int i = 0; i < divisionRatio; i++)
+                {
+                    SubdivideAllTriangles(false);
                 }
 
                 return;
@@ -402,7 +411,7 @@ public class MeshDeformer : MonoBehaviour
             debugLog.Append($"{finalNumber} not divisible by 4 - skipping subdivision.\n");
         }
 
-        Debug.Log(debugLog);
+        // Debug.Log(debugLog);
     }
     private int CeilDivide(int a, int b)
     {

@@ -45,15 +45,15 @@ public class MaterialManager : MonoBehaviour
     public void ApplyMaterial(GameObject parent, MaterialType type)
     {
         var preset = materialDatabase.GetPreset(type);
-        Debug.LogWarning($"type {type}");
-        Debug.LogWarning($"Preset {preset}");
+        // Debug.LogWarning($"type {type}");
+        // Debug.LogWarning($"Preset {preset}");
 
         if (preset != null && parent != null)
         {
             // ProcessChildren
             if (parent.transform.childCount > 0)
             {
-                Debug.LogWarning("Children found in " + parent.name);
+                // Debug.LogWarning("Children found in " + parent.name);
                 foreach (Transform child in parent.transform)
                 {
                     // Process each child
@@ -64,7 +64,7 @@ public class MaterialManager : MonoBehaviour
             } 
             else
             {
-                Debug.LogWarning("No children found in " + parent.name);
+                // Debug.LogWarning("No children found in " + parent.name);
                 var renderer = parent.GetComponent<Renderer>();
                 if (preset != null && renderer != null)
                     renderer.sharedMaterial = preset.material;
@@ -82,7 +82,7 @@ public class MaterialManager : MonoBehaviour
             // ProcessChildren
             if (parent.transform.childCount > 0)
             {
-                Debug.LogWarning("Children found in " + parent.name);
+                // Debug.LogWarning("Children found in " + parent.name);
                 foreach (Transform child in parent.transform)
                 {
                     // Process each child
@@ -93,7 +93,7 @@ public class MaterialManager : MonoBehaviour
             }
             else
             {
-                Debug.LogWarning("No children found in " + parent.name);
+                // Debug.LogWarning("No children found in " + parent.name);
                 var renderer = parent.GetComponent<Renderer>();
                 if (preset != null && renderer != null)
                     renderer.sharedMaterial = preset.material;

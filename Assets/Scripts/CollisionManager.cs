@@ -34,6 +34,7 @@ public class CollisionManager : MonoBehaviour
     public int totalCollisionsThisFrame = 0;
     public bool showCollisionGizmos = false;
     private List<CollisionInfo> lastFrameCollisions = new List<CollisionInfo>();
+    private List<ContactPoint> currentFrameContacts = new List<ContactPoint>();
 
     // Debug visualization
     [Header("Debug Visualization")]
@@ -41,16 +42,18 @@ public class CollisionManager : MonoBehaviour
     public bool showInfluenceRadius = true;
     public bool logCollisionDetails = false;
 
-    private List<ContactPoint> currentFrameContacts = new List<ContactPoint>();
 
     private struct ContactPoint
     {
         public Vector3 worldPosition;
         public Vector3 normal;
+
         public float penetrationDepth;
         public float impactVelocity;
+
         public int point1Index;  // Index of point from object 1 involved in contact
         public int point2Index;   // Index of point from object 2 involved in contact
+
         public float influenceRadius;
         public float restitution;  // Blended restitution for this contact
         public float friction;     // Blended friction for this contact
@@ -168,7 +171,7 @@ public class CollisionManager : MonoBehaviour
 
         if (logCollisionDetails)
         {
-            Debug.Log($"Collision between {obj1.name} and {obj2.name}: {contacts.Count} contact points found");
+            // Debug.Log($"Collision between {obj1.name} and {obj2.name}: {contacts.Count} contact points found");
         }
 
         // Calculate pre-collision KE before applying responses
@@ -183,7 +186,8 @@ public class CollisionManager : MonoBehaviour
         // Apply response at each contact point
         foreach (var contact in contacts)
         {
-            ApplyContactPointResponse(obj1, obj2, contact);
+            GG(obj1, obj2, contact);
+            //ApplyContactPointResponse(obj1, obj2, contact);
             currentFrameContacts.Add(contact); // For debug visualization
         }
 
@@ -564,6 +568,58 @@ public class CollisionManager : MonoBehaviour
         return closestIndex;
     }
 
+    private void GG(OctreeSpringFiller obj1, OctreeSpringFiller obj2, ContactPoint contact)
+    {
+        SpringPointData point1 = obj1.surfaceSpringPoints2[contact.point1Index];
+        SpringPointData point2 = obj2.surfaceSpringPoints2[contact.point2Index];
+
+        if (contact.normal == Vector3.zero) return; // Simple Unnecessary Check
+
+        float impulseMagnitude = CalculateContactImpulse(obj1, obj2, contact);
+        Vector3 impulse = contact.normal * impulseMagnitude;
+
+        if (point1.isFixed == 0)
+        {
+            point1.velocity += (float3)(impulse / point1.mass);
+            obj1.surfaceSpringPoints2[contact.point1Index] = point1;
+        }
+
+        if (point2.isFixed == 0)
+        {
+            point2.velocity -= (float3)(impulse / point2.mass);
+            obj2.surfaceSpringPoints2[contact.point2Index] = point2;
+        }
+
+        // Apply impulse to nearby points in both objects
+        ApplyImpulseToNearbyPoints(obj1, contact.worldPosition, impulse, contact.influenceRadius, contact.normal, contact.restitution);
+        ApplyImpulseToNearbyPoints(obj2, contact.worldPosition, -impulse, contact.influenceRadius, -contact.normal, contact.restitution);
+
+        // Apply friction if the contact friction is significant
+        if (contact.friction > 0.001f)
+        {
+            Vector3 frictionImpulse = CalculateFrictionImpulse(obj1, obj2, contact, impulseMagnitude);
+            ApplyImpulseToNearbyPoints(obj1, contact.worldPosition, frictionImpulse, contact.influenceRadius, contact.normal, contact.friction);
+            ApplyImpulseToNearbyPoints(obj2, contact.worldPosition, -frictionImpulse, contact.influenceRadius, -contact.normal, contact.friction);
+        }
+        if (contact.penetrationDepth <= penetrationSlop) return;
+        float correctionAmount = (contact.penetrationDepth - penetrationSlop) * penetrationCorrectionFactor;
+        Vector3 correction = contact.normal * correctionAmount;
+
+
+        // Compute effective invMass based on nearby points
+        float effectiveInvMass1 = CalculateEffectiveInvMass(obj1, contact.worldPosition, contact.influenceRadius, contact.normal);
+        float effectiveInvMass2 = CalculateEffectiveInvMass(obj2, contact.worldPosition, contact.influenceRadius, -contact.normal);
+        float totalEffectiveInvMass = effectiveInvMass1 + effectiveInvMass2;
+
+        if (totalEffectiveInvMass == 0f) return;
+
+        Vector3 correction1 = -correction * (effectiveInvMass1 / totalEffectiveInvMass);
+        Vector3 correction2 = correction * (effectiveInvMass2 / totalEffectiveInvMass);
+
+        ApplyPositionCorrectionToNearbyPoints(obj1, contact.worldPosition, correction1, contact.influenceRadius, contact.normal);
+        ApplyPositionCorrectionToNearbyPoints(obj2, contact.worldPosition, correction2, contact.influenceRadius, -contact.normal);
+    }
+
     private void ApplyContactPointResponse(OctreeSpringFiller obj1, OctreeSpringFiller obj2, ContactPoint contact)
     {
         SpringPointData point1 = obj1.surfaceSpringPoints2[contact.point1Index];
@@ -597,13 +653,14 @@ public class CollisionManager : MonoBehaviour
             ApplyImpulseToNearbyPoints(obj2, contact.worldPosition, -frictionImpulse, contact.influenceRadius, -contact.normal, contact.friction);
         }
 
-        //// Position correction to resolve penetration
+        // Position correction to resolve penetration
         ApplyPositionCorrection(obj1, obj2, contact);
+        
         // Continuous penalty forces and damping for sustained contacts
-        //ApplyContinuousContactForces(obj1, obj2, contact);
+        ApplyContinuousContactForces(obj1, obj2, contact);
 
         // Position correction to resolve penetration (existing)
-        //ApplyPositionCorrection(obj1, obj2, contact);
+        ApplyPositionCorrection(obj1, obj2, contact);
     }
 
     private void ApplyContinuousContactForces(OctreeSpringFiller obj1, OctreeSpringFiller obj2, ContactPoint contact)
@@ -682,7 +739,7 @@ public class CollisionManager : MonoBehaviour
         float invMass1 = point1.mass > 0 ? 1.0f / point1.mass : 0.0f;
         float invMass2 = point2.mass > 0 ? 1.0f / point2.mass : 0.0f;
         // NEW: Use effective (reduced) mass for conservation
-        float reducedMass = 1f / (invMass1 + invMass2);
+        float reducedMass = 1f / (invMass1 + invMass2 + 1e-6f);
         float e = contact.restitution;
 
         // NEW: Impulse with momentum conservation
@@ -781,7 +838,7 @@ public class CollisionManager : MonoBehaviour
 
                 if (logCollisionDetails && influence > 0.1f)
                 {
-                    Debug.Log($"Applied impulse {velocityChange.magnitude:F2} to point at distance {distance:F2} (influence: {influence:F2}, material: {materialProperty:F2})");
+                    // Debug.Log($"Applied impulse {velocityChange.magnitude:F2} to point at distance {distance:F2} (influence: {influence:F2}, material: {materialProperty:F2})");
                 }
             }
         }
@@ -885,18 +942,6 @@ public class CollisionManager : MonoBehaviour
             Depth = info.Depth,
             DidCollide = true
         }, obj1);
-    }
-
-    private void TriggerMeshDeformation(OctreeSpringFiller obj1, OctreeSpringFiller obj2)
-    {
-        if (obj1.TryGetComponent<MeshDeformer>(out var deformer1))
-        {
-            deformer1.HandleCollisionPoints(obj1.GetSurfacePointsInCollision(obj2));
-        }
-        if (obj2.TryGetComponent<MeshDeformer>(out var deformer2))
-        {
-            deformer2.HandleCollisionPoints(obj2.GetSurfacePointsInCollision(obj1));
-        }
     }
 
     // This method is now used only when contact point response is disabled

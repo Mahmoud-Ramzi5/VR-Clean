@@ -12,8 +12,8 @@ public class MainPanelReference : MonoBehaviour
         if (springFillerRef == null)
         {
             springFillerRef = GetComponentInChildren<OctreeSpringFiller>(true);
-            if (springFillerRef == null)
-                Debug.LogError("No OctreeSpringFiller found in hierarchy!");
+            // if (springFillerRef == null)
+                // Debug.LogError("No OctreeSpringFiller found in hierarchy!");
         }
     }
 }

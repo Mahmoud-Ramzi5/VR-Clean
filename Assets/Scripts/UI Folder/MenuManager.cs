@@ -50,7 +50,7 @@ public class MenuManager : MonoBehaviour
     /// </summary>
     public void ApplyUIAndRun()
     {
-        Debug.Log("Applying settings to all simulation objects");
+        // Debug.Log("Applying settings to all simulation objects");
 
         // Find all MenuDataBinderBase scripts in child panels (even inactive)
         var binders = GetComponentsInChildren<MenuDataBinderBase>(true);
@@ -68,7 +68,7 @@ public class MenuManager : MonoBehaviour
             //simulationScript.RunSimulation();
         }
 
-        Debug.Log($"Applied settings to {simulationScripts.Length} simulation objects");
+        // Debug.Log($"Applied settings to {simulationScripts.Length} simulation objects");
     }
 }
 

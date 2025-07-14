@@ -23,7 +23,7 @@ public class Menu6 : MenuDataBinderBase
         }
         else
         {
-            Debug.LogError("MainPanelReference or OctreeSpringFiller not found!");
+            // Debug.LogError("MainPanelReference or OctreeSpringFiller not found!");
         }
     }
 
@@ -32,7 +32,7 @@ public class Menu6 : MenuDataBinderBase
     {
         if (target == null) return;
         Vector3 velocity = target.velocity;
-        Debug.Log("velocity is"+velocity);
+        // Debug.Log("velocity is" + velocity);
         Mass.text = target.totalMass.ToString("F2");
         Gravity.text = target.gravity.y.ToString("F2");
         target.applyGravity = Apply_Gravity.isOn;
@@ -50,7 +50,8 @@ public class Menu6 : MenuDataBinderBase
         if (Mass != null && !string.IsNullOrWhiteSpace(Mass.text))
             float.TryParse(Mass.text, out target.totalMass);
 
-        if (Gravity != null && !string.IsNullOrWhiteSpace(Gravity.text)) { 
+        if (Gravity != null && !string.IsNullOrWhiteSpace(Gravity.text))
+        {
             float.TryParse(Gravity.text, out grav.y);
             target.gravity = grav;
         }

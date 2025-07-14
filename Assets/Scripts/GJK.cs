@@ -52,7 +52,7 @@ public static class GJK
             {
                 // No collision
                 info.DidCollide = false;
-                Debug.Log($"GJK End: No Collision found after {i} iterations!"); // DEBUG
+                // Debug.Log($"GJK End: No Collision found after {i} iterations!"); // DEBUG
                 return false;
             }
 
@@ -62,7 +62,7 @@ public static class GJK
             {
                 // Collision found, proceed to EPA
                 info.DidCollide = true;
-                Debug.Log($"GJK End: Collision found after {i} iterations! Proceeding to EPA."); // DEBUG
+                // Debug.Log($"GJK End: Collision found after {i} iterations! Proceeding to EPA."); // DEBUG
                 EPA(simplex, bodyA, bodyB, out info.Normal, out info.Depth);
                 return true;
             }
@@ -98,7 +98,7 @@ public static class GJK
 
         if (body.surfaceSpringPoints2.Length == 0)
         {
-            Debug.LogWarning($"{body.name} has no surface points for GJK calculation!", body);
+            // Debug.LogWarning($"{body.name} has no surface points for GJK calculation!", body);
             return body.transform.position;
         }
 

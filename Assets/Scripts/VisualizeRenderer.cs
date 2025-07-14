@@ -87,7 +87,7 @@ public class VisualizeRenderer
 
         if (shader == null)
         {
-            Debug.LogError("URP/Lit shader not found.");
+            // Debug.LogError("URP/Lit shader not found.");
             return;
         }
 
@@ -108,7 +108,7 @@ public class VisualizeRenderer
             }
             else
             {
-                Debug.LogError("Shader not found!");
+                // Debug.LogError("Shader not found!");
             }
         }
     }
@@ -189,7 +189,7 @@ public class VisualizeRenderer
         connectionMaterial.SetFloat("_Thickness", 0.05f);
 
         // renders a number of line primitives directly on the GPU
-        // using procedural geometry — meaning no mesh is needed.
+        // using procedural geometry ï¿½ meaning no mesh is needed.
         Graphics.DrawProcedural(
             connectionMaterial, // The material that contains the shader
             new Bounds(centerPosition, Vector3.one * 100f), // Large bounds

@@ -77,7 +77,7 @@ public class PrefabSpawner : MonoBehaviour
     {
         if (_templateInstance == null)
         {
-            Debug.LogError("No template instance assigned!");
+            // Debug.LogError("No template instance assigned!");
             return null;
         }
 

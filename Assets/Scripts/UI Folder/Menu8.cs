@@ -38,7 +38,7 @@ public class Menu8 : MenuDataBinderBase
     void SelectMatirial(MaterialPreset preset)
     {
         selectedpreset = preset;
-        Debug.Log("preset queued: " + preset.name);
+        // Debug.Log("preset queued: " + preset.name);
         // Apply mesh change if one was selected
         if (selectedpreset != null)
         {
@@ -46,7 +46,7 @@ public class Menu8 : MenuDataBinderBase
             var materialManager = game_object.GetComponent<MaterialManager>();
             materialManager.ApplyMaterial(game_object, selectedpreset);
             materialManager.materialType = selectedpreset.Type;
-            Debug.Log("Applied preset: " + selectedpreset.name);
+            // Debug.Log("Applied preset: " + selectedpreset.name);
             FindObjectOfType<PrefabSpawner>().SetTemplateInstance(target.gameObject);
             menu3.Initializethings(target);
             menu4.Initializethings(target);
