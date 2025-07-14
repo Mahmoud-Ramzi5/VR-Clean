@@ -1659,4 +1659,14 @@ public class OctreeSpringFiller : MonoBehaviour
         }
     }
 
+    public float GetMaxPointVelocityMagnitude()
+    {
+        float maxVel = 0f;
+        for (int i = 0; i < allSpringPoints.Length; i++)
+        {
+            maxVel = Mathf.Max(maxVel, math.length(allSpringPoints[i].velocity));
+        }
+        return maxVel;
+    }
+
 }
