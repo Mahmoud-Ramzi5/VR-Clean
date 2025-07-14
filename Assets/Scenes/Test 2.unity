@@ -746,7 +746,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!23 &968068586
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -948,11 +948,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enableInterObjectCollision: 1
   enableContactPointResponse: 1
-  baseContactRadius: 2
+  baseContactRadius: 1
   contactInfluenceFalloff: 2
   maxContactsPerCollision: 16
   radiusDepthScale: 0.5
-  contactStiffness: 1000
+  contactStiffness: 5000
   contactDampingRatio: 1
   viscousFrictionFactor: 0.5
   defaultCoefficientOfRestitution: 0.6

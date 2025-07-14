@@ -22,8 +22,6 @@ public class PerformanceMonitor : MonoBehaviour
     private TimeSpan lastCpuTime;
     private DateTime lastUpdateTime;
 
-    private float gpuFrameTimeMs = 0f;
-
     void Start()
     {
         UnityEngine.Profiling.Profiler.enabled = true;
@@ -142,16 +140,9 @@ public class PerformanceMonitor : MonoBehaviour
     {
         try
         {
-            FrameTimingManager.CaptureFrameTimings();
-            FrameTiming[] timings = new FrameTiming[1];
-            uint frames = FrameTimingManager.GetLatestTimings(1, timings);
-
-            if (frames > 0 && timings[0].gpuFrameTime > 0f)
-                gpuFrameTimeMs = (float)(timings[0].gpuFrameTime);
-                // This is just an approximation - real GPU monitoring requires platform-specific code
-                // float gpuUsage = Mathf.Clamp(Time.deltaTime / (1f / 60f) * 100f, 0f, 100f);
-
-                gpuText.text = $"GPU: {gpuFrameTimeMs:0.0} ms";
+            // This is just an approximation - real GPU monitoring requires platform-specific code
+            float gpuUsage = Mathf.Clamp(Time.deltaTime / (1f / 60f) * 100f, 0f, 100f);
+            gpuText.text = $"GPU: {gpuUsage:0.0}%";
         }
         catch
         {

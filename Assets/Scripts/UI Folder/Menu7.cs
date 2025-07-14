@@ -60,7 +60,7 @@ public class Menu7 : MenuDataBinderBase
 
             if (www.result == UnityWebRequest.Result.ConnectionError || www.result == UnityWebRequest.Result.ProtocolError)
             {
-                // Debug.LogError("Error loading file: " + www.error);
+                Debug.LogError("Error loading file: " + www.error);
             }
             else
             {
@@ -77,7 +77,7 @@ public class Menu7 : MenuDataBinderBase
         if (selectedMesh != null && targetMeshFilter != null)
         {
             targetMeshFilter.mesh = selectedMesh;
-            // Debug.Log("Applied new mesh: " + selectedMesh.name);
+            Debug.Log("Applied new mesh: " + selectedMesh.name);
         }
         panel.SetActive(false);
     }
