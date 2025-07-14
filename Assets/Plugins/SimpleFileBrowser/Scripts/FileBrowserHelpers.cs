@@ -183,7 +183,7 @@ namespace SimpleFileBrowser
 				int separatorIndex = resultRaw.IndexOf( "<>" );
 				if( separatorIndex <= 0 )
 				{
-					Debug.LogError( "Entry count does not exist" );
+					// Debug.LogError( "Entry count does not exist" );
 					return null;
 				}
 
@@ -193,7 +193,7 @@ namespace SimpleFileBrowser
 					char ch = resultRaw[i];
 					if( ch < '0' && ch > '9' )
 					{
-						Debug.LogError( "Couldn't parse entry count" );
+						// Debug.LogError( "Couldn't parse entry count" );
 						return null;
 					}
 					
@@ -209,7 +209,7 @@ namespace SimpleFileBrowser
 					separatorIndex += 2;
 					if( separatorIndex >= resultRaw.Length )
 					{
-						Debug.LogError( "Couldn't fetch directory attribute" );
+						// Debug.LogError( "Couldn't fetch directory attribute" );
 						return null;
 					}
 
@@ -219,7 +219,7 @@ namespace SimpleFileBrowser
 					int nextSeparatorIndex = resultRaw.IndexOf( "<>", separatorIndex );
 					if( nextSeparatorIndex <= 0 )
 					{
-						Debug.LogError( "Entry name is empty" );
+						// Debug.LogError( "Entry name is empty" );
 						return null;
 					}
 
@@ -229,7 +229,7 @@ namespace SimpleFileBrowser
 					nextSeparatorIndex = resultRaw.IndexOf( "<>", separatorIndex );
 					if( nextSeparatorIndex <= 0 )
 					{
-						Debug.LogError( "Entry rawUri is empty" );
+						// Debug.LogError( "Entry rawUri is empty" );
 						return null;
 					}
 
@@ -260,7 +260,7 @@ namespace SimpleFileBrowser
 					}
 					catch( System.Exception e )
 					{
-						Debug.LogException( e );
+						// Debug.LogException( e );
 					}
 				}
 
@@ -273,7 +273,7 @@ namespace SimpleFileBrowser
 					}
 					catch( System.Exception e )
 					{
-						Debug.LogException( e );
+						// Debug.LogException( e );
 					}
 				}
 
@@ -285,7 +285,7 @@ namespace SimpleFileBrowser
 			catch( System.UnauthorizedAccessException ) { }
 			catch( System.Exception e )
 			{
-				Debug.LogException( e );
+				// Debug.LogException( e );
 			}
 
 			return null;
