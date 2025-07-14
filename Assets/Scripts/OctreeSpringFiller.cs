@@ -455,8 +455,12 @@ public class OctreeSpringFiller : MonoBehaviour
             yield return null; // Wait one frame
         }
 
+        Debug.Log(meshDeformer.meshFilter.mesh.vertices.Length);
+        Debug.Log(meshDeformer.meshFilter.mesh.triangles.Length);
+
         // Debug.Log("MeshDeformer is ready, proceeding with subdivision...");
-        meshDeformer.SubdivideMeshWithPoints(surfaceSpringPoints2);
+        meshDeformer.UpdateMeshWithPoints(surfaceSpringPoints2);
+        Debug.Log(surfaceSpringPoints2.Length);
         Debug.Log(meshDeformer.meshFilter.mesh.vertices.Length);
         Debug.Log(meshDeformer.meshFilter.mesh.triangles.Length);
     }
