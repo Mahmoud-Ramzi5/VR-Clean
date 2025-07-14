@@ -52,7 +52,7 @@ public class OctreeSpringFiller : MonoBehaviour
     public Vector3 velocity = Vector3.zero;
     public bool applyVelocity = false;
 
-    private Mesh targetMesh;
+    public Mesh targetMesh;
     private Bounds meshBounds;
     private Vector3[] meshVertices;
     private int[] meshTriangles;
