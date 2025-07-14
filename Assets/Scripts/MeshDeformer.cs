@@ -265,12 +265,11 @@ public class MeshDeformer : MonoBehaviour
 
     void BuildInfluenceMapping()
     {
-        Vector3[] currentMeshVertices = workingMesh.vertices;
-        vertexInfluences = new List<WeightedInfluence>[currentMeshVertices.Length];
-        for (int i = 0; i < currentMeshVertices.Length; i++)
+        vertexInfluences = new List<WeightedInfluence>[baseVertices.Length];
+        for (int i = 0; i < baseVertices.Length; i++)
         {
             vertexInfluences[i] = new List<WeightedInfluence>();
-            Vector3 vertexWorld = transform.TransformPoint(currentMeshVertices[i]);
+            Vector3 vertexWorld = transform.TransformPoint(baseVertices[i]);
             float totalWeight = 0f;
             int maxInfluences = 4;  // Limit for perf
 
@@ -381,12 +380,12 @@ public class MeshDeformer : MonoBehaviour
             debugLog.Append($"Original triangles: {originalTriangleCount}\n");
 
             finalNumber /= 4;
-            if (finalNumber == 0)
-            {
-                debugLog.Append("After dividing by 4, finalNumber is zero, skipping subdivision to avoid division by zero.\n");
-                // Debug.Log(debugLog.ToString());
-                return;
-            }
+            //if (finalNumber == 0)
+            //{
+            //    debugLog.Append("After dividing by 4, finalNumber is zero, skipping subdivision to avoid division by zero.\n");
+            //    // Debug.Log(debugLog.ToString());
+            //    return;
+            //}
 
             int divisionRatio = originalTriangleCount / finalNumber;
             debugLog.Append($"Check {originalTriangleCount}/{finalNumber} == 3: {divisionRatio}\n");
