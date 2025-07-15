@@ -499,12 +499,12 @@ public class OctreeSpringFiller : MonoBehaviour
     {
         if (surfaceSpringPoints2.IsCreated)
         {
-            // Calculate surface points
-            meshJobManager.IdentifySurfacePoints(
-                meshVertices,
-                meshTriangles,
-                transform.worldToLocalMatrix
-            );
+            //// Calculate surface points
+            //meshJobManager.IdentifySurfacePoints(
+            //    meshVertices,
+            //    meshTriangles,
+            //    transform.worldToLocalMatrix
+            //);
         }
         float deltaTime = Time.fixedDeltaTime;
 
@@ -629,7 +629,7 @@ public class OctreeSpringFiller : MonoBehaviour
             //meshJobManager.UpdateSurfacePointsInMesh(meshVertices, meshTriangles,
             //    transform.localToWorldMatrix, transform.worldToLocalMatrix,
             //    targetMesh, autoUpdateMeshFromSurface);
-            UpdateSurfacePointsInMesh();
+            //UpdateSurfacePointsInMesh();
         }
 
         // Handle Mesh Update
