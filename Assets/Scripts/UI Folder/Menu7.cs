@@ -1,6 +1,7 @@
-using SimpleFileBrowser; // Required for file browser
-using Assimp.Unmanaged;  // For AssimpContext
 using Assimp;           // For PostProcessSteps, Mesh, etc.
+using Assimp.Unmanaged;  // For AssimpContext
+using NUnit.Framework;
+using SimpleFileBrowser; // Required for file browser
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -146,14 +147,11 @@ public class Menu7 : MenuDataBinderBase
             if (target != null)
             {
                 target.targetMesh = selectedMesh;
-                target.ClearVertexPointCache();
-                target.FillObjectWithSpringPoints();
+                panel.SetActive(false);
             }
 
             Debug.Log("Mesh loaded and assigned successfully.");
         }
-
-        panel.SetActive(false);
     }
 
     public override void ApplyTo(OctreeSpringFiller target)
