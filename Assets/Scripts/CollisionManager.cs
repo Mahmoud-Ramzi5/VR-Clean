@@ -1,6 +1,10 @@
 using System.Collections.Generic;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+
 
 public class CollisionManager : MonoBehaviour
 {
@@ -74,11 +78,17 @@ public class CollisionManager : MonoBehaviour
 
     // NEW: Spatial Hash for broad-phase optimization
     private SpatialHash<OctreeSpringFiller> bodySpatialHash;
-    private float hashCellSize = 10f; // Adjust based on typical body size; larger for bigger scenes
+    private float defaultCellSize = 10f;  // Fallback if no bodies or tiny bounds
+
+    // NEW: NativeArrays for Job access
+    private NativeArray<float3> allSurfacePositions;  // Concatenated world positions
+    private NativeArray<int> bodySurfaceStarts;       // Start index per body
+    private NativeArray<int> bodySurfaceCounts;       // Count per body
+
     void Awake()
     {
-        // Initialize spatial hash with a reasonable cell size
-        bodySpatialHash = new SpatialHash<OctreeSpringFiller>(hashCellSize);
+        // Initial hash (will be recreated dynamically)
+        bodySpatialHash = new SpatialHash<OctreeSpringFiller>(defaultCellSize);
     }
 
     void FixedUpdate()
@@ -109,58 +119,178 @@ public class CollisionManager : MonoBehaviour
         lastFrameCollisions.Clear();
         currentFrameContacts.Clear();
 
-        // NEW: Clear and rebuild spatial hash each frame (since bodies move)
-        bodySpatialHash.Clear();
+        // Update bounding volumes and compute avg extents for dynamic cellSize
+        float totalExtentsMag = 0f;
+        float maxVelocityMag = 0f;  // For predictive radius
         foreach (var body in AllSoftBodies)
         {
-            body.UpdateBoundingVolume(); // Ensure bounds are up-to-date
+            body.UpdateBoundingVolume();
+            totalExtentsMag += body.boundingVolume.extents.magnitude;
+            maxVelocityMag = Mathf.Max(maxVelocityMag, body.GetMaxPointVelocityMagnitude());  // Assume this method exists
+        }
+
+        int bodyCount = AllSoftBodies.Count;
+        float avgExtentsMag = bodyCount > 0 ? totalExtentsMag / bodyCount : 0f;
+        float dynamicCellSize = Mathf.Max(1f, avgExtentsMag * 1.5f);  // Tune: 1.5x avg extents
+
+        // Recreate spatial hash
+        bodySpatialHash = new SpatialHash<OctreeSpringFiller>(dynamicCellSize);
+
+        // Add bodies
+        foreach (var body in AllSoftBodies)
+        {
             bodySpatialHash.Add(body.boundingVolume.center, body);
         }
 
-        // NEW: Use spatial hash to find potential pairs instead of O(n^2) loop
-        HashSet<KeyValuePair<int, int>> checkedPairs = new HashSet<KeyValuePair<int, int>>(); // Avoid duplicates
-        foreach (var body1 in AllSoftBodies)
+        // Extract surface positions for all bodies (world-space, concatenated)
+        int totalSurfacePoints = 0;
+        foreach (var body in AllSoftBodies)
         {
-            // Query nearby bodies using the bounding volume extent
-            float queryRadius = body1.boundingVolume.extents.magnitude * 2f; // Conservative radius
+            totalSurfacePoints += body.surfaceSpringPoints2.Length;
+        }
+
+        if (allSurfacePositions.IsCreated) allSurfacePositions.Dispose();
+        if (bodySurfaceStarts.IsCreated) bodySurfaceStarts.Dispose();
+        if (bodySurfaceCounts.IsCreated) bodySurfaceCounts.Dispose();
+
+        allSurfacePositions = new NativeArray<float3>(totalSurfacePoints, Allocator.TempJob);
+        bodySurfaceStarts = new NativeArray<int>(bodyCount, Allocator.TempJob);
+        bodySurfaceCounts = new NativeArray<int>(bodyCount, Allocator.TempJob);
+
+        int offset = 0;
+        for (int i = 0; i < bodyCount; i++)
+        {
+            var body = AllSoftBodies[i];
+            bodySurfaceStarts[i] = offset;
+            bodySurfaceCounts[i] = body.surfaceSpringPoints2.Length;
+            for (int j = 0; j < bodySurfaceCounts[i]; j++)
+            {
+                allSurfacePositions[offset + j] = body.surfaceSpringPoints2[j].position;
+            }
+            offset += bodySurfaceCounts[i];
+        }
+
+        // Collect potential pairs
+        HashSet<KeyValuePair<int, int>> checkedPairs = new HashSet<KeyValuePair<int, int>>();
+        List<(int id1, int id2)> potentialPairs = new List<(int, int)>();
+
+        for (int i = 0; i < bodyCount; i++)
+        {
+            var body1 = AllSoftBodies[i];
+            float queryRadius = body1.boundingVolume.extents.magnitude * 1.732f + maxVelocityMag * Time.fixedDeltaTime;  // Tune: diagonal half + motion
             var nearbyBodies = bodySpatialHash.Query(body1.boundingVolume.center, queryRadius);
 
             foreach (var body2 in nearbyBodies)
             {
                 if (body1 == body2) continue;
-
-                // Ensure we don't check pairs twice (i < j)
-                int id1 = AllSoftBodies.IndexOf(body1);
-                int id2 = AllSoftBodies.IndexOf(body2);
-                if (id1 > id2) continue; // Skip if already would have been checked from the other side
-
-                var pair = new KeyValuePair<int, int>(Mathf.Min(id1, id2), Mathf.Max(id1, id2));
+                int id1 = Mathf.Min(i, AllSoftBodies.IndexOf(body2));
+                int id2 = Mathf.Max(i, AllSoftBodies.IndexOf(body2));
+                var pair = new KeyValuePair<int, int>(id1, id2);
                 if (checkedPairs.Contains(pair)) continue;
                 checkedPairs.Add(pair);
 
-                // CHECK COLLISION LAYERS FIRST
-                if (!body1.CanCollideWith(body2))
-                {
-                    continue; // Skip collision if layers don't interact
-                }
-
+                if (!body1.CanCollideWith(body2)) continue;
                 if (!body1.boundingVolume.Intersects(body2.boundingVolume)) continue;
 
-                if (GJK.DetectCollision(body1, body2, out CollisionInfo info))
-                {
-                    totalCollisionsThisFrame++;
-                    lastFrameCollisions.Add(info);
+                potentialPairs.Add((id1, id2));
+            }
+        }
 
-                    if (enableContactPointResponse)
-                    {
-                        HandleContactPointCollision(body1, body2, info);
-                    }
-                    else
-                    {
-                        HandleGlobalCollision(body1, body2, info);
-                    }
+        // Parallel GJK on pairs
+        int pairCount = potentialPairs.Count;
+        if (pairCount == 0)
+        {
+            // Cleanup natives
+            allSurfacePositions.Dispose();
+            bodySurfaceStarts.Dispose();
+            bodySurfaceCounts.Dispose();
+            return;
+        }
+
+        NativeArray<CollisionInfo> collisionResults = new NativeArray<CollisionInfo>(pairCount, Allocator.TempJob);
+        NativeArray<PairData> pairDataArray = new NativeArray<PairData>(pairCount, Allocator.TempJob);
+
+        for (int p = 0; p < pairCount; p++)
+        {
+            var (id1, id2) = potentialPairs[p];
+            pairDataArray[p] = new PairData
+            {
+                BodyIndex1 = id1,
+                BodyIndex2 = id2
+            };
+        }
+
+        GJKJob gjkJob = new GJKJob
+        {
+            PairData = pairDataArray,
+            AllSurfacePositions = allSurfacePositions,
+            BodySurfaceStarts = bodySurfaceStarts,
+            BodySurfaceCounts = bodySurfaceCounts,
+            Results = collisionResults
+        };
+
+        JobHandle jobHandle = gjkJob.Schedule(pairCount, 4);  // Batch size tune (e.g., 4 for small pairs)
+        jobHandle.Complete();
+
+        // Process results serially
+        for (int p = 0; p < pairCount; p++)
+        {
+            var info = collisionResults[p];
+            if (info.DidCollide)
+            {
+                var body1 = AllSoftBodies[potentialPairs[p].id1];
+                var body2 = AllSoftBodies[potentialPairs[p].id2];
+                totalCollisionsThisFrame++;
+                lastFrameCollisions.Add(info);
+
+                if (enableContactPointResponse)
+                {
+                    HandleContactPointCollision(body1, body2, info);
+                }
+                else
+                {
+                    HandleGlobalCollision(body1, body2, info);
                 }
             }
+        }
+
+        // Cleanup
+        pairDataArray.Dispose();
+        collisionResults.Dispose();
+        allSurfacePositions.Dispose();
+        bodySurfaceStarts.Dispose();
+        bodySurfaceCounts.Dispose();
+    }
+
+    private struct PairData
+    {
+        public int BodyIndex1;
+        public int BodyIndex2;
+    }
+
+    [BurstCompile]
+    private struct GJKJob : IJobParallelFor
+    {
+        [ReadOnly] public NativeArray<PairData> PairData;
+        [ReadOnly] public NativeArray<float3> AllSurfacePositions;
+        [ReadOnly] public NativeArray<int> BodySurfaceStarts;
+        [ReadOnly] public NativeArray<int> BodySurfaceCounts;
+        public NativeArray<CollisionInfo> Results;
+
+        public void Execute(int index)
+        {
+            var pair = PairData[index];
+            int start1 = BodySurfaceStarts[pair.BodyIndex1];
+            int count1 = BodySurfaceCounts[pair.BodyIndex1];
+            NativeSlice<float3> pointsA = new NativeSlice<float3>(AllSurfacePositions, start1, count1);
+
+            int start2 = BodySurfaceStarts[pair.BodyIndex2];
+            int count2 = BodySurfaceCounts[pair.BodyIndex2];
+            NativeSlice<float3> pointsB = new NativeSlice<float3>(AllSurfacePositions, start2, count2);
+
+            CollisionInfo info;
+            bool collided = GJK.DetectCollision(pointsA, pointsB, out info);
+            Results[index] = info;
         }
     }
 
@@ -655,7 +785,7 @@ public class CollisionManager : MonoBehaviour
 
         // Position correction to resolve penetration
         ApplyPositionCorrection(obj1, obj2, contact);
-        
+
         // Continuous penalty forces and damping for sustained contacts
         ApplyContinuousContactForces(obj1, obj2, contact);
 
@@ -1159,18 +1289,17 @@ public class CollisionManager : MonoBehaviour
         }
     }
 
-    void OnGUI()
-    {
-        GUILayout.Label($"Collisions: {totalCollisionsThisFrame}");
-        GUILayout.Label($"Bodies: {AllSoftBodies.Count}");
+    //void OnGUI()
+    //{
+    //    GUILayout.Label($"Collisions: {totalCollisionsThisFrame}");
+    //    GUILayout.Label($"Bodies: {AllSoftBodies.Count}");
 
-        foreach (var body in AllSoftBodies)
-        {
-            if (body.surfaceSpringPoints2.IsCreated)
-                GUILayout.Label($"{body.name}: Surface={body.surfaceSpringPoints2.Length}");
-        }
-    }
-
+    //    foreach (var body in AllSoftBodies)
+    //    {
+    //        if (body.surfaceSpringPoints2.IsCreated)
+    //            GUILayout.Label($"{body.name}: Surface={body.surfaceSpringPoints2.Length}");
+    //    }
+    //}
     private class SpatialHash<T> where T : class
     {
         private readonly Dictionary<Vector3Int, List<T>> buckets = new Dictionary<Vector3Int, List<T>>();
@@ -1212,10 +1341,7 @@ public class CollisionManager : MonoBehaviour
                         Vector3Int neighborCell = centerCell + new Vector3Int(x, y, z);
                         if (buckets.TryGetValue(neighborCell, out var list))
                         {
-                            foreach (var item in list)
-                            {
-                                results.Add(item);
-                            }
+                            results.AddRange(list);
                         }
                     }
                 }
@@ -1234,7 +1360,6 @@ public class CollisionManager : MonoBehaviour
         }
     }
 
-    // NEW: Simple Vector3Int struct (since Unity doesn't have one built-in)
     private struct Vector3Int
     {
         public int x, y, z;
