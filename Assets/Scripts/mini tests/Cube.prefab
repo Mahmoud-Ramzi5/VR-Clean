@@ -31,8 +31,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 6.01, z: 3.53}
-  m_LocalScale: {x: 10, y: 10, z: 10}
-  m_ConstrainProportionsScale: 1
+  m_LocalScale: {x: 2, y: 2, z: 2}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -67,7 +67,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 5f3277584c204ec47bc0f2e7d13582da, type: 2}
+  - {fileID: 2100000, guid: a5813af496f1b4f4a99cbe8a296c0257, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -104,31 +104,31 @@ MonoBehaviour:
   minNodeSize: 0.5
   PointSpacing: 0.5
   isFilled: 1
-  isRigid: 0
+  isRigid: 1
   isFixCorners: 0
   skipPhysicsFromMaterial: 0
-  springConstantL1: 180
-  damperConstantL1: 0.55
+  springConstantL1: 850
+  damperConstantL1: 0.85
   connectionRadiusL1: 1
-  maxRestLengthL1: 7
-  springConstantL2: 130
-  damperConstantL2: 0.45
+  maxRestLengthL1: 3
+  springConstantL2: 700
+  damperConstantL2: 0.8
   connectionRadiusL2: 2
-  maxRestLengthL2: 8
-  springConstantL3: 90
-  damperConstantL3: 0.35
+  maxRestLengthL2: 4
+  springConstantL3: 550
+  damperConstantL3: 0.75
   connectionRadiusL3: 3
-  maxRestLengthL3: 9
+  maxRestLengthL3: 5
   roomMinBounds: {x: -9.5, y: 0, z: 0}
   roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
   roomBounce: 0.3
   roomFriction: 0.4
-  totalMass: 100
-  bounciness: 0.6
-  friction: 0.3
-  velocity: {x: 0, y: 0, z: 0}
+  totalMass: 300
+  bounciness: 0.3
+  friction: 0.4
+  velocity: {x: 0, y: 0, z: 10}
   applyVelocity: 1
-  targetMesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  targetMesh: {fileID: 0}
   applyGravity: 1
   gravity: {x: 0, y: -9.83, z: 0}
   boundingVolume:
@@ -153,9 +153,9 @@ MonoBehaviour:
     dampingFactor: 0.1
   layerPreset: 0
   visualizeSpringPoints: 1
-  visualizeSpringConnections: 0
-  enableMeshSubdivision: 0
-  autoUpdateMeshFromSurface: 0
+  visualizeSpringConnections: 1
+  enableMeshSubdivision: 1
+  autoUpdateMeshFromSurface: 1
   surfaceDetectionThreshold: 0.2
 --- !u!114 &4359626019738600632
 MonoBehaviour:
@@ -170,7 +170,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   skipApplyPhysicsOnStart: 0
-  materialType: 5
+  materialType: 3
   materialDatabase: {fileID: 11400000, guid: 3a5fe3bd8ae9ba947b42c666475a8b38, type: 2}
 --- !u!114 &7767920483859642973
 MonoBehaviour:

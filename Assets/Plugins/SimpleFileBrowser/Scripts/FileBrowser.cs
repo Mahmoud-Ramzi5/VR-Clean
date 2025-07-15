@@ -1015,7 +1015,7 @@ namespace SimpleFileBrowser
 				}
 				catch( Exception e )
 				{
-					// Debug.LogException( e );
+					Debug.LogException( e );
 				}
 
 				return;
@@ -1596,7 +1596,7 @@ namespace SimpleFileBrowser
 						catch( ArgumentException e )
 						{
 							filenameImage.color = m_skin.InputFieldInvalidBackgroundColor;
-							// Debug.LogException( e );
+							Debug.LogException( e );
 							return;
 						}
 					}
@@ -1896,7 +1896,7 @@ namespace SimpleFileBrowser
 			int separatorIndex = resultRaw.LastIndexOf( "<>" );
 			if( separatorIndex <= 0 )
 			{
-				// Debug.LogError( "Entry count does not exist" );
+				Debug.LogError( "Entry count does not exist" );
 				return;
 			}
 
@@ -1906,7 +1906,7 @@ namespace SimpleFileBrowser
 				char ch = resultRaw[i];
 				if( ch < '0' && ch > '9' )
 				{
-					// Debug.LogError( "Couldn't parse entry count" );
+					Debug.LogError( "Couldn't parse entry count" );
 					return;
 				}
 
@@ -1924,7 +1924,7 @@ namespace SimpleFileBrowser
 				int nextSeparatorIndex = resultRaw.IndexOf( "<>", separatorIndex );
 				if( nextSeparatorIndex <= 0 )
 				{
-					// Debug.LogError( "Entry name is empty" );
+					Debug.LogError( "Entry name is empty" );
 					return;
 				}
 
@@ -1934,7 +1934,7 @@ namespace SimpleFileBrowser
 				nextSeparatorIndex = resultRaw.IndexOf( "<>", separatorIndex );
 				if( nextSeparatorIndex <= 0 )
 				{
-					// Debug.LogError( "Entry rawUri is empty" );
+					Debug.LogError( "Entry rawUri is empty" );
 					return;
 				}
 
@@ -2063,7 +2063,7 @@ namespace SimpleFileBrowser
 					}
 					catch( Exception e )
 					{
-						// Debug.LogException( e );
+						Debug.LogException( e );
 					}
 				}
 			}
