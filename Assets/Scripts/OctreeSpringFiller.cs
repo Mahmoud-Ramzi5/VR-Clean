@@ -264,6 +264,11 @@ public class OctreeSpringFiller : MonoBehaviour
         collisionJobManager = gameObject.AddComponent<CollisionJobManager>();
         collisionJobManager.InitializeArrays(allSpringPoints);
 
+        if (collisionLayer == null)
+            InitializeCollisionLayer();
+        ApplyLayerPreset(); // Sets restitution/friction from preset (e.g., Rubber: restitution=0.9, friction=0.8)
+        ApplyMaterialProperties();
+
         // Calculate surface points
         meshJobManager.IdentifySurfacePoints(
             meshVertices,
@@ -455,8 +460,14 @@ public class OctreeSpringFiller : MonoBehaviour
             yield return null; // Wait one frame
         }
 
+        Debug.Log(meshDeformer.meshFilter.mesh.vertices.Length);
+        Debug.Log(meshDeformer.meshFilter.mesh.triangles.Length);
+        
         // Debug.Log("MeshDeformer is ready, proceeding with subdivision...");
-        meshDeformer.SubdivideMeshWithPoints(surfaceSpringPoints2);
+        // meshDeformer.SubdivideMeshWithPoints(surfaceSpringPoints2);
+        meshDeformer.UpdateMeshWithPoints(surfaceSpringPoints2);
+        Debug.Log(surfaceSpringPoints2.Length);
+
         Debug.Log(meshDeformer.meshFilter.mesh.vertices.Length);
         Debug.Log(meshDeformer.meshFilter.mesh.triangles.Length);
     }
@@ -768,6 +779,20 @@ public class OctreeSpringFiller : MonoBehaviour
             }
         }
 
+        // Check triangles
+        for (int i = 0; i < meshTriangles.Length; i += 3)
+        {
+            Vector3 v0 = meshVertices[meshTriangles[i]];
+            Vector3 v1 = meshVertices[meshTriangles[i + 1]];
+            Vector3 v2 = meshVertices[meshTriangles[i + 2]];
+
+            Bounds triBounds = new Bounds(v0, Vector3.zero);
+            triBounds.Encapsulate(v1);
+            triBounds.Encapsulate(v2);
+
+            if (node.localBounds.Intersects(triBounds)) return true;
+        }
+
         return false;
     }
 
@@ -1033,7 +1058,7 @@ public class OctreeSpringFiller : MonoBehaviour
 
     void AddConnection(int i, int j, float distance, float maxRestLength, float springConst, float damperConst)
     {
-        float restLength = math.clamp(distance, 0.5f, maxRestLength);
+        float restLength = math.clamp(distance, 0.01f, maxRestLength);
         tempConnections.Add(new SpringConnectionData(i, j, restLength, springConst, damperConst));
     }
 
@@ -1606,26 +1631,37 @@ public class OctreeSpringFiller : MonoBehaviour
 
     public void HandleCollisionResponse(CollisionInfo info, OctreeSpringFiller other)
     {
+        int penetrated = 0;
+        float avgDepth = 0, avgVelNormal = 0;
         for (int i = 0; i < surfaceSpringPoints2.Length; i++)
         {
             SpringPointData point = surfaceSpringPoints2[i];
             Vector3 otherLocal = other.transform.InverseTransformPoint(point.position);
-
             if (other.IsPointInside(otherLocal))
             {
-                // Position correction
                 point.position += (float3)info.Normal * (info.Depth + 0.01f);
-
-                // Velocity response
                 float velAlongNormal = Vector3.Dot(point.velocity, info.Normal);
+                penetrated++;
+                avgDepth += info.Depth;
+                avgVelNormal += velAlongNormal;
+
+                Vector3 oldVel = point.velocity;
                 if (velAlongNormal < 0)
                 {
                     point.velocity -= (float3)(1 + groundBounce) * velAlongNormal * info.Normal;
                     Vector3 tangentVel = point.velocity - velAlongNormal * (float3)info.Normal;
                     point.velocity = tangentVel * (1 - groundFriction);
                 }
+                surfaceSpringPoints2[i] = point;
+                UnityEngine.Debug.Log($"[OctreeSpringFiller] Point {i} collision: Depth={info.Depth}, VelNormal={velAlongNormal}. Used bounce={groundBounce} (but layer={collisionLayer.restitution}, otherLayer={other.collisionLayer.restitution}). Vel change: {oldVel} -> {point.velocity}. Normal={info.Normal}");
+
             }
             surfaceSpringPoints2[i] = point;
+        }
+        if (penetrated > 0)
+        {
+            avgDepth /= penetrated; avgVelNormal /= penetrated;
+            UnityEngine.Debug.Log($"[OctreeSpringFiller] HandleCollisionResponse vs {other.name}: {penetrated}/{surfaceSpringPoints2.Length} points penetrated. Avg depth={avgDepth}, avg velNormal={avgVelNormal}.");
         }
     }
 

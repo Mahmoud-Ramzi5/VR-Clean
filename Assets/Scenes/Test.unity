@@ -154,7 +154,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -167,16 +168,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -190,15 +201,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &16851848
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -298,11 +305,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enableInterObjectCollision: 1
   enableContactPointResponse: 1
-  contactRadius: 1
+  baseContactRadius: 1
   contactInfluenceFalloff: 2
   maxContactsPerCollision: 8
-  coefficientOfRestitution: 0.6
-  coefficientOfFriction: 0.4
+  radiusDepthScale: 0.5
+  contactStiffness: 500
+  contactDampingRatio: 0.8
+  viscousFrictionFactor: 0.5
+  defaultCoefficientOfRestitution: 0.6
+  defaultCoefficientOfFriction: 0.4
   penetrationCorrectionFactor: 0.6
   penetrationSlop: 0.01
   totalCollisionsThisFrame: 0
@@ -360,7 +371,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -373,16 +385,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -396,15 +418,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &65578164
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -508,7 +526,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -521,16 +540,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -544,15 +573,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &147341510
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -656,7 +681,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -669,16 +695,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -692,15 +728,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &178866465
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -804,7 +836,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -817,16 +850,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -840,15 +883,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &270825515
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -952,7 +991,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -965,16 +1005,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -988,15 +1038,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &297600171
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1100,7 +1146,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -1113,16 +1160,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -1136,15 +1193,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &325186467
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1385,7 +1438,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -1398,16 +1452,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -1421,15 +1485,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &338183453
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1533,7 +1593,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -1546,16 +1607,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -1569,15 +1640,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &380261145
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1802,7 +1869,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -1815,16 +1883,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -1838,15 +1916,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &512074802
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1950,7 +2024,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -1963,16 +2038,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -1986,15 +2071,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &535156804
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2098,7 +2179,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -2111,16 +2193,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -2134,15 +2226,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &548138808
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2246,7 +2334,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -2259,16 +2348,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -2282,15 +2381,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &579658040
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2394,7 +2489,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -2407,16 +2503,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -2430,15 +2536,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &628920995
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2542,7 +2644,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -2555,16 +2658,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -2578,15 +2691,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &651258670
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2690,7 +2799,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 600
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -2703,16 +2813,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -2726,15 +2846,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &817871910
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2887,7 +3003,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -2900,16 +3017,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -2923,15 +3050,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &840348596
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3035,7 +3158,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -3048,16 +3172,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -3071,15 +3205,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &874807571
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3183,7 +3313,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -3196,16 +3327,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -3219,15 +3360,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &973296326
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3331,7 +3468,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -3344,16 +3482,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -3367,15 +3515,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &1062221856
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3479,30 +3623,41 @@ MonoBehaviour:
   minNodeSize: 0.5
   PointSpacing: 0.5
   isFilled: 1
-  isRigid: 1
-  maxConnectionsPerPoint: 18
-  springConstantL1: 300
-  damperConstantL1: 0.6
+  isRigid: 0
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
+  springConstantL1: 60
+  damperConstantL1: 0.2
   connectionRadiusL1: 1
-  maxRestLengthL1: 2
-  springConstantL2: 100
-  damperConstantL2: 0.5
+  maxRestLengthL1: 3
+  springConstantL2: 45
+  damperConstantL2: 0.15
   connectionRadiusL2: 2
-  maxRestLengthL2: 2.5
-  springConstantL3: 40
-  damperConstantL3: 0.4
+  maxRestLengthL2: 4
+  springConstantL3: 30
+  damperConstantL3: 0.1
   connectionRadiusL3: 3
-  maxRestLengthL3: 3
-  totalMass: 400
-  bounciness: 0.2
-  friction: 0.5
+  maxRestLengthL3: 5
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
+  totalMass: 95
+  bounciness: 0.9
+  friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 1
   groundFriction: 0.7
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 41275468}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -3516,15 +3671,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 0
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &1084887422
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3548,7 +3699,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 92dfcc09cc10b0a429ec0a645bc91616, type: 2}
+  - {fileID: 2100000, guid: 2389935a1e2cd6f458893a6b833a36dd, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -3605,7 +3756,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec3f314a6c7bd84daec4379820a2cf2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  materialType: 1
+  skipApplyPhysicsOnStart: 0
+  materialType: 4
   materialDatabase: {fileID: 11400000, guid: 3a5fe3bd8ae9ba947b42c666475a8b38, type: 2}
 --- !u!1 &1304115353
 GameObject:
@@ -3642,7 +3794,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -3655,16 +3808,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -3678,15 +3841,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &1304115355
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3790,7 +3949,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -3803,16 +3963,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -3826,15 +3996,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &1344387142
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3938,7 +4104,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -3951,16 +4118,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -3974,15 +4151,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &1388939973
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4086,7 +4259,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -4099,16 +4273,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -4122,15 +4306,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &1469524019
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4234,7 +4414,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -4247,16 +4428,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -4270,15 +4461,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &1563347105
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4382,7 +4569,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -4395,16 +4583,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -4418,15 +4616,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &1614564035
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4530,7 +4724,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 100
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -4543,16 +4738,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -4566,15 +4771,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &1718630222
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4764,7 +4965,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -4777,16 +4979,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -4800,15 +5012,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &1879789599
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4912,7 +5120,8 @@ MonoBehaviour:
   PointSpacing: 0.5
   isFilled: 1
   isRigid: 0
-  maxConnectionsPerPoint: 18
+  isFixCorners: 0
+  skipPhysicsFromMaterial: 0
   springConstantL1: 80
   damperConstantL1: 0.6
   connectionRadiusL1: 1
@@ -4925,16 +5134,26 @@ MonoBehaviour:
   damperConstantL3: 0.4
   connectionRadiusL3: 3
   maxRestLengthL3: 3
+  roomMinBounds: {x: -9.5, y: 0, z: -1}
+  roomMaxBounds: {x: 9.5, y: 10, z: 9.5}
+  roomBounce: 0.5
+  roomFriction: 0.8
   totalMass: 100
   bounciness: 0.5
   friction: 0.8
+  velocity: {x: 0, y: 0, z: 0}
+  applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
+  gravity: {x: 0, y: -9.81, z: 0}
+  boundingVolume:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   groundLevel: 0
   groundBounce: 0.5
   groundFriction: 0.8
   applyGroundCollision: 1
-  visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  applyRoomCollision: 1
   collisionManager: {fileID: 0}
   meshDeformer: {fileID: 0}
   collisionLayer:
@@ -4948,15 +5167,11 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  convexHullVertices: []
-  surfacePointsLocalSpace: []
-  surfaceDetectionThreshold: 0.2
+  visualizeSpringPoints: 1
+  visualizeSpringConnections: 1
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
-  applyVelocity: 0
-  boundingVolume:
-    m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 0, y: 0, z: 0}
+  surfaceDetectionThreshold: 0.2
 --- !u!23 &1887957618
 MeshRenderer:
   m_ObjectHideFlags: 0

@@ -1,5 +1,6 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Unity.Collections;
@@ -265,39 +266,39 @@ public class MeshDeformer : MonoBehaviour
 
     void BuildInfluenceMapping()
     {
-        Vector3[] currentMeshVertices = workingMesh.vertices;
-        vertexInfluences = new List<WeightedInfluence>[currentMeshVertices.Length];
-        for (int i = 0; i < currentMeshVertices.Length; i++)
-        {
-            vertexInfluences[i] = new List<WeightedInfluence>();
-            Vector3 vertexWorld = transform.TransformPoint(currentMeshVertices[i]);
-            float totalWeight = 0f;
-            int maxInfluences = 4;  // Limit for perf
+        //Vector3[] currentMeshVertices = workingMesh.vertices;
+        //vertexInfluences = new List<WeightedInfluence>[currentMeshVertices.Length];
+        //for (int i = 0; i < currentMeshVertices.Length; i++)
+        //{
+        //    vertexInfluences[i] = new List<WeightedInfluence>();
+        //    Vector3 vertexWorld = transform.TransformPoint(currentMeshVertices[i]);
+        //    float totalWeight = 0f;
+        //    int maxInfluences = 4;  // Limit for perf
 
-            // Sort springs by distance and take top N
-            var closestSprings = springFiller.allSpringPoints
-                .Select((sp, idx) => new { Dist = Vector3.Distance(vertexWorld, sp.position), Sp = sp, Idx = idx })
-                .OrderBy(x => x.Dist)
-                .Take(maxInfluences);
+        //    // Sort springs by distance and take top N
+        //    var closestSprings = springFiller.allSpringPoints
+        //        .Select((sp, idx) => new { Dist = Vector3.Distance(vertexWorld, sp.position), Sp = sp, Idx = idx })
+        //        .OrderBy(x => x.Dist)
+        //        .Take(maxInfluences);
 
-            foreach (var cs in closestSprings)
-            {
-                if (cs.Dist < influenceRadius)
-                {
-                    float weight = 1f / (cs.Dist + 0.01f);  // Inverse distance weighting
-                    totalWeight += weight;
-                    vertexInfluences[i].Add(new WeightedInfluence { springPoint = cs.Sp, weight = weight });
-                }
-            }
+        //    foreach (var cs in closestSprings)
+        //    {
+        //        if (cs.Dist < influenceRadius)
+        //        {
+        //            float weight = 1f / (cs.Dist + 0.01f);  // Inverse distance weighting
+        //            totalWeight += weight;
+        //            vertexInfluences[i].Add(new WeightedInfluence { springPoint = cs.Sp, weight = weight });
+        //        }
+        //    }
 
-            // Normalize weights
-            for (int j = 0; j < vertexInfluences[i].Count; j++)
-            {
-                var inf = vertexInfluences[i][j];
-                inf.weight /= totalWeight;
-                vertexInfluences[i][j] = inf;
-            }
-        }
+        //    // Normalize weights
+        //    for (int j = 0; j < vertexInfluences[i].Count; j++)
+        //    {
+        //        var inf = vertexInfluences[i][j];
+        //        inf.weight /= totalWeight;
+        //        vertexInfluences[i][j] = inf;
+        //    }
+        //}
     }
 
     void LateUpdate()
@@ -347,12 +348,13 @@ public class MeshDeformer : MonoBehaviour
 
     public void SubdivideMeshWithPoints(NativeList<SpringPointData> newPoints)
     {
+        Stopwatch sw = Stopwatch.StartNew();
         //StringBuilder debugLog = new StringBuilder("\n--- SubdivideMeshWithPoints() ---\n");
 
         if (newPoints.Length == 0)
         {
             //debugLog.Append("No new points - exiting.\n");
-            // Debug.Log(debugLog);
+            //// Debug.Log(debugLog);
             return;
         }
 
@@ -371,47 +373,41 @@ public class MeshDeformer : MonoBehaviour
         int finalNumber = afterFirstDivision / 3;
         //debugLog.Append($"After second /3: Ceil({afterFirstDivision}/3) = {finalNumber}\n");
 
-        // Step 4: Check divisibility by 4
-        bool divisibleBy4 = finalNumber % 4 == 0;
-        //debugLog.Append($"Check {finalNumber} % 4 == 0: {divisibleBy4}\n");
 
-        if (divisibleBy4)
+        int originalTriangleCount = originalMesh.triangles.Length / 3;
+        //debugLog.Append($"Original triangles: {originalTriangleCount}\n");
+
+        finalNumber = CeilDivide(finalNumber, 4);
+        if (finalNumber == 0)
         {
-            int originalTriangleCount = originalMesh.triangles.Length / 3;
-            //debugLog.Append($"Original triangles: {originalTriangleCount}\n");
+            //debugLog.Append("After dividing by 4, finalNumber is zero, skipping subdivision to avoid division by zero.\n");
+            // Debug.Log(debugLog.ToString());
+            return;
+        }
 
-            finalNumber /= 4;
-            if (finalNumber == 0)
+        int divisionRatio = originalTriangleCount / finalNumber;
+        //debugLog.Append($"Check {originalTriangleCount}/{finalNumber} == 3: {divisionRatio}\n");
+
+        if (divisionRatio % 3 == 0)
+        {
+            //debugLog.Append("CONDITIONS MET - Subdividing mesh!\n");
+            //SubdivideAllTriangles(false);
+            for (int i = 0; i < (divisionRatio); i++)
             {
-                //debugLog.Append("After dividing by 4, finalNumber is zero, skipping subdivision to avoid division by zero.\n");
-                // Debug.Log(debugLog.ToString());
-                return;
+                SubdivideAllTriangles(false);
             }
 
-            int divisionRatio = originalTriangleCount / finalNumber;
-            //debugLog.Append($"Check {originalTriangleCount}/{finalNumber} == 3: {divisionRatio}\n");
-
-            if (divisionRatio % 3 == 0)
-            {
-                //debugLog.Append("CONDITIONS MET - Subdividing mesh!\n");
-                for (int i = 0; i < divisionRatio; i++)
-                {
-                    SubdivideAllTriangles(false);
-                }
-
-                return;
-            }
-            else
-            {
-                //debugLog.Append($"Division ratio {divisionRatio} != 3 - skipping subdivision.\n");
-            }
+            return;
         }
         else
         {
-            //debugLog.Append($"{finalNumber} not divisible by 4 - skipping subdivision.\n");
+            //debugLog.Append($"Division ratio {divisionRatio} != 3 - skipping subdivision.\n");
         }
 
-        // Debug.Log(debugLog);
+
+
+        sw.Stop();
+        UnityEngine.Debug.Log($"[MeshDeformer] SubdivideMeshWithPoints took {sw.ElapsedMilliseconds}ms for {newPoints.Length} new points");
     }
     private int CeilDivide(int a, int b)
     {
@@ -424,10 +420,12 @@ public class MeshDeformer : MonoBehaviour
         {
             allTriangleIndices.Add(i);
         }
+        UnityEngine.Debug.Log("yo");
         SubdivideSelectedTriangles(allTriangleIndices, create);
     }
     private void SubdivideSelectedTriangles(List<int> triangleIndices, bool create = true)
     {
+        Stopwatch sw = Stopwatch.StartNew();
         Vector3[] oldVertices = workingMesh.vertices;
         int[] oldTriangles = workingMesh.triangles;
         List<Vector3> newVertices = new List<Vector3>(oldVertices);
@@ -495,7 +493,7 @@ public class MeshDeformer : MonoBehaviour
             }
         }
 
-        // Create midpoints for all edges of triangles to be subdivided
+        // Create midpoints for all edges of trfiangles to be subdivided
         Dictionary<Edge, int> edgeMidpoints = new Dictionary<Edge, int>();
         foreach (int triIdx in trianglesToSubdivide)
         {
@@ -624,6 +622,8 @@ public class MeshDeformer : MonoBehaviour
         triangleDataList = newTriangleData;
         baseVertices = workingMesh.vertices;
         currentVertices = baseVertices.Clone() as Vector3[];
+        sw.Stop();
+        UnityEngine.Debug.Log($"[MeshDeformer] BuildInfluenceMapping took {sw.ElapsedMilliseconds}ms for {workingMesh.vertices.Length} vertices and {springFiller.allSpringPoints.Length} springs");
     }
 
     private void AddEdgeToMap(Edge edge, int triangleIdx, Dictionary<Edge, List<int>> edgeToTriangles)
@@ -634,6 +634,348 @@ public class MeshDeformer : MonoBehaviour
         }
         edgeToTriangles[edge].Add(triangleIdx);
     }
+
+    public void UpdateMeshWithPoints(NativeList<SpringPointData> newPoints)
+    {
+        if (workingMesh.vertexCount < newPoints.Length)
+        {
+            SubdivideMeshWithPoints(newPoints);
+        }
+        else
+        {
+            UnityEngine.Debug.Log("merge");
+            MergeMeshWithPoints(newPoints);
+        }
+    }
+
+    public int MergeMeshWithPoints(NativeList<SpringPointData> newPoints)
+    {
+        Stopwatch sw = Stopwatch.StartNew();
+        if (newPoints.Length == 0)
+        {
+            return 0;
+        }
+        int first = meshFilter.mesh.vertices.Length - CeilDivide(meshFilter.mesh.vertices.Length, 3);
+        // Step 1: Calculate the intermediate values in reverse order
+        int second = CeilDivide(first, newPoints.Length);
+
+        for (int i = 0; i < second; i++)
+        {
+            MergeAllTriangles(false);
+        }
+
+        sw.Stop();
+        UnityEngine.Debug.Log($"[MeshDeformer] MergeMeshWithPoints took {sw.ElapsedMilliseconds}ms for {newPoints.Length} points");
+        return 0;
+    }
+
+    public void MergeAllTriangles(bool create = true)
+    {
+        // Get current mesh data
+        Vector3[] vertices = workingMesh.vertices;
+        int[] triangles = workingMesh.triangles;
+        Vector3[] normals = workingMesh.normals;
+
+        // Use a tolerance based on mesh size for vertex welding
+        float weldTolerance = workingMesh.bounds.size.magnitude * 0.001f;
+
+        // Weld nearby vertices
+        List<Vector3> weldedVertices = new List<Vector3>();
+        Dictionary<int, int> vertexMapping = new Dictionary<int, int>();
+
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            bool found = false;
+            for (int j = 0; j < weldedVertices.Count; j++)
+            {
+                if (Vector3.Distance(vertices[i], weldedVertices[j]) < weldTolerance)
+                {
+                    vertexMapping[i] = j;
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found)
+            {
+                vertexMapping[i] = weldedVertices.Count;
+                weldedVertices.Add(vertices[i]);
+            }
+        }
+
+        // Rebuild triangles with new vertex indices
+        List<int> weldedTriangles = new List<int>();
+        for (int i = 0; i < triangles.Length; i++)
+        {
+            weldedTriangles.Add(vertexMapping[triangles[i]]);
+        }
+
+        // Remove degenerate triangles (where all 3 vertices are the same)
+        List<int> finalTriangles = new List<int>();
+        for (int i = 0; i < weldedTriangles.Count; i += 3)
+        {
+            int v1 = weldedTriangles[i];
+            int v2 = weldedTriangles[i + 1];
+            int v3 = weldedTriangles[i + 2];
+
+            // Only keep triangles with distinct vertices
+            if (v1 != v2 && v2 != v3 && v1 != v3)
+            {
+                finalTriangles.Add(v1);
+                finalTriangles.Add(v2);
+                finalTriangles.Add(v3);
+            }
+        }
+
+        // Update mesh data
+        workingMesh.Clear();
+        workingMesh.vertices = weldedVertices.ToArray();
+        workingMesh.triangles = finalTriangles.ToArray();
+        workingMesh.RecalculateNormals();
+        workingMesh.RecalculateBounds();
+
+        // Reset triangle data
+        triangleDataList = new List<TriangleData>();
+        int triangleCount = finalTriangles.Count / 3;
+        for (int i = 0; i < triangleCount; i++)
+        {
+            triangleDataList.Add(new TriangleData
+            {
+                originalIndex = i,
+                subdivisionLevel = 0,
+                canSubdivide = true
+            });
+        }
+
+        // Update cached references
+        baseVertices = workingMesh.vertices;
+        currentVertices = baseVertices.Clone() as Vector3[];
+        baseTriangles = workingMesh.triangles;
+        currentTriangles = baseTriangles.Clone() as int[];
+    }
+
+
+    // ... Existing variables remain unchanged ...
+
+    private void MergeSelectedTriangles(List<int> triangleIndices)
+    {
+        if (triangleIndices.Count == 0) return;
+
+        // Step 1: Build connected components of triangles
+        List<HashSet<int>> components = FindConnectedComponents(new HashSet<int>(triangleIndices));
+
+        // Collect all triangles to be replaced
+        HashSet<int> allTrianglesToRemove = new HashSet<int>();
+        foreach (var comp in components)
+        {
+            allTrianglesToRemove.UnionWith(comp);
+        }
+
+        // Create new triangle list and triangle data list
+        List<int> newTriangleList = new List<int>();
+        List<TriangleData> newTriangleDataList = new List<TriangleData>();
+
+        // Add unaffected triangles
+        for (int i = 0; i < triangleDataList.Count; i++)
+        {
+            if (!allTrianglesToRemove.Contains(i))
+            {
+                int baseIdx = i * 3;
+                newTriangleList.Add(currentTriangles[baseIdx]);
+                newTriangleList.Add(currentTriangles[baseIdx + 1]);
+                newTriangleList.Add(currentTriangles[baseIdx + 2]);
+                newTriangleDataList.Add(triangleDataList[i]);
+            }
+        }
+
+        // Process each component
+        foreach (var component in components)
+        {
+            // Collect edges and count occurrences
+            Dictionary<Edge, int> edgeCounts = new Dictionary<Edge, int>();
+            foreach (int triIdx in component)
+            {
+                int baseIdx = triIdx * 3;
+                int i0 = currentTriangles[baseIdx];
+                int i1 = currentTriangles[baseIdx + 1];
+                int i2 = currentTriangles[baseIdx + 2];
+
+                Edge e0 = new Edge(i0, i1, baseVertices);
+                Edge e1 = new Edge(i1, i2, baseVertices);
+                Edge e2 = new Edge(i2, i0, baseVertices);
+
+                edgeCounts.TryGetValue(e0, out int count0);
+                edgeCounts[e0] = count0 + 1;
+
+                edgeCounts.TryGetValue(e1, out int count1);
+                edgeCounts[e1] = count1 + 1;
+
+                edgeCounts.TryGetValue(e2, out int count2);
+                edgeCounts[e2] = count2 + 1;
+            }
+
+            // Identify boundary edges (only used by one triangle)
+            List<Edge> boundaryEdges = new List<Edge>();
+            foreach (var kvp in edgeCounts)
+            {
+                if (kvp.Value == 1)
+                {
+                    boundaryEdges.Add(kvp.Key);
+                }
+            }
+
+            // Build boundary polygon
+            List<int> boundaryPolygon = BuildBoundaryPolygon(boundaryEdges);
+            if (boundaryPolygon.Count < 3) continue;
+
+            // Triangulate the polygon
+            List<int> newTris = TriangulateConvexPolygon(boundaryPolygon);
+
+            // Determine new triangle data properties
+            int minLevel = component.Min(triIdx => triangleDataList[triIdx].subdivisionLevel);
+            int minOriginalIndex = component.Min(triIdx => triangleDataList[triIdx].originalIndex);
+            int newLevel = Mathf.Max(0, minLevel - 1);
+            bool canSubdivide = newLevel < maxSubdivisionLevel;
+
+            // Add new triangles
+            newTriangleList.AddRange(newTris);
+            for (int i = 0; i < newTris.Count / 3; i++)
+            {
+                newTriangleDataList.Add(new TriangleData
+                {
+                    originalIndex = minOriginalIndex,
+                    subdivisionLevel = newLevel,
+                    canSubdivide = canSubdivide
+                });
+            }
+        }
+
+        // Update mesh data
+        currentTriangles = newTriangleList.ToArray();
+        triangleDataList = newTriangleDataList;
+        workingMesh.triangles = currentTriangles;
+        workingMesh.RecalculateNormals();
+        workingMesh.RecalculateBounds();
+    }
+
+    private List<HashSet<int>> FindConnectedComponents(HashSet<int> trianglesToMerge)
+    {
+        List<HashSet<int>> components = new List<HashSet<int>>();
+        HashSet<int> visited = new HashSet<int>();
+        Dictionary<Edge, List<int>> edgeToTriangles = new Dictionary<Edge, List<int>>();
+
+        // Build edge mapping
+        foreach (int tri in trianglesToMerge)
+        {
+            int baseIdx = tri * 3;
+            int i0 = currentTriangles[baseIdx];
+            int i1 = currentTriangles[baseIdx + 1];
+            int i2 = currentTriangles[baseIdx + 2];
+
+            Edge e0 = new Edge(i0, i1, baseVertices);
+            Edge e1 = new Edge(i1, i2, baseVertices);
+            Edge e2 = new Edge(i2, i0, baseVertices);
+
+            AddEdgeToMap(e0, tri, edgeToTriangles);
+            AddEdgeToMap(e1, tri, edgeToTriangles);
+            AddEdgeToMap(e2, tri, edgeToTriangles);
+        }
+
+        // Build adjacency
+        Dictionary<int, List<int>> adj = new Dictionary<int, List<int>>();
+        foreach (var kvp in edgeToTriangles)
+        {
+            List<int> tris = kvp.Value;
+            if (tris.Count == 2)
+            {
+                int t1 = tris[0];
+                int t2 = tris[1];
+                if (!adj.ContainsKey(t1)) adj[t1] = new List<int>();
+                if (!adj.ContainsKey(t2)) adj[t2] = new List<int>();
+                adj[t1].Add(t2);
+                adj[t2].Add(t1);
+            }
+        }
+
+        // Find components using BFS
+        foreach (int tri in trianglesToMerge)
+        {
+            if (visited.Contains(tri)) continue;
+
+            HashSet<int> component = new HashSet<int>();
+            Queue<int> queue = new Queue<int>();
+            queue.Enqueue(tri);
+            visited.Add(tri);
+
+            while (queue.Count > 0)
+            {
+                int current = queue.Dequeue();
+                component.Add(current);
+
+                if (adj.TryGetValue(current, out List<int> neighbors))
+                {
+                    foreach (int neighbor in neighbors)
+                    {
+                        if (!visited.Contains(neighbor))
+                        {
+                            visited.Add(neighbor);
+                            queue.Enqueue(neighbor);
+                        }
+                    }
+                }
+            }
+            components.Add(component);
+        }
+
+        return components;
+    }
+
+    private List<int> BuildBoundaryPolygon(List<Edge> boundaryEdges)
+    {
+        Dictionary<int, List<int>> graph = new Dictionary<int, List<int>>();
+        foreach (Edge edge in boundaryEdges)
+        {
+            if (!graph.ContainsKey(edge.v1)) graph[edge.v1] = new List<int>();
+            if (!graph.ContainsKey(edge.v2)) graph[edge.v2] = new List<int>();
+            graph[edge.v1].Add(edge.v2);
+            graph[edge.v2].Add(edge.v1);
+        }
+
+        List<int> polygon = new List<int>();
+        if (graph.Count == 0) return polygon;
+
+        int start = graph.Keys.First();
+        int current = start;
+        int prev = -1;
+
+        do
+        {
+            polygon.Add(current);
+            List<int> neighbors = graph[current];
+            int next = neighbors[0] == prev ? neighbors[1] : neighbors[0];
+            prev = current;
+            current = next;
+        } while (current != start && polygon.Count <= graph.Count);
+
+        return polygon;
+    }
+
+    private List<int> TriangulateConvexPolygon(List<int> vertices)
+    {
+        List<int> triangles = new List<int>();
+        if (vertices.Count < 3) return triangles;
+
+        for (int i = 1; i < vertices.Count - 1; i++)
+        {
+            triangles.Add(vertices[0]);
+            triangles.Add(vertices[i]);
+            triangles.Add(vertices[i + 1]);
+        }
+
+        return triangles;
+    }
+
+    // ... Rest of the class remains unchanged ...
 
     private struct WeightedInfluence
     {

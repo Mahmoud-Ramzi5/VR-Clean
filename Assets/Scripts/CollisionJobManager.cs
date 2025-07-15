@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Threading;
 using Unity.Burst;
@@ -144,7 +145,8 @@ public class CollisionJobManager : MonoBehaviour
     }
 
     public void ScheduleGroundCollisionJobs(float groundLevel, float groundBounce, float groundFriction)
-    {
+    {// In CollisionJobManager.ScheduleGroundCollisionJobs:
+        Stopwatch sw = Stopwatch.StartNew();
         var groundJob = new GroundCollisionJob
         {
             springPoints = springPoints,
@@ -155,6 +157,8 @@ public class CollisionJobManager : MonoBehaviour
         };
 
         collisionJobHandle = groundJob.Schedule(springPoints.Length, 64);
+        sw.Stop();
+        UnityEngine.Debug.Log($"[CollisionJobManager] ScheduleGroundCollisionJobs took {sw.ElapsedMilliseconds}ms for {springPoints.Length} points. Using bounce={groundBounce}, fric={groundFriction} ");
     }
 
     public void ScheduleRoomCollisionJob(float3 minBounds, float3 maxBounds, float bounce, float friction)
@@ -173,7 +177,11 @@ public class CollisionJobManager : MonoBehaviour
 
     public void CompleteAllJobsAndApply()
     {
+        Stopwatch sw = Stopwatch.StartNew();
         collisionJobHandle.Complete();
+        int affected = 0; // Add counter in job for penetrated points
+        sw.Stop();
+        UnityEngine.Debug.Log($"[CollisionJobManager] Ground complete took {sw.ElapsedMilliseconds}ms. Affected {affected} points.");
     }
 
     private void OnDestroy()
