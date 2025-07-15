@@ -31,8 +31,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 6.01, z: 3.53}
-  m_LocalScale: {x: 2, y: 2, z: 2}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 10, y: 10, z: 10}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -101,8 +101,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eb8f2297a8688e746805467c15f3e018, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minNodeSize: 0.5
-  PointSpacing: 0.5
+  minNodeSize: 1
+  PointSpacing: 1
   isFilled: 1
   isRigid: 0
   isFixCorners: 0
@@ -128,7 +128,6 @@ MonoBehaviour:
   friction: 0.8
   velocity: {x: 0, y: 0, z: 0}
   applyVelocity: 1
-  targetMesh: {fileID: 0}
   applyGravity: 1
   gravity: {x: 0, y: -9.83, z: 0}
   boundingVolume:
@@ -153,7 +152,7 @@ MonoBehaviour:
     dampingFactor: 0.1
   layerPreset: 0
   visualizeSpringPoints: 1
-  visualizeSpringConnections: 1
+  visualizeSpringConnections: 0
   enableMeshSubdivision: 0
   autoUpdateMeshFromSurface: 0
   surfaceDetectionThreshold: 0.2
