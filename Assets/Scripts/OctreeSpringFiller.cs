@@ -437,7 +437,7 @@ public class OctreeSpringFiller : MonoBehaviour
         if (collisionLayer == null) return;
 
         // NEW: For jelly/gel, reduce stiffness near surface
-        UnityEngine.Debug.Log($"[OctreeSpringFiller] Set material props: collisionManager defaults to restitution={collisionManager.defaultCoefficientOfRestitution}, friction={collisionManager.defaultCoefficientOfFriction}. Poisson={collisionLayer.poissonRatio} (for incompressibility).");
+       // UnityEngine.Debug.Log($"[OctreeSpringFiller] Set material props: collisionManager defaults to restitution={collisionManager.defaultCoefficientOfRestitution}, friction={collisionManager.defaultCoefficientOfFriction}. Poisson={collisionLayer.poissonRatio} (for incompressibility).");
         if (collisionLayer.poissonRatio > 0.4f) 
         {
             UnityEngine.Debug.Log($"[OctreeSpringFiller] Applied soft surface mass reduction for {allSpringPoints.Length} points.");
@@ -504,15 +504,15 @@ public class OctreeSpringFiller : MonoBehaviour
 
         // Time each major section
         Stopwatch swSurface = Stopwatch.StartNew();
-        if (surfaceSpringPoints2.IsCreated)
-        {
-            // Calculate surface points
-            meshJobManager.IdentifySurfacePoints(
-                meshVertices,
-                meshTriangles,
-                transform.worldToLocalMatrix
-            );
-        }
+        //if (surfaceSpringPoints2.IsCreated)
+        //{
+        //    // Calculate surface points
+        //    meshJobManager.IdentifySurfacePoints(
+        //        meshVertices,
+        //        meshTriangles,
+        //        transform.worldToLocalMatrix
+        //    );
+        //}
         swSurface.Stop();
         UnityEngine.Debug.Log($"[OctreeSpringFiller] Surface identification took {swSurface.ElapsedMilliseconds}ms");
 
@@ -585,10 +585,10 @@ public class OctreeSpringFiller : MonoBehaviour
         UnityEngine.Debug.Log($"[OctreeSpringFiller] Collisions took {swCollision.ElapsedMilliseconds}ms");
 
         Stopwatch swMesh = Stopwatch.StartNew();
-        if (Time.frameCount % 3 == 0) // Every 3 frames
-        {
-            UpdateSurfacePointsInMesh();
-        }
+        //if (Time.frameCount % 3 == 0) // Every 3 frames
+        //{
+        //    UpdateSurfacePointsInMesh();
+        //}
 
         // Handle Mesh Update
         UpdateMeshFromPoints();
