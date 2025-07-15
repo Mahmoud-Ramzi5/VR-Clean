@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Unity.Collections;
@@ -265,39 +266,39 @@ public class MeshDeformer : MonoBehaviour
 
     void BuildInfluenceMapping()
     {
-        Vector3[] currentMeshVertices = workingMesh.vertices;
-        vertexInfluences = new List<WeightedInfluence>[currentMeshVertices.Length];
-        for (int i = 0; i < currentMeshVertices.Length; i++)
-        {
-            vertexInfluences[i] = new List<WeightedInfluence>();
-            Vector3 vertexWorld = transform.TransformPoint(currentMeshVertices[i]);
-            float totalWeight = 0f;
-            int maxInfluences = 4;  // Limit for perf
+        //Vector3[] currentMeshVertices = workingMesh.vertices;
+        //vertexInfluences = new List<WeightedInfluence>[currentMeshVertices.Length];
+        //for (int i = 0; i < currentMeshVertices.Length; i++)
+        //{
+        //    vertexInfluences[i] = new List<WeightedInfluence>();
+        //    Vector3 vertexWorld = transform.TransformPoint(currentMeshVertices[i]);
+        //    float totalWeight = 0f;
+        //    int maxInfluences = 4;  // Limit for perf
 
-            // Sort springs by distance and take top N
-            var closestSprings = springFiller.allSpringPoints
-                .Select((sp, idx) => new { Dist = Vector3.Distance(vertexWorld, sp.position), Sp = sp, Idx = idx })
-                .OrderBy(x => x.Dist)
-                .Take(maxInfluences);
+        //    // Sort springs by distance and take top N
+        //    var closestSprings = springFiller.allSpringPoints
+        //        .Select((sp, idx) => new { Dist = Vector3.Distance(vertexWorld, sp.position), Sp = sp, Idx = idx })
+        //        .OrderBy(x => x.Dist)
+        //        .Take(maxInfluences);
 
-            foreach (var cs in closestSprings)
-            {
-                if (cs.Dist < influenceRadius)
-                {
-                    float weight = 1f / (cs.Dist + 0.01f);  // Inverse distance weighting
-                    totalWeight += weight;
-                    vertexInfluences[i].Add(new WeightedInfluence { springPoint = cs.Sp, weight = weight });
-                }
-            }
+        //    foreach (var cs in closestSprings)
+        //    {
+        //        if (cs.Dist < influenceRadius)
+        //        {
+        //            float weight = 1f / (cs.Dist + 0.01f);  // Inverse distance weighting
+        //            totalWeight += weight;
+        //            vertexInfluences[i].Add(new WeightedInfluence { springPoint = cs.Sp, weight = weight });
+        //        }
+        //    }
 
-            // Normalize weights
-            for (int j = 0; j < vertexInfluences[i].Count; j++)
-            {
-                var inf = vertexInfluences[i][j];
-                inf.weight /= totalWeight;
-                vertexInfluences[i][j] = inf;
-            }
-        }
+        //    // Normalize weights
+        //    for (int j = 0; j < vertexInfluences[i].Count; j++)
+        //    {
+        //        var inf = vertexInfluences[i][j];
+        //        inf.weight /= totalWeight;
+        //        vertexInfluences[i][j] = inf;
+        //    }
+        //}
     }
 
     void LateUpdate()
@@ -347,6 +348,7 @@ public class MeshDeformer : MonoBehaviour
 
     public void SubdivideMeshWithPoints(NativeList<SpringPointData> newPoints)
     {
+        Stopwatch sw = Stopwatch.StartNew();
         //StringBuilder debugLog = new StringBuilder("\n--- SubdivideMeshWithPoints() ---\n");
 
         if (newPoints.Length == 0)
@@ -404,7 +406,8 @@ public class MeshDeformer : MonoBehaviour
 
 
 
-        // Debug.Log(debugLog);
+        sw.Stop();
+        UnityEngine.Debug.Log($"[MeshDeformer] SubdivideMeshWithPoints took {sw.ElapsedMilliseconds}ms for {newPoints.Length} new points");
     }
     private int CeilDivide(int a, int b)
     {
@@ -417,11 +420,12 @@ public class MeshDeformer : MonoBehaviour
         {
             allTriangleIndices.Add(i);
         }
-        Debug.Log("yo");
+        UnityEngine.Debug.Log("yo");
         SubdivideSelectedTriangles(allTriangleIndices, create);
     }
     private void SubdivideSelectedTriangles(List<int> triangleIndices, bool create = true)
     {
+        Stopwatch sw = Stopwatch.StartNew();
         Vector3[] oldVertices = workingMesh.vertices;
         int[] oldTriangles = workingMesh.triangles;
         List<Vector3> newVertices = new List<Vector3>(oldVertices);
@@ -618,6 +622,8 @@ public class MeshDeformer : MonoBehaviour
         triangleDataList = newTriangleData;
         baseVertices = workingMesh.vertices;
         currentVertices = baseVertices.Clone() as Vector3[];
+        sw.Stop();
+        UnityEngine.Debug.Log($"[MeshDeformer] BuildInfluenceMapping took {sw.ElapsedMilliseconds}ms for {workingMesh.vertices.Length} vertices and {springFiller.allSpringPoints.Length} springs");
     }
 
     private void AddEdgeToMap(Edge edge, int triangleIdx, Dictionary<Edge, List<int>> edgeToTriangles)
@@ -637,13 +643,14 @@ public class MeshDeformer : MonoBehaviour
         }
         else
         {
-            Debug.Log("merge");
+            UnityEngine.Debug.Log("merge");
             MergeMeshWithPoints(newPoints);
         }
     }
 
     public int MergeMeshWithPoints(NativeList<SpringPointData> newPoints)
     {
+        Stopwatch sw = Stopwatch.StartNew();
         if (newPoints.Length == 0)
         {
             return 0;
@@ -657,6 +664,8 @@ public class MeshDeformer : MonoBehaviour
             MergeAllTriangles(false);
         }
 
+        sw.Stop();
+        UnityEngine.Debug.Log($"[MeshDeformer] MergeMeshWithPoints took {sw.ElapsedMilliseconds}ms for {newPoints.Length} points");
         return 0;
     }
 

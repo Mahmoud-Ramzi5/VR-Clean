@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Threading;
 using Unity.Burst;
@@ -178,27 +179,29 @@ public class SpringJobManager : MonoBehaviour
 
     public void ScheduleGravityJobs(float3 gravity, bool applyGravity)
     {
+        Stopwatch sw = Stopwatch.StartNew();
         // Clear the force map
         forceMap.Clear();
 
         var gravityJob = new GravityJob
         {
             forceMap = forceMap.AsParallelWriter(),
-
             gravity = gravity,
             applyGravity = applyGravity,
             springPoints = springPoints,
         };
 
         gravityJobHandle = gravityJob.Schedule(springPoints.Length, 64);
+        sw.Stop();
+        UnityEngine.Debug.Log($"[SpringJobManager] ScheduleGravityJobs took {sw.ElapsedMilliseconds}ms for {springPoints.Length} points");
     }
 
     public void ScheduleSpringJobs(float deltaTime)
     {
+        Stopwatch sw = Stopwatch.StartNew();
         var calculateJob = new CalculateForcesJob
         {
             forceMap = forceMap.AsParallelWriter(),
-
             springPoints = springPoints,
             springConnections = springConnections,
         };
@@ -219,12 +222,17 @@ public class SpringJobManager : MonoBehaviour
         springJobHandle = calculateJob.Schedule(springConnections.Length, 64, gravityJobHandle);
         springJobHandle = accumulateJob.Schedule(springPoints.Length, 64, springJobHandle);
         pointJobHandle = updatePointJob.Schedule(springPoints.Length, 64, springJobHandle);
+        sw.Stop();
+        UnityEngine.Debug.Log($"[SpringJobManager] ScheduleSpringJobs took {sw.ElapsedMilliseconds}ms for {springConnections.Length} connections and {springPoints.Length} points");
     }
 
     public void CompleteAllJobsAndApply()
     {
+        Stopwatch sw = Stopwatch.StartNew();
         JobHandle.CombineDependencies(gravityJobHandle, springJobHandle, pointJobHandle).Complete();
         forceMap.Clear();
+        sw.Stop();
+        UnityEngine.Debug.Log($"[SpringJobManager] CompleteAllJobsAndApply took {sw.ElapsedMilliseconds}ms");
     }
 
     private void OnDestroy()
