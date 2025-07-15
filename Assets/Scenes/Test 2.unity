@@ -246,6 +246,7 @@ MonoBehaviour:
   friction: 0.8
   velocity: {x: 0, y: 0, z: 0}
   applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 0
   gravity: {x: 0, y: -9.81, z: 0}
   boundingVolume:
@@ -373,6 +374,7 @@ MonoBehaviour:
   friction: 0.8
   velocity: {x: 0, y: 0, z: 0}
   applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
   gravity: {x: 0, y: -9.81, z: 0}
   boundingVolume:
@@ -453,7 +455,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 171372771}
-  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!4 &171372776
 Transform:
   m_ObjectHideFlags: 0
@@ -854,6 +856,7 @@ MonoBehaviour:
   friction: 0.8
   velocity: {x: 0, y: 0, z: 0}
   applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
   gravity: {x: 0, y: -9.81, z: 0}
   boundingVolume:

@@ -87,26 +87,60 @@ public static class GJK
         return p1 - p2;
     }
 
+    // A cache to store the furthest points for each body and direction
+    private static readonly Dictionary<(OctreeSpringFiller, int), float3> FurthestPointCache = new Dictionary<(OctreeSpringFiller, int), float3>();
+    private const int NumDirections = 6; // Number of cached directions
+    private static readonly float3[] CachedDirections = {
+        new float3(1, 0, 0), new float3(-1, 0, 0),
+        new float3(0, 1, 0), new float3(0, -1, 0),
+        new float3(0, 0, 1), new float3(0, 0, -1)
+    };
+
     /// <summary>
     /// Finds the point on a soft body's surface furthest in a given world-space direction.
     /// This is the corrected version that uses the current deformed shape.
     /// </summary>
     private static float3 FindFurthestPoint(OctreeSpringFiller body, float3 worldDirection)
     {
+        // Check if the exact direction is cached
+        if (FurthestPointCache.TryGetValue((body, worldDirection.GetHashCode()), out var cachedPoint))
+        {
+            return cachedPoint;
+        }
+
+        // Find the closest cached direction
+        int closestDirectionIndex = -1;
+        float maxDot = -1.0f;
+
+        for (int i = 0; i < NumDirections; i++)
+        {
+            float dot = math.dot(worldDirection, CachedDirections[i]);
+            if (dot > maxDot)
+            {
+                maxDot = dot;
+                closestDirectionIndex = i;
+            }
+        }
+
+        // Check if the result for the closest direction is cached
+        if (FurthestPointCache.TryGetValue((body, closestDirectionIndex), out cachedPoint))
+        {
+            return cachedPoint;
+        }
+
+        // If not cached, perform a full search
         float3 furthestPoint = float3.zero;
-        float maxDot = float.NegativeInfinity;
+        maxDot = float.NegativeInfinity;
 
         if (body.surfaceSpringPoints2.Length == 0)
         {
-            // Debug.LogWarning($"{body.name} has no surface points for GJK calculation!", body);
             return body.transform.position;
         }
 
-        // Initialize with the first point to ensure we have a valid starting point
         furthestPoint = body.surfaceSpringPoints2[0].position;
         maxDot = math.dot(furthestPoint, worldDirection);
 
-        for (int i = 0; i < body.surfaceSpringPoints2.Length; i++)
+        for (int i = 1; i < body.surfaceSpringPoints2.Length; i++)
         {
             SpringPointData sp = body.surfaceSpringPoints2[i];
             float dot = math.dot(sp.position, worldDirection);
@@ -117,10 +151,9 @@ public static class GJK
             }
         }
 
-        // DEBUG: Visualize the search direction on the body and the resulting furthest point.
-        float3 origin = (float3)body.transform.position;
-        Debug.DrawRay(origin, math.normalize(worldDirection) * 2, Color.green, 0.1f);
-        Debug.DrawLine(origin, furthestPoint, Color.yellow, 0.1f);
+        // Cache the result for the specific direction and the closest cached direction
+        FurthestPointCache[(body, worldDirection.GetHashCode())] = furthestPoint;
+        FurthestPointCache[(body, closestDirectionIndex)] = furthestPoint;
 
         return furthestPoint;
     }
