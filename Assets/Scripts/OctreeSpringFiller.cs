@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Unity.Collections;
 using Unity.Jobs;
@@ -263,6 +264,9 @@ public class OctreeSpringFiller : MonoBehaviour
         // Collision
         collisionJobManager = gameObject.AddComponent<CollisionJobManager>();
         collisionJobManager.InitializeArrays(allSpringPoints);
+        if (collisionLayer == null) InitializeCollisionLayer();
+        ApplyLayerPreset(); // Sets restitution/friction from preset (e.g., Rubber: restitution=0.9, friction=0.8)
+        ApplyMaterialProperties();
 
         // Calculate surface points
         meshJobManager.IdentifySurfacePoints(
@@ -304,6 +308,7 @@ public class OctreeSpringFiller : MonoBehaviour
                 // Debug.LogWarning($"{gameObject.name}: No CollisionManager found in scene!");
             }
         }
+
 
         if (isFixCorners)
         {
@@ -355,6 +360,7 @@ public class OctreeSpringFiller : MonoBehaviour
 
     private void ApplyLayerPreset()
     {
+        Stopwatch sw = Stopwatch.StartNew();
         switch (layerPreset)
         {
             case CollisionLayerPreset.Default:
@@ -394,6 +400,8 @@ public class OctreeSpringFiller : MonoBehaviour
                 collisionLayer.dampingFactor = 0.5f;
                 break;
         }
+        sw.Stop();
+        UnityEngine.Debug.Log($"[OctreeSpringFiller] Applied layer preset {layerPreset}: restitution={collisionLayer.restitution}, friction={collisionLayer.friction}. Took {sw.ElapsedMilliseconds}ms");
     }
 
     // Public methods for collision layer system
@@ -429,8 +437,10 @@ public class OctreeSpringFiller : MonoBehaviour
         if (collisionLayer == null) return;
 
         // NEW: For jelly/gel, reduce stiffness near surface
-        if (collisionLayer.poissonRatio > 0.4f) // Incompressible like jelly
+        UnityEngine.Debug.Log($"[OctreeSpringFiller] Set material props: collisionManager defaults to restitution={collisionManager.defaultCoefficientOfRestitution}, friction={collisionManager.defaultCoefficientOfFriction}. Poisson={collisionLayer.poissonRatio} (for incompressibility).");
+        if (collisionLayer.poissonRatio > 0.4f) 
         {
+            UnityEngine.Debug.Log($"[OctreeSpringFiller] Applied soft surface mass reduction for {allSpringPoints.Length} points.");
             for (int i = 0; i < allSpringPoints.Length; i++)
             {
                 var p = allSpringPoints[i];
@@ -455,14 +465,14 @@ public class OctreeSpringFiller : MonoBehaviour
             yield return null; // Wait one frame
         }
 
-        Debug.Log(meshDeformer.meshFilter.mesh.vertices.Length);
-        Debug.Log(meshDeformer.meshFilter.mesh.triangles.Length);
+        UnityEngine.Debug.Log(meshDeformer.meshFilter.mesh.vertices.Length);
+        UnityEngine.Debug.Log(meshDeformer.meshFilter.mesh.triangles.Length);
 
         // Debug.Log("MeshDeformer is ready, proceeding with subdivision...");
         meshDeformer.UpdateMeshWithPoints(surfaceSpringPoints2);
-        Debug.Log(surfaceSpringPoints2.Length);
-        Debug.Log(meshDeformer.meshFilter.mesh.vertices.Length);
-        Debug.Log(meshDeformer.meshFilter.mesh.triangles.Length);
+        UnityEngine.Debug.Log(surfaceSpringPoints2.Length);
+        UnityEngine.Debug.Log(meshDeformer.meshFilter.mesh.vertices.Length);
+        UnityEngine.Debug.Log(meshDeformer.meshFilter.mesh.triangles.Length);
     }
     //private void Update()
     //{
@@ -490,6 +500,10 @@ public class OctreeSpringFiller : MonoBehaviour
 
     void FixedUpdate()
     {
+        Stopwatch swTotal = Stopwatch.StartNew();
+
+        // Time each major section
+        Stopwatch swSurface = Stopwatch.StartNew();
         if (surfaceSpringPoints2.IsCreated)
         {
             // Calculate surface points
@@ -499,8 +513,12 @@ public class OctreeSpringFiller : MonoBehaviour
                 transform.worldToLocalMatrix
             );
         }
+        swSurface.Stop();
+        UnityEngine.Debug.Log($"[OctreeSpringFiller] Surface identification took {swSurface.ElapsedMilliseconds}ms");
+
         float deltaTime = Time.fixedDeltaTime;
 
+        Stopwatch swPhysics = Stopwatch.StartNew();
         if (isRigid)
         {
             // ----- RIGID MODE -----
@@ -512,56 +530,6 @@ public class OctreeSpringFiller : MonoBehaviour
 
             // 3. Complete all jobs and apply results
             rigidJobManager.CompleteAllJobsAndApply();
-
-            //// 1. Initialize predicted positions
-            //foreach (var point in allSpringPoints)
-            //{
-            //    point.predictedPosition = point.position;
-            //    point.force = Vector3.zero; // Clear forces
-            //}
-
-            //// 2. Apply gravity and other forces directly (skip jobs for rigid mode)
-            //if (applyGravity)
-            //{
-            //    foreach (var point in allSpringPoints)
-            //    {
-            //        if (!point.isFixed)
-            //            point.force += gravity * point.mass;
-            //    }
-            //}
-
-            //// 3. Apply spring forces as rigid constraints (not as forces)
-            //// (We don't use ScheduleSpringOrRigidJobs in rigid mode)
-
-            //// 4. Integrate forces to get predicted positions
-            //foreach (var point in allSpringPoints)
-            //{
-            //    if (!point.isFixed)
-            //    {
-            //        Vector3 acceleration = point.force / point.mass;
-            //        point.velocity += acceleration * deltaTime;
-            //        point.predictedPosition += point.velocity * deltaTime;
-            //    }
-            //}
-
-            //// 5. Solve constraints (multiple iterations)
-            //for (int i = 0; i < 5; i++)  // Try 3-10 iterations
-            //{
-            //    foreach (var connection in allSpringConnections)
-            //    {
-            //        connection.EnforceRigidConstraint();
-            //    }
-            //}
-
-            //// 6. Update velocities and positions
-            //foreach (var point in allSpringPoints)
-            //{
-            //    if (!point.isFixed)
-            //    {
-            //        point.velocity = (point.predictedPosition - point.position) / deltaTime;
-            //        point.position = point.predictedPosition;
-            //    }
-            //}
         }
         else
         {
@@ -574,62 +542,64 @@ public class OctreeSpringFiller : MonoBehaviour
 
             // 3. Complete all jobs and apply results
             springJobManager.CompleteAllJobsAndApply();
-
-            // This next section was moved to Jobs
-
-            //// Update springs
-            //foreach (var connection in allSpringConnections)
-            //{
-            //    connection.CalculateAndApplyForces();
-            //}
-            //// Update points normally
-            //foreach (var point in allSpringPoints)
-            //{
-            //    point.UpdatePoint(deltaTime);
-            //}
         }
+        swPhysics.Stop();
+        UnityEngine.Debug.Log($"[OctreeSpringFiller] Physics update took {swPhysics.ElapsedMilliseconds}ms");
 
+        Stopwatch swCollision = Stopwatch.StartNew();
         // ----- COMMON OPERATIONS -----
         // Handle collisions
         if (applyGroundCollision)
         {
+            Stopwatch swGround = Stopwatch.StartNew();
             collisionJobManager.ScheduleGroundCollisionJobs(groundLevel, groundBounce, groundFriction);
             collisionJobManager.CompleteAllJobsAndApply();
+            swGround.Stop();
+            UnityEngine.Debug.Log($"[OctreeSpringFiller] Ground collision handling took {swGround.ElapsedMilliseconds}ms using bounce={groundBounce}, friction={groundFriction}. Layer values: rest={collisionLayer.restitution}, fric={collisionLayer.friction}");
         }
 
         if (applyRoomCollision)
         {
+            Stopwatch swRoom = Stopwatch.StartNew();
             collisionJobManager.ScheduleRoomCollisionJob(
                 roomMinBounds, roomMaxBounds,
                 roomBounce, roomFriction
             );
             collisionJobManager.CompleteAllJobsAndApply();
+            swRoom.Stop();
+            UnityEngine.Debug.Log($"[OctreeSpringFiller] Room collision handling took {swRoom.ElapsedMilliseconds}ms using bounce={roomBounce}, friction={roomFriction}. Layer values: rest={collisionLayer.restitution}, fric={collisionLayer.friction}");
         }
 
         if (collisionManager != null)
         {
+            Stopwatch swInter = Stopwatch.StartNew();
             collisionManager.ResolveInterObjectCollisions();
+            swInter.Stop();
+            UnityEngine.Debug.Log($"[OctreeSpringFiller] Inter-object collisions via CollisionManager took {swInter.ElapsedMilliseconds}ms. This body's layer: index={collisionLayer.layerIndex}, rest={collisionLayer.restitution}, fric={collisionLayer.friction}");
         }
         else
         {
-            // NEW DEBUG LOG: This will alert you if the manager isn't assigned.
-            // if (enableMeshSubdivision)
-            //     Debug.LogWarning($"{gameObject.name}: CollisionManager is not assigned in the inspector!", this);
+            UnityEngine.Debug.LogWarning($"{gameObject.name}: CollisionManager is not assigned! Skipping inter-object collisions.");
         }
+        swCollision.Stop();
+        UnityEngine.Debug.Log($"[OctreeSpringFiller] Collisions took {swCollision.ElapsedMilliseconds}ms");
 
+        Stopwatch swMesh = Stopwatch.StartNew();
         if (Time.frameCount % 3 == 0) // Every 3 frames
         {
-            //meshJobManager.UpdateSurfacePointsInMesh(meshVertices, meshTriangles,
-            //    transform.localToWorldMatrix, transform.worldToLocalMatrix,
-            //    targetMesh, autoUpdateMeshFromSurface);
             UpdateSurfacePointsInMesh();
         }
 
         // Handle Mesh Update
         UpdateMeshFromPoints();
-        //meshJobManager.DispatchMeshUpdate(meshVertices, transform.worldToLocalMatrix, targetMesh, transform);
-        //meshJobManager.ScheduleMeshVerticesUpdateJobs(meshVertices, meshTriangles, transform.localToWorldMatrix, transform.worldToLocalMatrix);
-        //meshJobManager.CompleteAllJobsAndApply(meshVertices, meshTriangles, targetMesh, surfacePoints);
+        swMesh.Stop();
+        UnityEngine.Debug.Log($"[OctreeSpringFiller] Mesh update took {swMesh.ElapsedMilliseconds}ms");
+
+        swTotal.Stop();
+        if (swTotal.ElapsedMilliseconds > 16)
+        { // Warn if >60fps frame time
+            UnityEngine.Debug.LogWarning($"[OctreeSpringFiller] FixedUpdate frame took {swTotal.ElapsedMilliseconds}ms");
+        }
     }
     void LateUpdate()
     {
@@ -668,6 +638,9 @@ public class OctreeSpringFiller : MonoBehaviour
 
     public void FillObjectWithSpringPoints()
     {
+        Stopwatch swTotal = Stopwatch.StartNew();
+        
+        
         // NEW: Clear surface point data
         if (surfaceSpringPoints2.IsCreated)
         {
@@ -715,12 +688,16 @@ public class OctreeSpringFiller : MonoBehaviour
         // Fill Object using Octree Algorithms
         OctreeNode rootNode = new OctreeNode(worldBounds, meshBounds);
         int total_nodes = BuildOctree(rootNode);
+        Stopwatch swOctree = Stopwatch.StartNew();
+        swOctree.Stop();
+        UnityEngine.Debug.Log($"[OctreeSpringFiller] BuildOctree took {swOctree.ElapsedMilliseconds}ms, created {total_nodes} nodes");
         CreateSpringConnectionsForAllPoints();
 
         // Copy to native arrays
         allSpringPoints = tempPoints.AsArray();
         allSpringConnections = tempConnections.AsArray();
 
+        // ... existing code up to BuildOctree ...
 
         // Some logs
         // Debug.Log($"Octree Nodes: {total_nodes}");
@@ -730,6 +707,7 @@ public class OctreeSpringFiller : MonoBehaviour
 
     int BuildOctree(OctreeNode node)
     {
+        Stopwatch sw = Stopwatch.StartNew();
         int total_nodes = 0;
 
         if (node.isDivided || node.Divide(minNodeSize))
@@ -756,7 +734,8 @@ public class OctreeSpringFiller : MonoBehaviour
                 FillNodeWithSpringPoints(node);
             }
         }
-
+        sw.Stop();
+        UnityEngine.Debug.Log($"[OctreeSpringFiller] BuildOctree recursion for node (size={node.worldBounds.size.magnitude:F2}) took {sw.ElapsedMilliseconds}ms");
         return total_nodes;
     }
 
@@ -897,6 +876,7 @@ public class OctreeSpringFiller : MonoBehaviour
 
     void CreateSpringConnectionsForAllPoints()
     {
+        Stopwatch swHash = Stopwatch.StartNew();
         tempConnections.Clear();
         if (tempPoints.Length == 0) return;
 
@@ -907,6 +887,10 @@ public class OctreeSpringFiller : MonoBehaviour
         {
             spatialHash.Add(tempPoints[i].position, i);
         }
+        swHash.Stop();
+        UnityEngine.Debug.Log($"[OctreeSpringFiller] Spatial hash build took {swHash.ElapsedMilliseconds}ms for {tempPoints.Length} points");
+
+        Stopwatch swConnect = Stopwatch.StartNew();
 
         var connectedPairs = new HashSet<ulong>();
         for (int i = 0; i < tempPoints.Length; i++)
@@ -933,6 +917,8 @@ public class OctreeSpringFiller : MonoBehaviour
                 /*PointSpacing * 5f*/connectionRadiusL3, 50f, ConnectionType.Bend,
                 bendNeighbors, connectedPairs);
         }
+        swConnect.Stop();
+        UnityEngine.Debug.Log($"[OctreeSpringFiller] Connection creation loop took {swConnect.ElapsedMilliseconds}ms");
     }
 
     void CreateSpringConnectionsForPoint(int pointIndex, SpringPointData pointData)
@@ -1037,7 +1023,7 @@ public class OctreeSpringFiller : MonoBehaviour
 
     void AddConnection(int i, int j, float distance, float maxRestLength, float springConst, float damperConst)
     {
-        float restLength = math.clamp(distance, 0.5f, maxRestLength);
+        float restLength = math.clamp(distance, 0.01f, maxRestLength);
         tempConnections.Add(new SpringConnectionData(i, j, restLength, springConst, damperConst));
     }
 
@@ -1055,6 +1041,7 @@ public class OctreeSpringFiller : MonoBehaviour
     // Check if SpringPoint is in Mesh
     bool IsPointInsideMesh(Vector3 point)
     {
+        Stopwatch sw = Stopwatch.StartNew();
         // Transform point to mesh's local space
         Vector3 localPoint = transform.InverseTransformPoint(point);
 
@@ -1087,6 +1074,11 @@ public class OctreeSpringFiller : MonoBehaviour
             testDirections[i] = (baseDirections[i] + jitter_negative).normalized;
             testDirections[len + i] = (baseDirections[i] + jitter_positive).normalized;
         }
+        sw.Stop();
+        if (sw.ElapsedMilliseconds > 1)
+        { // Log slow calls
+            UnityEngine.Debug.LogWarning($"[OctreeSpringFiller] IsPointInsideMesh took {sw.ElapsedMilliseconds}ms for point {point}");
+        }
 
         // If *any* direction ray test says point is inside (odd intersections), we say inside
         foreach (Vector3 direction in testDirections)
@@ -1099,12 +1091,14 @@ public class OctreeSpringFiller : MonoBehaviour
             if (intersections % 2 == 1) // odd = inside
                 return true; // point is inside mesh
         }
+        
 
         return false; // All tests say outside
     }
 
     int CountRayIntersections(Vector3 origin, Vector3 direction)
     {
+        Stopwatch sw = Stopwatch.StartNew();
         int count = 0;
 
         for (int i = 0; i < meshTriangles.Length; i += 3)
@@ -1117,6 +1111,11 @@ public class OctreeSpringFiller : MonoBehaviour
                 count++;
         }
 
+        sw.Stop();
+        if (sw.ElapsedMilliseconds > 0.5f)
+        {
+            UnityEngine.Debug.LogWarning($"[OctreeSpringFiller] CountRayIntersections took {sw.ElapsedMilliseconds}ms over {meshTriangles.Length / 3} tris");
+        }
         return count;
     }
 
@@ -1265,7 +1264,7 @@ public class OctreeSpringFiller : MonoBehaviour
         foreach (var conn in allSpringConnections)
         {
 
-            Debug.DrawLine(allSpringPoints[conn.pointA].position, allSpringPoints[conn.pointB].position, Color.white);
+            UnityEngine.Debug.DrawLine(allSpringPoints[conn.pointA].position, allSpringPoints[conn.pointB].position, Color.white);
         }
     }
 
@@ -1410,6 +1409,7 @@ public class OctreeSpringFiller : MonoBehaviour
 
     void UpdateMeshFromPoints()
     {
+        Stopwatch sw = Stopwatch.StartNew();
         if (allSpringPoints == null || allSpringPoints.Length == 0) return;
 
         // Get current mesh data directly from the mesh
@@ -1492,11 +1492,14 @@ public class OctreeSpringFiller : MonoBehaviour
         // Update cached references
         meshVertices = newVertices;
         meshTriangles = currentTriangles;
+        sw.Stop();
+        UnityEngine.Debug.Log($"[OctreeSpringFiller] UpdateMeshFromPoints took {sw.ElapsedMilliseconds}ms for {targetMesh.vertexCount} verts and {allSpringPoints.Length} points");
     }
 
     // Helper method to find the index of the closest point
     private int FindClosestPointIndex(Vector3 worldPos)
     {
+        Stopwatch sw = Stopwatch.StartNew();
         int closestIndex = 0;
         float minDist = float.MaxValue;
 
@@ -1510,6 +1513,11 @@ public class OctreeSpringFiller : MonoBehaviour
             }
         }
 
+        sw.Stop();
+        if (sw.ElapsedMilliseconds > 0.1f)
+        {
+            UnityEngine.Debug.LogWarning($"[OctreeSpringFiller] FindClosestPointIndex took {sw.ElapsedMilliseconds}ms over {allSpringPoints.Length} points");
+        }
         return closestIndex;
     }
 
@@ -1610,27 +1618,41 @@ public class OctreeSpringFiller : MonoBehaviour
 
     public void HandleCollisionResponse(CollisionInfo info, OctreeSpringFiller other)
     {
+        Stopwatch sw = Stopwatch.StartNew();
+        int penetrated = 0;
+        float avgDepth = 0, avgVelNormal = 0;
         for (int i = 0; i < surfaceSpringPoints2.Length; i++)
         {
             SpringPointData point = surfaceSpringPoints2[i];
             Vector3 otherLocal = other.transform.InverseTransformPoint(point.position);
-
             if (other.IsPointInside(otherLocal))
             {
-                // Position correction
                 point.position += (float3)info.Normal * (info.Depth + 0.01f);
-
-                // Velocity response
                 float velAlongNormal = Vector3.Dot(point.velocity, info.Normal);
+                penetrated++;
+                avgDepth += info.Depth;
+                avgVelNormal += velAlongNormal;
+
+                Vector3 oldVel = point.velocity;
                 if (velAlongNormal < 0)
                 {
                     point.velocity -= (float3)(1 + groundBounce) * velAlongNormal * info.Normal;
                     Vector3 tangentVel = point.velocity - velAlongNormal * (float3)info.Normal;
                     point.velocity = tangentVel * (1 - groundFriction);
                 }
+                surfaceSpringPoints2[i] = point;
+                UnityEngine.Debug.Log($"[OctreeSpringFiller] Point {i} collision: Depth={info.Depth}, VelNormal={velAlongNormal}. Used bounce={groundBounce} (but layer={collisionLayer.restitution}, otherLayer={other.collisionLayer.restitution}). Vel change: {oldVel} -> {point.velocity}. Normal={info.Normal}");
+
             }
             surfaceSpringPoints2[i] = point;
         }
+        if (penetrated > 0)
+        {
+            avgDepth /= penetrated; avgVelNormal /= penetrated;
+            UnityEngine.Debug.Log($"[OctreeSpringFiller] HandleCollisionResponse vs {other.name}: {penetrated}/{surfaceSpringPoints2.Length} points penetrated. Avg depth={avgDepth}, avg velNormal={avgVelNormal}.");
+        }
+        sw.Stop();
+        UnityEngine.Debug.Log($"[OctreeSpringFiller] Response took {sw.ElapsedMilliseconds}ms.");
     }
 
     public List<Vector3> GetSurfacePointsInCollision(OctreeSpringFiller other)

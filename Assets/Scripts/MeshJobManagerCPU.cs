@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Threading;
 using Unity.Burst;
@@ -249,6 +250,7 @@ public class MeshJobManagerCPU : MonoBehaviour
 
     public void IdentifySurfacePoints(Vector3[] meshVerts, int[] meshTris, Matrix4x4 worldToLocal)
     {
+        Stopwatch sw = Stopwatch.StartNew();
         surfaceSpringPoints.Clear();
         surfacePointsLocalSpace.Clear();
 
@@ -269,10 +271,14 @@ public class MeshJobManagerCPU : MonoBehaviour
             worldToLocalMatrix = worldToLocal,
             surfacePoints = surfaceSpringPoints.AsParallelWriter()
         }.Schedule(springPoints.Length, 64).Complete();
+        sw.Stop();
+        UnityEngine.Debug.Log($"[MeshJobManagerCPU] IdentifySurfacePoints took {sw.ElapsedMilliseconds}ms for {springPoints.Length} points, {meshVerts.Length} verts, {meshTris.Length / 3} tris. Found {surfaceSpringPoints.Length} surface points");
+
     }
 
     public void ScheduleMeshVerticesUpdateJobs(Vector3[] meshVerts, int[] meshTris, Matrix4x4 localToWorld, Matrix4x4 worldToLocal)
     {
+        Stopwatch sw = Stopwatch.StartNew();
         VertexPointMap.Clear();
         surfaceSpringPoints.Clear();
 
@@ -322,10 +328,13 @@ public class MeshJobManagerCPU : MonoBehaviour
 
         jobHandle = findJob.Schedule(meshVerticesNative.Length, 64);
         jobHandle = updateJob.Schedule(meshVerticesNative.Length, 64, jobHandle);
+        sw.Stop();
+        UnityEngine.Debug.Log($"[MeshJobManagerCPU] ScheduleMeshVerticesUpdateJobs took {sw.ElapsedMilliseconds}ms for {meshVerts.Length} verts");
     }
 
     public void CompleteAllJobsAndApply(Vector3[] meshVertices, int[] meshTriangles, Mesh targetMesh, List<SpringPointData> surfacePoints)
     {
+        Stopwatch sw = Stopwatch.StartNew();
         jobHandle.Complete();
 
         // update points
@@ -372,6 +381,8 @@ public class MeshJobManagerCPU : MonoBehaviour
 
         if (positions.IsCreated)
             positions.Dispose();
+        sw.Stop();
+        UnityEngine.Debug.Log($"[MeshJobManagerCPU] CompleteAllJobsAndApply took {sw.ElapsedMilliseconds}ms. Updated {meshVertices.Length} verts, {surfacePoints.Count} surface points");
     }
 
     private void OnDestroy()
