@@ -246,6 +246,7 @@ MonoBehaviour:
   friction: 0.8
   velocity: {x: 0, y: 0, z: 0}
   applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 0
   gravity: {x: 0, y: -9.81, z: 0}
   boundingVolume:
@@ -373,6 +374,7 @@ MonoBehaviour:
   friction: 0.8
   velocity: {x: 0, y: 0, z: 0}
   applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
   gravity: {x: 0, y: -9.81, z: 0}
   boundingVolume:
@@ -383,7 +385,7 @@ MonoBehaviour:
   groundFriction: 0.8
   applyGroundCollision: 1
   applyRoomCollision: 1
-  collisionManager: {fileID: 0}
+  collisionManager: {fileID: 1133259031}
   meshDeformer: {fileID: 0}
   collisionLayer:
     layerName: Default
@@ -396,7 +398,7 @@ MonoBehaviour:
     poissonRatio: 0.3
     dampingFactor: 0.1
   layerPreset: 0
-  visualizeSpringPoints: 1
+  visualizeSpringPoints: 0
   visualizeSpringConnections: 0
   enableMeshSubdivision: 1
   autoUpdateMeshFromSurface: 1
@@ -453,7 +455,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 171372771}
-  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!4 &171372776
 Transform:
   m_ObjectHideFlags: 0
@@ -854,6 +856,7 @@ MonoBehaviour:
   friction: 0.8
   velocity: {x: 0, y: 0, z: 0}
   applyVelocity: 0
+  targetMesh: {fileID: 0}
   applyGravity: 1
   gravity: {x: 0, y: -9.81, z: 0}
   boundingVolume:
@@ -864,7 +867,7 @@ MonoBehaviour:
   groundFriction: 0.8
   applyGroundCollision: 1
   applyRoomCollision: 1
-  collisionManager: {fileID: 0}
+  collisionManager: {fileID: 1133259031}
   meshDeformer: {fileID: 0}
   collisionLayer:
     layerName: Default
@@ -918,7 +921,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1133259030
 Transform:
   m_ObjectHideFlags: 0
@@ -948,11 +951,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enableInterObjectCollision: 1
   enableContactPointResponse: 1
-  baseContactRadius: 2
+  baseContactRadius: 1
   contactInfluenceFalloff: 2
   maxContactsPerCollision: 16
   radiusDepthScale: 0.5
-  contactStiffness: 1000
+  contactStiffness: 5000
   contactDampingRatio: 1
   viscousFrictionFactor: 0.5
   defaultCoefficientOfRestitution: 0.6
